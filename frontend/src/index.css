@@ -3,23 +3,27 @@
 
 :root {
   /* KIET Exams Design System */
-  
+
   /* Primary Colors */
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-  --primary-glow: rgba(37, 99, 235, 0.5);
+  --primary-color: #B13BFF;
+  --primary-hover: #9b2add;
+  --primary-light: #d896ff;
+  --primary-glow: rgba(177, 59, 255, 0.5);
+
+  /* Accent/Highlight Colors */
+  --accent-color: #FFCC00;
+  --accent-hover: #e6b800;
 
   /* Background Colors (Dark/Premium Vibe) */
-  --bg-color: #0f172a;
-  --surface-color: #1e293b;
-  --surface-color-light: #334155;
-  --surface-color-hover: #475569;
-  
+  --bg-color: #090040;
+  --surface-color: #471396;
+  --surface-color-light: rgba(71, 19, 150, 0.7);
+  --surface-color-hover: rgba(177, 59, 255, 0.2);
+
   /* Text Colors */
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  
+
   /* Danger Colors (For exams/errors) */
   --danger-color: #ef4444;
   --danger-hover: #dc2626;
@@ -28,11 +32,11 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-  
+
   /* Glassmorphism properties */
   --glass-bg: rgba(30, 41, 59, 0.7);
   --glass-border: rgba(255, 255, 255, 0.1);
-  
+
   /* Radii */
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -41,7 +45,7 @@
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  
+
   /* Layout constraints */
   --max-width: 1280px;
 }
