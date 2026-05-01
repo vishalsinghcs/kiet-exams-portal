@@ -2,7 +2,6 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 import AnimatedMeshBackground from "./components/AnimatedMeshBackground";
 import Login from "./components/Login";
@@ -10,6 +9,7 @@ import "./App.css";
 import Dashboard from "./components/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Signup from "./components/Signup";
+import LandingPage from "./components/LandingPage";
 
 function App() {
   return (
@@ -18,7 +18,7 @@ function App() {
         <AnimatedMeshBackground />
 
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"
