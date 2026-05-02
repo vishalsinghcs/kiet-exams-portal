@@ -3,29 +3,30 @@ import { createContext, useContext, useState, useEffect } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Initialize state synchronously to prevent redirect on refresh
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token"),
-  );
+  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
-  // Check token on app load (optional now, but good for safety)
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-  }, []);
+    if (token) {
+      localStorage.setItem("token", token);
+      setIsAuthenticated(true);
+    } else {
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+    }
+  }, [token]);
 
-  const login = () => {
-    localStorage.setItem("token", "dummy-token");
-    setIsAuthenticated(true);
+  // Called after a successful API login/signup — stores the real JWT
+  const login = (access_token) => {
+    setToken(access_token);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setIsAuthenticated(false);
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,5 @@
 /* App level specific styles can go here. Global styles are in index.css */
 .app-container {
-  min-height: 100vh;
+  height: 100%;
   width: 100%;
-  display: flex;
-  flex-direction: column;
 }

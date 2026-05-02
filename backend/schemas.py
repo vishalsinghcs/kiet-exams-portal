@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, Field
 from datetime import datetime
 
 # 1. The rules for signing up
@@ -25,7 +25,12 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# 3. The rules for the Login Token
+# 3. The rules for Login Request (email + password as JSON)
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+# 4. The rules for the Login Token response
 class Token(BaseModel):
     access_token: str
     token_type: str

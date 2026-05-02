@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
@@ -47,15 +46,14 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @app.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # OAuth2 uses 'username', but we will treat it as 'email'
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
+    # Look up user by email
+    user = db.query(models.User).filter(models.User.email == credentials.email).first()
     
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+    if not user or not auth.verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Generate the JWT Token

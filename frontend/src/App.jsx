@@ -10,6 +10,7 @@ import Dashboard from "./components/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Signup from "./components/Signup";
 import LandingPage from "./components/LandingPage";
+import ForgotPassword from "./components/ForgotPassword";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             }
           />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
       </div>
     </Router>

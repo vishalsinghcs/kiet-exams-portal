@@ -1,0 +1,430 @@
+/* Login.css */
+
+/* ===================== PAGE WRAPPER ===================== */
+/* Full viewport, everything stacks on top of each other */
+.login-page {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ===================== BACKGROUND LAYER ===================== */
+/* Sits behind the card, fills the entire screen */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.login-bg-left {
+  flex: 0 0 50%;
+  position: relative;
+  overflow: hidden;
+  background-color: #0d0d3b;
+}
+
+.login-bg-right {
+  flex: 0 0 50%;
+  background-color: #ffffff;
+}
+
+/* ===================== FLOATING CARD ===================== */
+/* Sits on top of the background with large margins */
+.login-card-wrapper {
+  position: absolute;
+  inset: 0;
+  margin: 3.5rem 12rem;
+  display: flex;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* ===================== LEFT PANE (card, no animation) ===================== */
+.login-left-pane {
+  flex: 0 0 50%;
+  background-color: #0d0d3b;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 3rem;
+  color: #fff;
+}
+
+.left-pane-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  text-align: center;
+}
+
+.brand-kiet {
+  font-size: 5rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.brand-exams {
+  font-size: 5rem;
+  font-weight: 900;
+  color: rgb(255, 255, 255);
+  line-height: 1;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ---- Left pane decorative shapes ---- */
+.shape-circle-1 {
+  position: absolute;
+  top: -60px;
+  left: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.shape-circle-2 {
+  position: absolute;
+  top: 3%;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 20px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+}
+
+.shape-circle-3 {
+  position: absolute;
+  top: 38%;
+  left: -50px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 14px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+}
+
+.shape-dashes {
+  position: absolute;
+  top: 22%;
+  right: 22%;
+}
+
+.shape-dashes::before,
+.shape-dashes::after {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  margin-bottom: 5px;
+  transform: rotate(-35deg);
+}
+
+.shape-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.shape-circle-4 {
+  position: absolute;
+  bottom: -60px;
+  left: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.shape-circle-5 {
+  position: absolute;
+  bottom: -30px;
+  right: 10%;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 18px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+}
+
+/* ===================== RIGHT PANE (card, form) ===================== */
+.login-right-pane {
+  flex: 1;
+  background-color: #fff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Top-right corner: filled quarter circle */
+.shape-top-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 110px;
+  height: 110px;
+  background-color: #0d0d3b;
+  border-bottom-left-radius: 110px;
+  z-index: 1;
+}
+
+/* Thin arc: wraps around the filled quarter — sits at the same top/right corner */
+.shape-top-right-outline {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 145px;
+  height: 145px;
+  border-bottom-left-radius: 145px;
+  border: 2px solid #0d0d3b;
+  background: transparent;
+  z-index: 0;
+}
+
+/* Top-left of right pane: hollow circle with filled dot inside */
+.shape-top-left {
+  position: absolute;
+  top: 18%;
+  left: 14%;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.circle-inner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #bbb;
+}
+
+/* ===================== FORM ===================== */
+.login-form-container {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem 2.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.form-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 2.5rem;
+}
+
+.form-title {
+  font-size: 2.8rem;
+  font-weight: 500;
+  color: #222;
+  margin: 0;
+  line-height: 1;
+}
+
+.title-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #e0b0ff;
+  border-radius: 50%;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.login-form-split {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.input-group-split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.4rem;
+}
+
+.input-group-split label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.input-group-split input {
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border: 1.5px solid #ddd;
+  background-color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  color: #333;
+  font-family: inherit;
+}
+
+.input-group-split input:focus {
+  border-color: #0d0d3b;
+}
+
+.forgot-password-link {
+  text-align: right;
+  margin-bottom: 1.5rem;
+}
+
+.forgot-password-link a {
+  font-size: 0.8rem;
+  color: #6c5ce7;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
+}
+
+.submit-btn-split {
+  background-color: #0d0d3b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 0.05em;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.submit-btn-split:hover {
+  background-color: #1a1a6e;
+}
+
+.submit-btn-split:active {
+  transform: scale(0.98);
+}
+
+.switch-auth-split {
+  text-align: center;
+  font-size: 0.82rem;
+  margin-top: 2.5rem;
+  color: #999;
+}
+
+.switch-auth-split a {
+  font-weight: 600;
+  color: #6c5ce7;
+  text-decoration: none;
+}
+
+.switch-auth-split a:hover {
+  text-decoration: underline;
+}
+
+.error-text {
+  color: #e74c3c;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  .login-card-wrapper {
+    margin: 1.5rem;
+    flex-direction: column;
+  }
+  .login-left-pane {
+    flex: 0 0 35%;
+  }
+  .login-bg-left {
+    flex: 0 0 100%;
+  }
+}
+
+/* ===================== SELECT DROPDOWN ===================== */
+.auth-select {
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border: 1.5px solid #ddd;
+  background-color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  color: #333;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  width: 100%;
+}
+
+.auth-select:focus {
+  border-color: #0d0d3b;
+}
+
+/* ===================== FORGOT PASSWORD EXTRAS ===================== */
+.forgot-desc {
+  font-size: 0.92rem;
+  color: #777;
+  margin-bottom: 1.8rem;
+  line-height: 1.6;
+}
+
+.forgot-success {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #0d0d3b;
+  color: #fff;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-to-login-btn {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.85rem 2.5rem;
+  background-color: #0d0d3b;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.back-to-login-btn:hover {
+  background-color: #1a1a6e;
+  color: #fff;
+}
+

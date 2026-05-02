@@ -9,8 +9,13 @@ export default function AnimatedMeshBackground() {
 
     // Set canvas dimensions
     const setDimensions = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      if (canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      } else {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
     };
 
     setDimensions();
@@ -19,13 +24,13 @@ export default function AnimatedMeshBackground() {
     // Mesh Properties
     const particles = [];
     const particleCount = Math.floor(
-      (window.innerWidth * window.innerHeight) / 10000,
+      ((canvas.width || window.innerWidth) * (canvas.height || window.innerHeight)) / 10000,
     );
-    const maxDistance = 150;
+    const maxDistance = 120;
     const colors = [
-      "rgba(255, 255, 255, 0.8)",
+      "rgba(255, 255, 255, 0.55)",
+      "rgba(255, 255, 255, 0.7)",
       "rgba(255, 255, 255, 0.4)",
-      "rgba(255, 255, 255, 0.1)",
     ];
 
     // Particle Class
@@ -35,7 +40,7 @@ export default function AnimatedMeshBackground() {
         this.y = Math.random() * canvas.height;
         this.vx = (Math.random() - 0.5) * 0.8;
         this.vy = (Math.random() - 0.5) * 0.8;
-        this.radius = Math.random() * 2 + 0.5;
+        this.radius = Math.random() * 3 + 1;
         this.color = colors[Math.floor(Math.random() * colors.length)];
         this.z = Math.random() * 2; // Pseudo 3D depth factor
       }
@@ -72,16 +77,13 @@ export default function AnimatedMeshBackground() {
     // Animation Loop
     let animationFrameId;
     const animate = () => {
-      // Clear with slight opacity for trails (optional, using clearRect for clean look here)
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update and draw particles
       particles.forEach((p) => {
         p.update();
         p.draw();
       });
 
-      // Draw connecting edges
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -92,11 +94,9 @@ export default function AnimatedMeshBackground() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            // Opacity based on distance and depth
             const opacity = 1 - distance / maxDistance;
-            // Average depth of the two connected particles
             const avgZ = (particles[i].z + particles[j].z) / 2;
-            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.6 * (avgZ * 0.5 + 0.5)})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.9 * (avgZ * 0.5 + 0.5)})`;
             ctx.lineWidth = 1 * (avgZ * 0.5 + 0.5);
             ctx.stroke();
           }
@@ -118,12 +118,12 @@ export default function AnimatedMeshBackground() {
     <canvas
       ref={canvasRef}
       style={{
-        position: "fixed",
+        position: "absolute",
         top: 0,
         left: 0,
         width: "100%",
         height: "100%",
-        zIndex: -1,
+        zIndex: 0,
         pointerEvents: "none",
         background: "transparent",
       }}
