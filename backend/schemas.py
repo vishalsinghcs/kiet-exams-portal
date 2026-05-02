@@ -7,6 +7,13 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+# 1b. The rules for verifying signup OTP
+class OTPVerifyRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    otp: str
+
     # This is the custom rule to ensure only KIET students can sign up
     @field_validator('email')
     def validate_kiet_email(cls, v):
@@ -30,7 +37,17 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-# 4. The rules for the Login Token response
+# 4. Forgot password request
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+# 5. Reset password with OTP request
+class ResetPasswordOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+# 6. The rules for the Login Token response
 class Token(BaseModel):
     access_token: str
     token_type: str

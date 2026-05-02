@@ -11,7 +11,12 @@ load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Create the engine: This is what actually communicates with postgres
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Added pool_pre_ping to fix "server closed the connection unexpectedly" errors with Supabase
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=3600
+)
 
 # Create a SessionLocal class 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

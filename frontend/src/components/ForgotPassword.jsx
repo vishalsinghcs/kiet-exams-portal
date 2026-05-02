@@ -1,16 +1,23 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { forgotPassword, resetPassword } from "../utils/api";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
-import "./Login.css"; /* Reuse the same split layout styles */
+import "./Login.css";
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1); // 1 = Email, 2 = OTP + New Password
+  
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!email) {
       setError("Please enter your email address");
@@ -22,17 +29,46 @@ const ForgotPassword = () => {
     }
     setError("");
     setLoading(true);
-    // TODO: call backend password reset endpoint
-    setTimeout(() => {
+    try {
+      await forgotPassword(email);
+      setStep(2); // Move to OTP + Password reset step
+    } catch (err) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
       setLoading(false);
-      setSubmitted(true);
-    }, 1500);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!otp || !newPassword || !confirmPassword) {
+      setError("All fields are required");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+    try {
+      await resetPassword(email, otp, newPassword);
+      // On success, redirect to login
+      navigate("/login", { state: { message: "Password reset successfully. Please login." } });
+    } catch (err) {
+      setError(err.message || "Failed to reset password. Please verify your OTP.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="login-page">
-
-      {/* Full-screen background layer */}
       <div className="login-bg">
         <div className="login-bg-left">
           <AnimatedMeshBackground />
@@ -40,14 +76,12 @@ const ForgotPassword = () => {
         <div className="login-bg-right"></div>
       </div>
 
-      {/* Floating card */}
       <motion.div
         className="login-card-wrapper"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Left pane */}
         <div className="login-left-pane">
           <div className="shape-circle-1"></div>
           <div className="shape-circle-2"></div>
@@ -65,7 +99,6 @@ const ForgotPassword = () => {
           </div>
         </div>
 
-        {/* Right pane */}
         <div className="login-right-pane">
           <div className="shape-top-right"></div>
           <div className="shape-top-right-outline"></div>
@@ -74,26 +107,7 @@ const ForgotPassword = () => {
           </div>
 
           <div className="login-form-container">
-
-            {submitted ? (
-              /* Success state */
-              <motion.div
-                className="forgot-success"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="success-icon">✓</div>
-                <h2 className="form-title" style={{ marginBottom: "1rem" }}>Check your inbox</h2>
-                <p className="forgot-desc">
-                  If an account with <strong>{email}</strong> exists, a password reset link has been sent.
-                </p>
-                <Link to="/login" className="back-to-login-btn">
-                  Back to Login
-                </Link>
-              </motion.div>
-            ) : (
-              /* Form state */
+            {step === 1 ? (
               <>
                 <div className="form-header">
                   <h2 className="form-title">Reset</h2>
@@ -101,12 +115,12 @@ const ForgotPassword = () => {
                 </div>
 
                 <p className="forgot-desc">
-                  Enter your KIET email address and we'll send you a link to reset your password.
+                  Enter your KIET email address and we'll send you an OTP to reset your password.
                 </p>
 
                 {error && <p className="error-text">{error}</p>}
 
-                <form onSubmit={handleSubmit} className="login-form-split">
+                <form onSubmit={handleSendOtp} className="login-form-split">
                   <div className="input-group-split">
                     <label>KIET Email</label>
                     <input
@@ -119,11 +133,69 @@ const ForgotPassword = () => {
                   </div>
 
                   <button type="submit" disabled={loading} className="submit-btn-split">
-                    {loading ? "Sending..." : "Send Reset Link"}
+                    {loading ? "Sending OTP..." : "Send OTP"}
                   </button>
 
                   <p className="switch-auth-split">
                     Remembered it? <Link to="/login">Back to Login</Link>
+                  </p>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="form-header">
+                  <h2 className="form-title">New Password</h2>
+                  <div className="title-dot"></div>
+                </div>
+                
+                <p className="forgot-desc" style={{ marginBottom: "1rem" }}>
+                  We sent a 6-digit code to <strong>{email}</strong>.
+                </p>
+
+                {error && <p className="error-text">{error}</p>}
+
+                <form onSubmit={handleResetPassword} className="login-form-split">
+                  <div className="input-group-split">
+                    <label>6-Digit OTP</label>
+                    <input 
+                      type="text" 
+                      placeholder="XXXXXX" 
+                      maxLength="6"
+                      value={otp} 
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} // only allow digits
+                      required 
+                      style={{ letterSpacing: '0.5rem', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' }}
+                    />
+                  </div>
+                  
+                  <div className="input-group-split">
+                    <label>New Password</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="input-group-split">
+                    <label>Confirm Password</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" disabled={loading} className="submit-btn-split" style={{ marginTop: '0.5rem' }}>
+                    {loading ? "Resetting..." : "Reset Password"}
+                  </button>
+                  
+                  <p className="switch-auth-split">
+                    <button type="button" onClick={() => setStep(1)} style={{ background:'none', border:'none', color:'#6c5ce7', cursor:'pointer', fontWeight: 600 }}>
+                      Back to Email
+                    </button>
                   </p>
                 </form>
               </>

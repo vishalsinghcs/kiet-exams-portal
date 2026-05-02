@@ -3,10 +3,7 @@
 import { API_BASE_URL } from "./constants";
 
 /**
- * Login — sends JSON body with email + password
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{ access_token: string, token_type: string }>}
+ * Login
  */
 export async function loginUser(email, password) {
   const res = await fetch(`${API_BASE_URL}/login`, {
@@ -14,31 +11,63 @@ export async function loginUser(email, password) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-
   const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.detail || "Login failed");
-  }
-  return data; // { access_token, token_type }
+  if (!res.ok) throw new Error(data.detail || "Login failed");
+  return data;
 }
 
 /**
- * Signup — JSON body
- * @param {string} name
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{ id, name, email, is_active, created_at }>}
+ * Step 1: Request Signup OTP
  */
 export async function signupUser(name, email, password) {
   const res = await fetch(`${API_BASE_URL}/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password }), // We don't send branch to backend yet since it's not in schema, but could add later
   });
-
   const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.detail || "Signup failed");
-  }
+  if (!res.ok) throw new Error(data.detail || "Signup failed");
+  return data;
+}
+
+/**
+ * Step 2: Verify Signup OTP & Login
+ */
+export async function verifyOtp(name, email, password, otp) {
+  const res = await fetch(`${API_BASE_URL}/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password, otp }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Verification failed");
+  return data;
+}
+
+/**
+ * Step 1: Request Password Reset OTP
+ */
+export async function forgotPassword(email) {
+  const res = await fetch(`${API_BASE_URL}/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to send reset link");
+  return data;
+}
+
+/**
+ * Step 2: Submit new password with OTP
+ */
+export async function resetPassword(email, otp, newPassword) {
+  const res = await fetch(`${API_BASE_URL}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp, new_password: newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Reset failed");
   return data;
 }

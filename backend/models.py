@@ -11,3 +11,13 @@ class User(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class VerificationToken(Base):
+    __tablename__ = "verification_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True)
+    token = Column(String)
+    token_type = Column(String) # 'signup_otp', 'password_reset_otp'
+    expires_at = Column(DateTime)
+
