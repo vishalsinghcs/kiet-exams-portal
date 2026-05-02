@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
-import { APP_NAME } from "../utils/constants";
 import { useAuth } from "../context/AuthContext";
 import { loginUser } from "../utils/api";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
