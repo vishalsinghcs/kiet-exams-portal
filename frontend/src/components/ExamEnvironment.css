@@ -20,105 +20,99 @@
 
 /* Sidebar Styles */
 .exam-sidebar {
-  width: 50px; /* Hover detection zone */
+  width: 70px; /* Closed width */
   height: 100%;
-  background: transparent;
-  border-right: none;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  z-index: 50;
-  box-shadow: none;
-  position: absolute; /* Hovering over content */
-  left: 0;
-  top: 0;
-}
-
-.exam-sidebar.hovered,
-.exam-sidebar.pinned {
-  width: 250px; /* Expanded width */
   background: var(--glass-bg);
   border-right: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .exam-sidebar.pinned {
-  position: relative; /* Takes up real space in the flex row — pushes content right */
+  width: 260px; /* Expanded width */
+  box-shadow: var(--shadow-md);
 }
 
 .hamburger-btn {
   background: transparent;
   border: none;
-  color: var(--text-main);
-  padding: 15px;
-  cursor: pointer;
+  color: var(--text-muted);
+  padding: 20px 0;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  transition: background 0.2s;
+  justify-content: center;
+  cursor: pointer;
   width: 100%;
-  min-height: 54px;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
 }
 
-.exam-sidebar.hovered .hamburger-btn,
+.hamburger-btn:hover {
+  color: var(--primary-color);
+}
+
 .exam-sidebar.pinned .hamburger-btn {
-  /* Options when expanded */
+  justify-content: flex-start;
+  padding-left: 25px; /* Align with nav items */
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 0;
-  width: 250px; /* Ensure content doesn't wrap when collapsing */
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.exam-sidebar.hovered .sidebar-nav,
-.exam-sidebar.pinned .sidebar-nav {
-  opacity: 1;
-  pointer-events: auto;
+  gap: 12px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .sidebar-nav-item {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 15px;
+  padding: 12px 15px;
+  margin: 0 10px; /* Floating pill effect */
+  border-radius: var(--radius-md);
   cursor: pointer;
   color: var(--text-muted);
   font-weight: 600;
-  transition: all 0.2s;
-  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .sidebar-nav-item:hover {
   background: var(--surface-color-hover);
-  color: var(--text-main);
+  color: var(--primary-color);
 }
 
 .sidebar-nav-item.active {
-  color: var(--primary-color);
-  background: var(--surface-color-hover);
-  border-left-color: var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 15px rgba(243, 118, 38, 0.35); /* Premium glow */
 }
 
 .nav-icon {
-  min-width: 24px;
+  min-width: 20px; /* Matches lucide size=20 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-text {
-  white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.2s;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
 }
 
-.exam-sidebar.hovered .nav-text,
 .exam-sidebar.pinned .nav-text {
   opacity: 1;
+  visibility: visible;
+  transition-delay: 0.1s; /* smooth fade in after expanding */
 }
 
 /* Main Content Area */
@@ -128,14 +122,6 @@
   height: 100%;
   position: relative;
   background-color: var(--bg-color);
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Leave room for the floating hamburger icon (50px) so content isn't under it */
-  margin-left: 50px;
-}
-
-/* When sidebar is pinned it's position:relative so it already takes space in flex row */
-.exam-main-content.sidebar-pinned {
-  margin-left: 0;
 }
 
 .view-container {
@@ -143,7 +129,6 @@
   width: 100%;
   overflow-y: auto;
   position: relative;
-  padding-top: 20px; /* Padding for the fixed button */
 }
 
 /* Fixed Start Coding Button */

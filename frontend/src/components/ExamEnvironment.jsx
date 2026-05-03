@@ -9,7 +9,6 @@ const ExamEnvironment = () => {
 
   // Sidebar state
   const [isSidebarPinned, setIsSidebarPinned] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   
   // View state: 'question' | 'coding' | 'result'
   const [activeView, setActiveView] = useState("question");
@@ -17,11 +16,7 @@ const ExamEnvironment = () => {
   return (
     <div className="exam-environment-page">
       {/* Sidebar */}
-      <div 
-        className={`exam-sidebar ${isSidebarPinned ? 'pinned' : ''} ${isSidebarHovered ? 'hovered' : ''}`}
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-      >
+      <div className={`exam-sidebar ${isSidebarPinned ? 'pinned' : ''}`}>
         <button 
           className="hamburger-btn"
           onClick={() => setIsSidebarPinned(!isSidebarPinned)}
