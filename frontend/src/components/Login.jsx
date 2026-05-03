@@ -11,9 +11,30 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
-    }
+    // If user is already authenticated on initial load, quickly check their role
+    const checkRoleAndRedirect = async () => {
+      if (isAuthenticated) {
+        const token = localStorage.getItem("token");
+        try {
+          const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            if (profileData.is_admin) {
+              navigate("/admin", { replace: true });
+              return;
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        navigate("/dashboard", { replace: true });
+      }
+    };
+    // Only run this if we are mounting and already authenticated
+    // For active login clicks, handleLogin will route directly
+    checkRoleAndRedirect();
   }, [isAuthenticated, navigate]);
 
   const [email, setEmail] = useState("");
@@ -32,6 +53,19 @@ const Login = () => {
     try {
       const data = await loginUser(email, password);
       login(data.access_token); // store real JWT in AuthContext
+      
+      // Immediately check profile using the fresh token to determine redirect route
+      const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
+        headers: { "Authorization": `Bearer ${data.access_token}` }
+      });
+      
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        if (profileData.is_admin) {
+          navigate("/admin");
+          return;
+        }
+      }
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");

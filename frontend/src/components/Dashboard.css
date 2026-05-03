@@ -1,0 +1,326 @@
+.dashboard-page {
+  /* Dashboard Specific Theme Override (GitHub Style) */
+  --primary-color: #238636;
+  --primary-hover: #2ea043;
+  --primary-light: #3fb950;
+  --primary-glow: rgba(35, 134, 54, 0.4);
+
+  --accent-color: #58A6FF;
+  --accent-hover: #79c0ff;
+
+  --bg-color: #0D1117;
+  --surface-color: #161B22;
+  --surface-color-light: #21262d;
+  --surface-color-hover: #30363d;
+
+  --text-main: #C9D1D9;
+  --text-muted: #8b949e;
+
+  --danger-color: #f85149;
+  --danger-hover: #da3633;
+
+  --glass-bg: #161B22;
+  --glass-border: #30363d;
+
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  position: relative;
+  z-index: 1;
+}
+
+/* Navbar */
+.dashboard-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background: rgba(13, 17, 23, 0.8);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dashboard-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-main);
+}
+
+.profile-container {
+  position: relative;
+}
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: var(--surface-color-light);
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s ease;
+}
+
+.profile-trigger:hover {
+  background: var(--surface-color-hover);
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Dropdown Menu */
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 250px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-header {
+  padding: 15px;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-email {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.dropdown-item {
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-color-hover);
+}
+
+.dropdown-item.logout-item {
+  color: var(--danger-color);
+  border-top: 1px solid var(--glass-border);
+}
+
+.dropdown-item.logout-item:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Main Layout (Sidebar + Content) */
+.dashboard-layout {
+  display: flex;
+  height: calc(100vh - 72px); /* Full height minus navbar */
+  width: 100%;
+}
+
+/* Sidebar */
+.dashboard-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  background: rgba(22, 27, 34, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid var(--glass-border);
+}
+
+.sidebar-item {
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.sidebar-item:hover {
+  background: var(--surface-color-hover);
+  color: var(--text-main);
+}
+
+.sidebar-item.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+/* Main Content Area */
+.dashboard-main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px 40px;
+  /* Custom Scrollbar for the main content area */
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-color-light) transparent;
+}
+
+.dashboard-main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-main-content::-webkit-scrollbar-thumb {
+  background-color: var(--surface-color-light);
+  border-radius: 10px;
+}
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: var(--text-main);
+}
+
+/* Exam Grid */
+.exam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 25px;
+}
+
+.exam-card {
+  display: flex;
+  flex-direction: column;
+  padding: 25px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.exam-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5);
+  border-color: rgba(88, 166, 255, 0.4);
+}
+
+.exam-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.exam-code {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  background: rgba(255, 204, 0, 0.1);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.5px;
+}
+
+.exam-type {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.exam-subject {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.exam-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.start-exam-btn {
+  margin-top: auto;
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.start-exam-btn:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-navbar {
+    padding: 15px 20px;
+  }
+  
+  .dashboard-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .dashboard-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 15px;
+  }
+
+  .sidebar-item {
+    white-space: nowrap;
+  }
+}

@@ -1,17 +1,17 @@
 /* KIET Exams Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 :root {
   /* KIET Exams Design System */
 
   /* Primary Colors */
-  --primary-color: #B13BFF;
+  --primary-color: #b13bff;
   --primary-hover: #9b2add;
   --primary-light: #d896ff;
   --primary-glow: rgba(177, 59, 255, 0.5);
 
   /* Accent/Highlight Colors */
-  --accent-color: #FFCC00;
+  --accent-color: #ffcc00;
   --accent-hover: #e6b800;
 
   /* Background Colors (Dark/Premium Vibe) */
@@ -31,7 +31,8 @@
   /* Shadows and Glassmorphism */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
 
   /* Glassmorphism properties */
   --glass-bg: rgba(30, 41, 59, 0.7);
@@ -44,19 +45,25 @@
   --radius-full: 9999px;
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 
   /* Layout constraints */
   --max-width: 1280px;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -388,7 +395,9 @@ a:hover {
 .feature-card {
   padding: 30px;
   text-align: left;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .feature-card:hover {
@@ -419,15 +428,15 @@ a:hover {
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-cta {
     flex-direction: column;
   }
-  
+
   .navbar-brand .brand-text {
     display: none; /* Hide text on small screens */
   }
-  
+
   .landing-navbar {
     padding: 15px 20px;
   }
