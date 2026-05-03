@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { LogOut, ShieldAlert, Plus, UserPlus, Shield, Activity, List } from "lucide-react";
+import { LogOut, ShieldAlert, Plus, UserPlus, Shield, Activity, List, ChevronDown, Settings } from "lucide-react";
+import { API_BASE_URL } from "../utils/api";
 import "./AdminDashboard.css";
 import logo from "../assets/KIET-Logo.jpg";
 
@@ -13,6 +14,9 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("create_exam");
   const [loading, setLoading] = useState(true);
   const [exams, setExams] = useState([]);
+  
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Form states
   const [examForm, setExamForm] = useState({
@@ -24,9 +28,19 @@ const AdminDashboard = () => {
   const [message, setMessage] = useState({ type: "", text: "" });
 
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     const fetchAdminProfile = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/users/me", {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         
@@ -54,7 +68,7 @@ const AdminDashboard = () => {
 
   const fetchAllExams = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/admin/exams/all", {
+      const response = await fetch(`${API_BASE_URL}/admin/exams/all`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (response.ok) {
@@ -76,7 +90,7 @@ const AdminDashboard = () => {
       // Ensure time includes timezone for backend
       const formattedTime = new Date(examForm.start_time).toISOString();
       
-      const response = await fetch("http://127.0.0.1:8000/admin/exams", {
+      const response = await fetch(`${API_BASE_URL}/admin/exams`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,7 +114,7 @@ const AdminDashboard = () => {
   const handleAssignExam = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://127.0.0.1:8000/admin/exams/assign", {
+      const response = await fetch(`${API_BASE_URL}/admin/exams/assign`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -124,7 +138,7 @@ const AdminDashboard = () => {
   const handleElevateUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://127.0.0.1:8000/admin/elevate?email=${elevateEmail}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/elevate?email=${elevateEmail}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -149,14 +163,40 @@ const AdminDashboard = () => {
       <nav className="admin-navbar">
         <div className="admin-brand">
           <img src={logo} alt="KIET Logo" className="admin-logo-img" />
-          <ShieldAlert size={20} className="admin-shield" />
           Admin Portal
         </div>
-        <div className="admin-profile">
-          <span>{user.email} (Admin)</span>
-          <button onClick={() => { logout(); navigate("/"); }} className="admin-logout-btn">
-            <LogOut size={16} /> Logout
-          </button>
+        <div className="admin-profile" ref={dropdownRef}>
+          <div 
+            className="admin-profile-trigger" 
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            <div className="admin-avatar">
+              {user.name ? user.name.charAt(0).toUpperCase() : "A"}
+            </div>
+            <span className="admin-name">{user.name || "Administrator"}</span>
+            <ChevronDown size={16} className={`dropdown-icon ${dropdownOpen ? 'open' : ''}`} />
+          </div>
+
+          {dropdownOpen && (
+            <div className="admin-profile-dropdown glass-panel">
+              <div className="dropdown-header">
+                <span className="dropdown-email">{user.email}</span>
+                <span className="dropdown-badge">Admin</span>
+              </div>
+              <div className="dropdown-divider"></div>
+              
+              <Link to="/forgot-password" className="dropdown-item">
+                <Settings size={16} /> Reset Password
+              </Link>
+              
+              <button 
+                onClick={() => { logout(); navigate("/admin"); }} 
+                className="dropdown-item dropdown-logout"
+              >
+                <LogOut size={16} /> Logout
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 

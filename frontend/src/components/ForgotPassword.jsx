@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { forgotPassword, resetPassword } from "../utils/api";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
+import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
 
 const ForgotPassword = () => {
@@ -73,7 +74,9 @@ const ForgotPassword = () => {
         <div className="login-bg-left">
           <AnimatedMeshBackground />
         </div>
-        <div className="login-bg-right"></div>
+        <div className="login-bg-right">
+          <AnimatedMeshBackgroundDark />
+        </div>
       </div>
 
       <motion.div

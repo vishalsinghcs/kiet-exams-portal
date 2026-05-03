@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import AdminDashboard from "./AdminDashboard";
 import { motion } from "framer-motion";
-import { loginUser } from "../utils/api";
+import { loginUser, API_BASE_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
+import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
 
 const AdminPage = () => {
@@ -18,7 +19,7 @@ const AdminPage = () => {
       if (isAuthenticated) {
         const currentToken = token || localStorage.getItem("token");
         try {
-          const res = await fetch("http://127.0.0.1:8000/users/me", {
+          const res = await fetch(`${API_BASE_URL}/users/me`, {
             headers: { "Authorization": `Bearer ${currentToken}` }
           });
           if (res.ok) {
@@ -75,7 +76,7 @@ const AdminLoginForm = () => {
       const data = await loginUser(email, password);
       
       // Verify admin status BEFORE authenticating the entire app state
-      const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
+      const profileRes = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { "Authorization": `Bearer ${data.access_token}` }
       });
       
@@ -103,7 +104,9 @@ const AdminLoginForm = () => {
         <div className="login-bg-left">
           <AnimatedMeshBackground />
         </div>
-        <div className="login-bg-right"></div>
+        <div className="login-bg-right">
+          <AnimatedMeshBackgroundDark />
+        </div>
       </div>
 
       <motion.div

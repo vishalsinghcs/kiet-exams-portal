@@ -266,13 +266,13 @@ a:hover {
 }
 
 .brand-logo-img {
-  height: 40px;
+  height: 30px;
   width: auto;
   object-fit: contain;
 }
 
 .brand-text {
-  font-size: 1.3rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: 0.5px;
@@ -414,7 +414,7 @@ a:hover {
   font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 12px;
-  color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 .feature-desc {

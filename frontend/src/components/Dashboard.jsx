@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, KeyRound, Clock, Calendar, PlayCircle, BookOpen } from "lucide-react";
+import { API_BASE_URL } from "../utils/api";
 import logo from "../assets/KIET-Logo.jpg";
 import "./Dashboard.css";
 
@@ -22,7 +23,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/users/me", {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -42,7 +43,7 @@ const Dashboard = () => {
 
     const fetchExams = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/users/me/exams", {
+        const response = await fetch(`${API_BASE_URL}/users/me/exams`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (response.ok) {
@@ -153,7 +154,7 @@ const Dashboard = () => {
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
         <div className="dashboard-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src={logo} alt="KIET Logo" style={{ height: '32px', borderRadius: '4px' }} />
+          <img src={logo} alt="KIET Logo" style={{ height: '30px', borderRadius: '4px' }} />
           Exams
         </div>
         
