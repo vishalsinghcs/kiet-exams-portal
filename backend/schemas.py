@@ -27,6 +27,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
     is_active: bool
+    is_admin: bool
     created_at: datetime
 
     class Config:
@@ -51,3 +52,35 @@ class ResetPasswordOTPRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# 7. Exams schemas
+class ExamBase(BaseModel):
+    code: str
+    subject: str
+    exam_name: str
+    duration: int
+    start_time: datetime
+
+class ExamCreate(ExamBase):
+    pass
+
+class ExamResponse(ExamBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ExamAssign(BaseModel):
+    email: EmailStr
+    exam_id: int
+
+class AssignedExamResponse(BaseModel):
+    id: int
+    code: str
+    subject: str
+    exam_name: str
+    duration: int
+    start_time: datetime
+    status: str # from ExamEnrollment
+

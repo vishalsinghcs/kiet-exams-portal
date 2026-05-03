@@ -1,42 +1,63 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AdminDashboard from "./AdminDashboard";
+import { motion } from "framer-motion";
 import { loginUser } from "../utils/api";
+import { useNavigate } from "react-router-dom";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
 import "./Login.css";
 
-const Login = () => {
-  const { login, isAuthenticated } = useAuth();
+const AdminPage = () => {
+  const { isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
+  
+  const [isAdmin, setIsAdmin] = useState(null);
 
   useEffect(() => {
-    // If user is already authenticated on initial load, quickly check their role
-    const checkRoleAndRedirect = async () => {
+    const checkRole = async () => {
       if (isAuthenticated) {
-        const token = localStorage.getItem("token");
+        const currentToken = token || localStorage.getItem("token");
         try {
-          const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
-            headers: { "Authorization": `Bearer ${token}` }
+          const res = await fetch("http://127.0.0.1:8000/users/me", {
+            headers: { "Authorization": `Bearer ${currentToken}` }
           });
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            if (profileData.is_admin) {
-              navigate("/admin", { replace: true });
-              return;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.is_admin) {
+              setIsAdmin(true);
+            } else {
+              // Valid user, but NOT an admin. Redirect to student dashboard
+              navigate("/dashboard");
             }
+          } else {
+            setIsAdmin(false); // Invalid token
           }
         } catch (e) {
-          console.error(e);
+          setIsAdmin(false);
         }
-        navigate("/dashboard", { replace: true });
+      } else {
+        setIsAdmin(false);
       }
     };
-    // Only run this if we are mounting and already authenticated
-    // For active login clicks, handleLogin will route directly
-    checkRoleAndRedirect();
-  }, [isAuthenticated, navigate]);
+    checkRole();
+  }, [isAuthenticated, token, navigate]);
 
+  // If authenticated and verified as admin, show the dashboard
+  if (isAuthenticated && isAdmin) {
+    return <AdminDashboard />;
+  }
+
+  // If still checking, show nothing or loading to prevent flash
+  if (isAuthenticated && isAdmin === null) {
+    return <div className="admin-loading" style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>Verifying Secure Access...</div>;
+  }
+
+  // Otherwise, render the Admin Login Form!
+  return <AdminLoginForm />;
+};
+
+const AdminLoginForm = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -52,9 +73,8 @@ const Login = () => {
     setLoading(true);
     try {
       const data = await loginUser(email, password);
-      login(data.access_token); // store real JWT in AuthContext
       
-      // Immediately check profile using the fresh token to determine redirect route
+      // Verify admin status BEFORE authenticating the entire app state
       const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
         headers: { "Authorization": `Bearer ${data.access_token}` }
       });
@@ -62,42 +82,37 @@ const Login = () => {
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         if (profileData.is_admin) {
-          navigate("/admin");
-          return;
+           login(data.access_token); // This updates AuthContext and mounts AdminDashboard automatically
+        } else {
+           setError("Access Denied: You are not an administrator.");
+           setLoading(false);
         }
+      } else {
+        setError("Failed to verify admin status.");
+        setLoading(false);
       }
-      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="login-page">
-
-      {/* ===== FULL-SCREEN BACKGROUND LAYER ===== */}
       <div className="login-bg">
-        {/* Left background half — dark blue with animated mesh */}
         <div className="login-bg-left">
           <AnimatedMeshBackground />
         </div>
-        {/* Right background half — plain white */}
         <div className="login-bg-right"></div>
       </div>
 
-      {/* ===== CARD — floats on top with large margins ===== */}
       <motion.div
         className="login-card-wrapper"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* ----- Left pane of card (dark, NO animation) ----- */}
         <div className="login-left-pane">
-
-          {/* Decorative shapes */}
           <div className="shape-circle-1"></div>
           <div className="shape-circle-2"></div>
           <div className="shape-circle-3"></div>
@@ -107,28 +122,21 @@ const Login = () => {
           <div className="shape-dot" style={{ bottom: "42%", left: "18%" }}></div>
           <div className="shape-circle-4"></div>
           <div className="shape-circle-5"></div>
-
-          {/* Quote text */}
           <div className="left-pane-content">
             <h1 className="brand-kiet">KIET</h1>
-            <h1 className="brand-exams">EXAMS</h1>
+            <h1 className="brand-exams">ADMIN</h1>
           </div>
         </div>
 
-        {/* ----- Right pane of card (white, form) ----- */}
         <div className="login-right-pane">
-
-          {/* Decorative corner shapes */}
           <div className="shape-top-right"></div>
           <div className="shape-top-right-outline"></div>
           <div className="shape-top-left">
             <div className="circle-inner"></div>
           </div>
-
-          {/* Form */}
           <div className="login-form-container">
             <div className="form-header">
-              <h2 className="form-title">Login</h2>
+              <h2 className="form-title">Admin Portal</h2>
               <div className="title-dot"></div>
             </div>
 
@@ -136,7 +144,7 @@ const Login = () => {
 
             <form onSubmit={handleLogin} className="login-form-split">
               <div className="input-group-split">
-                <label>KIET Email</label>
+                <label>Admin Email</label>
                 <input
                   type="email"
                   value={email}
@@ -155,17 +163,9 @@ const Login = () => {
                 />
               </div>
 
-              <div className="forgot-password-link">
-                <Link to="/forgot-password">forgot password?</Link>
-              </div>
-
               <button type="submit" disabled={loading} className="submit-btn-split">
-                {loading ? "Logging in..." : "Login"}
+                {loading ? "Authenticating..." : "Secure Login"}
               </button>
-
-              <p className="switch-auth-split">
-                Don't have any account? <Link to="/signup">Create an account</Link>
-              </p>
             </form>
           </div>
         </div>
@@ -174,4 +174,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminPage;

@@ -5,6 +5,8 @@ import os
 import random
 import string
 from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
 
 # Import our custom files
 from database import engine, Base, get_db
@@ -178,3 +180,109 @@ def reset_password_with_otp(data: schemas.ResetPasswordOTPRequest, db: Session =
     db.commit()
 
     return {"message": "Password updated successfully"}
+
+
+# ==================== USER PROFILE ====================
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+        
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+@app.get("/users/me", response_model=schemas.UserResponse)
+def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+# ==================== ADMIN ENDPOINTS ====================
+
+def get_admin_user(current_user: models.User = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
+    return current_user
+
+@app.post("/admin/elevate")
+def elevate_user(email: str, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_admin = True
+    db.commit()
+    return {"message": f"{email} is now an admin"}
+
+# ==================== EXAMS ENDPOINTS ====================
+
+@app.get("/users/me/exams", response_model=list[schemas.AssignedExamResponse])
+def get_my_exams(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Join ExamEnrollment and Exam
+    enrollments = db.query(models.ExamEnrollment, models.Exam).join(
+        models.Exam, models.ExamEnrollment.exam_id == models.Exam.id
+    ).filter(models.ExamEnrollment.user_id == current_user.id).all()
+    
+    results = []
+    for enrollment, exam in enrollments:
+        results.append({
+            "id": exam.id,
+            "code": exam.code,
+            "subject": exam.subject,
+            "exam_name": exam.exam_name,
+            "duration": exam.duration,
+            "start_time": exam.start_time,
+            "status": enrollment.status
+        })
+    return results
+
+@app.post("/admin/exams", response_model=schemas.ExamResponse)
+def create_exam(exam: schemas.ExamCreate, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    db_exam = models.Exam(**exam.model_dump())
+    db.add(db_exam)
+    db.commit()
+    db.refresh(db_exam)
+    return db_exam
+
+@app.post("/admin/exams/assign")
+def assign_exam(assign_data: schemas.ExamAssign, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    # 1. Find user by email
+    user = db.query(models.User).filter(models.User.email == assign_data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # 2. Check if exam exists
+    exam = db.query(models.Exam).filter(models.Exam.id == assign_data.exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+        
+    # 3. Check if already assigned
+    existing = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.user_id == user.id,
+        models.ExamEnrollment.exam_id == exam.id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Exam already assigned to this user")
+        
+    # 4. Create enrollment
+    enrollment = models.ExamEnrollment(user_id=user.id, exam_id=exam.id)
+    db.add(enrollment)
+    db.commit()
+    return {"message": "Exam assigned successfully"}
+
+@app.get("/admin/exams/all", response_model=list[schemas.ExamResponse])
+def get_all_exams(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    exams = db.query(models.Exam).order_by(models.Exam.created_at.desc()).all()
+    return exams
