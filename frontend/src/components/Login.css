@@ -26,6 +26,8 @@
 
 .login-bg-right {
   flex: 0 0 50%;
+  position: relative;
+  overflow: hidden;
   background-color: #ffffff;
 }
 
@@ -305,7 +307,7 @@
 .submit-btn-split {
   background-color: #0d0d3b;
   color: #fff;
-  border: none;
+  border: 2px solid transparent;
   border-radius: 8px;
   padding: 1rem;
   font-size: 1.2rem;
@@ -313,11 +315,14 @@
   cursor: pointer;
   width: 100%;
   letter-spacing: 0.05em;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: all 0.2s ease, transform 0.1s ease;
 }
 
-.submit-btn-split:hover {
-  background-color: #1a1a6e;
+.submit-btn-split:hover,
+.submit-btn-split:active {
+  background-color: #ffffff;
+  color: #0d0d3b;
+  border-color: #0d0d3b;
 }
 
 .submit-btn-split:active {

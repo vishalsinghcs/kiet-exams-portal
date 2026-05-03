@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginUser } from "../utils/api";
+import { loginUser, API_BASE_URL } from "../utils/api";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
 import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
@@ -17,7 +17,7 @@ const Login = () => {
       if (isAuthenticated) {
         const token = localStorage.getItem("token");
         try {
-          const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
+          const profileRes = await fetch(`${API_BASE_URL}/users/me`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           if (profileRes.ok) {
@@ -56,7 +56,7 @@ const Login = () => {
       login(data.access_token); // store real JWT in AuthContext
       
       // Immediately check profile using the fresh token to determine redirect route
-      const profileRes = await fetch("http://127.0.0.1:8000/users/me", {
+      const profileRes = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { "Authorization": `Bearer ${data.access_token}` }
       });
       
