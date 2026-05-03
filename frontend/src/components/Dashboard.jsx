@@ -86,7 +86,9 @@ const Dashboard = () => {
   };
 
   const formatISTTime = (isoString) => {
-    const date = new Date(isoString);
+    // Backend stores as naive UTC, append Z to force correct parsing
+    const utcString = isoString.endsWith("Z") ? isoString : `${isoString}Z`;
+    const date = new Date(utcString);
     return date.toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       dateStyle: 'medium',
@@ -98,7 +100,8 @@ const Dashboard = () => {
   const getExamCategory = (exam) => {
     if (exam.status === "completed") return "completed";
     
-    const examStart = new Date(exam.startTime);
+    const utcString = exam.startTime.endsWith("Z") ? exam.startTime : `${exam.startTime}Z`;
+    const examStart = new Date(utcString);
     const deadline = new Date(examStart.getTime() + exam.duration * 60000);
     const currentTime = new Date();
 

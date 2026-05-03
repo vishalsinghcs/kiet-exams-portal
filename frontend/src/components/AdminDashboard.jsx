@@ -274,7 +274,7 @@ const AdminDashboard = () => {
                         <td>{ex.code}</td>
                         <td>{ex.subject}</td>
                         <td>{ex.duration} min</td>
-                        <td>{new Date(ex.start_time).toLocaleString()}</td>
+                        <td>{new Date(ex.start_time.endsWith("Z") ? ex.start_time : `${ex.start_time}Z`).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
                       </tr>
                     ))}
                   </tbody>
