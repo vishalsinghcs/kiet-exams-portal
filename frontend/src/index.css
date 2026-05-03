@@ -63,9 +63,7 @@
 html,
 body,
 #root {
-  height: 100%;
   width: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -304,11 +302,12 @@ a:hover {
 
 .nav-signup-btn {
   background: var(--accent-color);
-  color: #000;
+  color: #fff;
 }
 
 .nav-signup-btn:hover {
   background: var(--accent-hover);
+  color: #fff;
   box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
 }
 
@@ -368,6 +367,7 @@ a:hover {
 
 .primary-cta:hover {
   background: var(--primary-hover);
+  color: white;
   box-shadow: 0 6px 20px var(--primary-glow);
   transform: translateY(-2px);
 }

@@ -28,9 +28,9 @@ export default function AnimatedMeshBackground() {
     );
     const maxDistance = 120;
     const colors = [
-      "rgba(0, 0, 0, 0.08)",
-      "rgba(0, 0, 0, 0.12)",
-      "rgba(26, 115, 232, 0.15)",
+      "rgba(255, 255, 255, 0.15)",
+      "rgba(255, 255, 255, 0.25)",
+      "rgba(138, 180, 248, 0.3)",
     ];
 
     // Particle Class
@@ -96,7 +96,7 @@ export default function AnimatedMeshBackground() {
             ctx.lineTo(particles[j].x, particles[j].y);
             const opacity = 1 - distance / maxDistance;
             const avgZ = (particles[i].z + particles[j].z) / 2;
-            ctx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.15 * (avgZ * 0.5 + 0.5)})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.25 * (avgZ * 0.5 + 0.5)})`;
             ctx.lineWidth = 1 * (avgZ * 0.5 + 0.5);
             ctx.stroke();
           }
