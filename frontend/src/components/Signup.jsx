@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { signupUser, verifyOtp } from "../utils/api";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
+import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
 
 const Signup = () => {
@@ -82,7 +83,9 @@ const Signup = () => {
         <div className="login-bg-left">
           <AnimatedMeshBackground />
         </div>
-        <div className="login-bg-right"></div>
+        <div className="login-bg-right">
+          <AnimatedMeshBackgroundDark />
+        </div>
       </div>
 
       <motion.div

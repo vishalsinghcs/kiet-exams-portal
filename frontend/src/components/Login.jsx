@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { loginUser } from "../utils/api";
 import AnimatedMeshBackground from "./AnimatedMeshBackground";
+import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
 
 const Login = () => {
@@ -84,7 +85,9 @@ const Login = () => {
           <AnimatedMeshBackground />
         </div>
         {/* Right background half — plain white */}
-        <div className="login-bg-right"></div>
+        <div className="login-bg-right">
+          <AnimatedMeshBackgroundDark />
+        </div>
       </div>
 
       {/* ===== CARD — floats on top with large margins ===== */}

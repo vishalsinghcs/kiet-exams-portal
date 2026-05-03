@@ -414,7 +414,7 @@ a:hover {
   font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 12px;
-  color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 .feature-desc {

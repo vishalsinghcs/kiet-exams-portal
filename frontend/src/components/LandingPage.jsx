@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 import logo from "../assets/KIET-Logo.jpg";
 
+import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
+
 const LandingPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page-wrapper">
+      <AnimatedMeshBackgroundDark />
       {/* Navbar */}
       <nav className="landing-navbar glass-panel">
         <div className="navbar-brand">
