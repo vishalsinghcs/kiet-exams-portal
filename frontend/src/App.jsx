@@ -11,7 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Signup from "./components/Signup";
 import LandingPage from "./components/LandingPage";
 import ForgotPassword from "./components/ForgotPassword";
-import AdminDashboard from "./components/AdminDashboard";
+import AdminPage from "./components/AdminPage";
 
 function App() {
   return (
@@ -32,14 +32,7 @@ function App() {
           />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </div>
     </Router>

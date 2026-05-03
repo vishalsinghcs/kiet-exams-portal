@@ -40,7 +40,6 @@ const AdminDashboard = () => {
           fetchAllExams();
         } else {
           logout();
-          navigate("/login");
         }
       } catch (error) {
         console.error("Auth check failed", error);
@@ -50,7 +49,7 @@ const AdminDashboard = () => {
     };
 
     if (token) fetchAdminProfile();
-    else navigate("/login");
+    else logout();
   }, [token, navigate, logout]);
 
   const fetchAllExams = async () => {
