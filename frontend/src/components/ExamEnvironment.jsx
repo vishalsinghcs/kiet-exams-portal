@@ -171,6 +171,7 @@ const ExamEnvironment = () => {
             src="https://piyushmtech2252.github.io/ML_ARENA/lab/index.html" 
             title="JupyterLite Coding Environment"
             className="coding-iframe"
+            allow="cross-origin-isolated; clipboard-read; clipboard-write"
           />
         </div>
 
