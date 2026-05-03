@@ -1,26 +1,5 @@
 .dashboard-page {
-  /* Dashboard Specific Theme Override (GitHub Style) */
-  --primary-color: #238636;
-  --primary-hover: #2ea043;
-  --primary-light: #3fb950;
-  --primary-glow: rgba(35, 134, 54, 0.4);
-
-  --accent-color: #58A6FF;
-  --accent-hover: #79c0ff;
-
-  --bg-color: #0D1117;
-  --surface-color: #161B22;
-  --surface-color-light: #21262d;
-  --surface-color-hover: #30363d;
-
-  --text-main: #C9D1D9;
-  --text-muted: #8b949e;
-
-  --danger-color: #f85149;
-  --danger-hover: #da3633;
-
-  --glass-bg: #161B22;
-  --glass-border: #30363d;
+  /* Inherits global light mode theme */
 
   min-height: 100vh;
   width: 100%;
@@ -36,7 +15,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px 40px;
-  background: rgba(13, 17, 23, 0.8);
+  background: var(--glass-bg);
   border-bottom: 1px solid var(--glass-border);
   position: sticky;
   top: 0;
@@ -149,7 +128,7 @@
   flex-direction: column;
   gap: 8px;
   height: 100%;
-  background: rgba(22, 27, 34, 0.5);
+  background: var(--surface-color);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-right: 1px solid var(--glass-border);
@@ -227,8 +206,8 @@
 
 .exam-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5);
-  border-color: rgba(88, 166, 255, 0.4);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-color);
 }
 
 .exam-header {
@@ -241,8 +220,8 @@
 .exam-code {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--accent-color);
-  background: rgba(255, 204, 0, 0.1);
+  color: var(--primary-color);
+  background: var(--surface-color-hover);
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   letter-spacing: 0.5px;
