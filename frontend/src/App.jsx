@@ -12,6 +12,7 @@ import Signup from "./components/Signup";
 import LandingPage from "./components/LandingPage";
 import ForgotPassword from "./components/ForgotPassword";
 import AdminPage from "./components/AdminPage";
+import ExamEnvironment from "./components/ExamEnvironment";
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route 
+            path="/exam/:examId" 
+            element={
+              <ProtectedRoute>
+                <ExamEnvironment />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </div>
     </Router>
