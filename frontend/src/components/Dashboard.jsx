@@ -137,7 +137,7 @@ const Dashboard = () => {
     return (
       <button 
         className="start-exam-btn"
-        onClick={() => alert(`Starting ${exam.code}... (Phase 2 Integration coming soon)`)}
+        onClick={() => navigate(`/exam/${exam.id}`)}
       >
         <PlayCircle size={18} />
         Start Test
