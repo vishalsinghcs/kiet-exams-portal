@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,9 +20,11 @@ const Dashboard = () => {
 
   // Passkey modal state
   const [passkeyModal, setPasskeyModal] = useState({ open: false, examId: null, examCode: "" });
-  const [passkeyInput, setPasskeyInput] = useState("");
+  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [passkeyError, setPasskeyError] = useState("");
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passkeyShake, setPasskeyShake] = useState(false);
+  const inputRefs = useRef([]);
 
   // Modal states
   const [showCodeModal, setShowCodeModal] = useState(false);
@@ -99,28 +101,68 @@ const Dashboard = () => {
 
   // Open passkey modal
   const handleStartExam = (exam) => {
-    setPasskeyInput("");
+    setDigits(["", "", "", "", "", ""]);
     setPasskeyError("");
+    setPasskeyShake(false);
     setPasskeyModal({ open: true, examId: exam.id, examCode: exam.code });
+    // Focus first box after render
+    setTimeout(() => inputRefs.current[0]?.focus(), 50);
   };
 
-  // Submit passkey to backend
-  const handlePasskeySubmit = async (e) => {
-    e.preventDefault();
-    if (passkeyInput.length !== 6) {
-      setPasskeyError("Please enter the full 6-digit passkey.");
-      return;
+  // Handle each digit box input
+  const handleDigitChange = (index, value) => {
+    const digit = value.replace(/\D/g, "").slice(-1); // only last digit, numbers only
+    const newDigits = [...digits];
+    newDigits[index] = digit;
+    setDigits(newDigits);
+    setPasskeyError("");
+    // Auto-advance to next box
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
+    // Auto-submit when all 6 filled
+    if (digit && index === 5 && newDigits.every(d => d !== "")) {
+      submitPasskey(newDigits.join(""));
+    }
+  };
+
+  const handleDigitKeyDown = (index, e) => {
+    if (e.key === "Backspace") {
+      if (digits[index] === "" && index > 0) {
+        // Move to previous box and clear it
+        const newDigits = [...digits];
+        newDigits[index - 1] = "";
+        setDigits(newDigits);
+        inputRefs.current[index - 1]?.focus();
+      }
+    }
+    if (e.key === "ArrowLeft" && index > 0) inputRefs.current[index - 1]?.focus();
+    if (e.key === "ArrowRight" && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  // Handle paste of full 6-digit code
+  const handleDigitPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasted.length === 6) {
+      setDigits(pasted.split(""));
+      inputRefs.current[5]?.focus();
+      submitPasskey(pasted);
+    }
+  };
+
+  // Core submit logic (called by auto-submit and button)
+  const submitPasskey = useCallback(async (code) => {
     setPasskeyLoading(true);
     setPasskeyError("");
     try {
-      const res = await fetch(`http://127.0.0.1:8000/users/me/exams/${passkeyModal.examId}/verify-code`, {
+      const res = await fetch(`${API_BASE_URL}/users/me/exams/${passkeyModal.examId}/verify-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ code: passkeyInput })
+        body: JSON.stringify({ code })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -128,13 +170,20 @@ const Dashboard = () => {
         navigate(`/exam/${passkeyModal.examId}`);
       } else {
         setPasskeyError(data.detail || "Invalid passkey. Please try again.");
+        setPasskeyShake(true);
+        setDigits(["", "", "", "", "", ""]);
+        setTimeout(() => {
+          setPasskeyShake(false);
+          inputRefs.current[0]?.focus();
+        }, 600);
       }
     } catch (err) {
       setPasskeyError("Connection error. Please try again.");
     } finally {
       setPasskeyLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passkeyModal.examId, token]);
 
   const verifyCodeAndStartExam = async (e) => {
     e.preventDefault();
@@ -227,48 +276,57 @@ const Dashboard = () => {
   return (
     <div className="dashboard-page">
 
-      {/* Passkey Modal */}
+      {/* Passkey OTP Modal */}
       {passkeyModal.open && (
         <div className="passkey-overlay" onClick={() => setPasskeyModal({ open: false, examId: null, examCode: "" })}>
           <div className="passkey-modal" onClick={(e) => e.stopPropagation()}>
-            <h3> Enter Exam Passkey</h3>
-            <p>Enter the 6-digit passkey provided by your administrator to start <strong>{passkeyModal.examCode}</strong>.</p>
-            <form onSubmit={handlePasskeySubmit}>
-              <input
-                className={`passkey-input${passkeyError ? ' input-error' : ''}`}
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="——————"
-                value={passkeyInput}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "");
-                  setPasskeyInput(val);
-                  setPasskeyError("");
-                }}
-                autoFocus
-              />
-              <p className="passkey-error">{passkeyError}</p>
-              <div className="passkey-actions">
-                <button
-                  type="button"
-                  className="passkey-cancel-btn"
-                  onClick={() => setPasskeyModal({ open: false, examId: null, examCode: "" })}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="passkey-submit-btn"
-                  disabled={passkeyLoading || passkeyInput.length !== 6}
-                >
-                  {passkeyLoading ? "Verifying..." : "Enter Exam"}
-                </button>
-              </div>
-            </form>
+            <div className="passkey-lock-icon">&#128274;</div>
+            <h3>Enter Exam Passkey</h3>
+            <p>Enter the 6-digit passkey for <strong>{passkeyModal.examCode}</strong> provided by your administrator.</p>
+
+            <div className={`otp-boxes${passkeyShake ? ' otp-shake' : ''}`}>
+              {digits.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={el => inputRefs.current[i] = el}
+                  className={`otp-box${passkeyError ? ' otp-error' : ''}${digit ? ' otp-filled' : ''}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  value={digit}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleDigitKeyDown(i, e)}
+                  onPaste={i === 0 ? handleDigitPaste : undefined}
+                  disabled={passkeyLoading}
+                  autoFocus={i === 0}
+                />
+              ))}
+            </div>
+
+            <p className="passkey-error">{passkeyError}</p>
+
+            <div className="passkey-actions">
+              <button
+                type="button"
+                className="passkey-cancel-btn"
+                onClick={() => setPasskeyModal({ open: false, examId: null, examCode: "" })}
+                disabled={passkeyLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="passkey-submit-btn"
+                disabled={passkeyLoading || digits.some(d => d === "")}
+                onClick={() => submitPasskey(digits.join(""))}
+              >
+                {passkeyLoading ? "Verifying..." : "Enter Exam"}
+              </button>
+            </div>
           </div>
         </div>
       )}
+
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
         <div className="dashboard-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
