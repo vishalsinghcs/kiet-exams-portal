@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator, Field
 from datetime import datetime
+from typing import Optional
 
 # 1. The rules for signing up
 class UserCreate(BaseModel):
@@ -28,6 +29,7 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     is_admin: bool
+    role: str                  # "student" | "teacher" | "admin"
     created_at: datetime
 
     class Config:
@@ -56,11 +58,24 @@ class Token(BaseModel):
 # 7. Exams schemas
 class ExamBase(BaseModel):
     code: str
-    access_code: str
+    access_code: str = Field(..., min_length=6, max_length=6, pattern=r'^\d{6}$')
     subject: str
     exam_name: str
     duration: int
     start_time: datetime
+    # Rich content fields (optional — added in Feature 6)
+    overview: Optional[str] = None
+    extra_sections: Optional[str] = None   # JSON string
+
+    @field_validator('access_code')
+    def validate_access_code(cls, v):
+        if not v.strip():
+            raise ValueError('Access code cannot be empty')
+        if not v.isdigit():
+            raise ValueError('Access code must be exactly 6 numeric digits')
+        if len(v) != 6:
+            raise ValueError('Access code must be exactly 6 digits long')
+        return v
 
 class ExamCreate(ExamBase):
     pass
@@ -68,6 +83,9 @@ class ExamCreate(ExamBase):
 class ExamResponse(ExamBase):
     id: int
     created_at: datetime
+    created_by: Optional[int] = None
+    dataset_path: Optional[str] = None
+    sample_csv_path: Optional[str] = None
 
     class Config:
         from_attributes = True

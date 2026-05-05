@@ -19,6 +19,12 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("ongoing"); // Default tab
   const dropdownRef = useRef(null);
 
+  // Passkey modal state
+  const [passkeyModal, setPasskeyModal] = useState({ open: false, examId: null, examCode: "" });
+  const [passkeyInput, setPasskeyInput] = useState("");
+  const [passkeyError, setPasskeyError] = useState("");
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+
   // Modal states
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [selectedExamId, setSelectedExamId] = useState(null);
@@ -90,6 +96,45 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  // Open passkey modal
+  const handleStartExam = (exam) => {
+    setPasskeyInput("");
+    setPasskeyError("");
+    setPasskeyModal({ open: true, examId: exam.id, examCode: exam.code });
+  };
+
+  // Submit passkey to backend
+  const handlePasskeySubmit = async (e) => {
+    e.preventDefault();
+    if (passkeyInput.length !== 6) {
+      setPasskeyError("Please enter the full 6-digit passkey.");
+      return;
+    }
+    setPasskeyLoading(true);
+    setPasskeyError("");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/users/me/exams/${passkeyModal.examId}/verify-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: passkeyInput })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPasskeyModal({ open: false, examId: null, examCode: "" });
+        navigate(`/exam/${passkeyModal.examId}`);
+      } else {
+        setPasskeyError(data.detail || "Invalid passkey. Please try again.");
+      }
+    } catch (err) {
+      setPasskeyError("Connection error. Please try again.");
+    } finally {
+      setPasskeyLoading(false);
+    }
   };
 
   const verifyCodeAndStartExam = async (e) => {
@@ -169,12 +214,7 @@ const Dashboard = () => {
     return (
       <button 
         className="start-exam-btn"
-        onClick={() => {
-          setSelectedExamId(exam.id);
-          setExamCodeInput("");
-          setCodeError("");
-          setShowCodeModal(true);
-        }}
+        onClick={() => handleStartExam(exam)}
       >
         <PlayCircle size={18} />
         Start Test
@@ -187,6 +227,49 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-page">
+
+      {/* Passkey Modal */}
+      {passkeyModal.open && (
+        <div className="passkey-overlay" onClick={() => setPasskeyModal({ open: false, examId: null, examCode: "" })}>
+          <div className="passkey-modal" onClick={(e) => e.stopPropagation()}>
+            <h3> Enter Exam Passkey</h3>
+            <p>Enter the 6-digit passkey provided by your administrator to start <strong>{passkeyModal.examCode}</strong>.</p>
+            <form onSubmit={handlePasskeySubmit}>
+              <input
+                className={`passkey-input${passkeyError ? ' input-error' : ''}`}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="——————"
+                value={passkeyInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  setPasskeyInput(val);
+                  setPasskeyError("");
+                }}
+                autoFocus
+              />
+              <p className="passkey-error">{passkeyError}</p>
+              <div className="passkey-actions">
+                <button
+                  type="button"
+                  className="passkey-cancel-btn"
+                  onClick={() => setPasskeyModal({ open: false, examId: null, examCode: "" })}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="passkey-submit-btn"
+                  disabled={passkeyLoading || passkeyInput.length !== 6}
+                >
+                  {passkeyLoading ? "Verifying..." : "Enter Exam"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
         <div className="dashboard-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
