@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, LogOut, KeyRound, Clock, Calendar, PlayCircle, BookOpen } from "lucide-react";
+import { User, LogOut, KeyRound, Clock, Calendar, PlayCircle, BookOpen, Shield } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
 import logo from "../assets/KIET-Logo.jpg";
 import "./Dashboard.css";
@@ -18,6 +18,12 @@ const Dashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("ongoing"); // Default tab
   const dropdownRef = useRef(null);
+
+  // Modal states
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [selectedExamId, setSelectedExamId] = useState(null);
+  const [examCodeInput, setExamCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
 
   // Fetch User Profile from Backend
   useEffect(() => {
@@ -86,6 +92,31 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const verifyCodeAndStartExam = async (e) => {
+    e.preventDefault();
+    setCodeError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me/exams/${selectedExamId}/verify-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: examCodeInput })
+      });
+      
+      if (response.ok) {
+        setShowCodeModal(false);
+        navigate(`/exam/${selectedExamId}`);
+      } else {
+        const data = await response.json();
+        setCodeError(data.detail || "Invalid access code");
+      }
+    } catch (err) {
+      setCodeError("An error occurred verifying the code");
+    }
+  };
+
   const formatISTTime = (isoString) => {
     // Backend stores as naive UTC, append Z to force correct parsing
     const utcString = isoString.endsWith("Z") ? isoString : `${isoString}Z`;
@@ -138,7 +169,12 @@ const Dashboard = () => {
     return (
       <button 
         className="start-exam-btn"
-        onClick={() => navigate(`/exam/${exam.id}`)}
+        onClick={() => {
+          setSelectedExamId(exam.id);
+          setExamCodeInput("");
+          setCodeError("");
+          setShowCodeModal(true);
+        }}
       >
         <PlayCircle size={18} />
         Start Test
@@ -192,6 +228,19 @@ const Dashboard = () => {
                   <KeyRound size={16} />
                   Reset Password
                 </button>
+                
+                {user?.is_admin && (
+                  <button 
+                    className="dropdown-item" 
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/admin");
+                    }}
+                  >
+                    <Shield size={16} />
+                    Admin Panel
+                  </button>
+                )}
                 
                 <button className="dropdown-item logout-item" onClick={handleLogout}>
                   <LogOut size={16} />
@@ -281,6 +330,51 @@ const Dashboard = () => {
         </main>
 
       </div>
+
+      {/* Code Verification Modal */}
+      <AnimatePresence>
+        {showCodeModal && (
+          <motion.div 
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCodeModal(false)}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <motion.div 
+              className="glass-panel"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ padding: '30px', width: '400px', maxWidth: '90%', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+            >
+              <h2 style={{ margin: 0, color: 'var(--text-color)' }}>Enter Exam Code</h2>
+              <p style={{ color: 'var(--text-muted)', margin: 0 }}>Please enter the 6-digit access code provided by your invigilator.</p>
+              
+              <form onSubmit={verifyCodeAndStartExam} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <input 
+                  type="text" 
+                  value={examCodeInput} 
+                  onChange={(e) => setExamCodeInput(e.target.value)} 
+                  maxLength={6} 
+                  placeholder="e.g. 123456"
+                  required 
+                  style={{ padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-color-light)', color: 'var(--text-color)', fontSize: '1.2rem', textAlign: 'center', letterSpacing: '4px' }}
+                />
+                
+                {codeError && <div style={{ color: 'var(--danger-color)', fontSize: '0.9rem', textAlign: 'center' }}>{codeError}</div>}
+                
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button type="button" onClick={() => setShowCodeModal(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-color)', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+                  <button type="submit" style={{ flex: 1, padding: '10px', background: 'var(--primary-color)', border: 'none', color: 'white', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Enter Exam</button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -286,3 +286,24 @@ def assign_exam(assign_data: schemas.ExamAssign, admin: models.User = Depends(ge
 def get_all_exams(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
     exams = db.query(models.Exam).order_by(models.Exam.created_at.desc()).all()
     return exams
+
+@app.post("/users/me/exams/{exam_id}/verify-code")
+def verify_exam_code(exam_id: int, request: schemas.VerifyExamCodeRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 1. Verify user is enrolled
+    enrollment = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.user_id == current_user.id,
+        models.ExamEnrollment.exam_id == exam_id
+    ).first()
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You are not enrolled in this exam")
+    
+    # 2. Check if exam exists
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+        
+    # 3. Verify access code
+    if exam.access_code != request.code:
+        raise HTTPException(status_code=400, detail="Invalid exam access code")
+        
+    return {"success": True, "message": "Code verified successfully"}

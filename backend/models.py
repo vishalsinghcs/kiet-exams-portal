@@ -27,6 +27,7 @@ class Exam(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String, index=True)
+    access_code = Column(String) # 6-digit random code
     subject = Column(String)
     exam_name = Column(String)
     duration = Column(Integer) # in minutes

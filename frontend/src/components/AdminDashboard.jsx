@@ -20,7 +20,7 @@ const AdminDashboard = () => {
 
   // Form states
   const [examForm, setExamForm] = useState({
-    code: "", subject: "", exam_name: "", duration: 60, start_time: ""
+    code: "", access_code: "", subject: "", exam_name: "", duration: 60, start_time: ""
   });
   const [assignForm, setAssignForm] = useState({ email: "", exam_id: "" });
   const [elevateEmail, setElevateEmail] = useState("");
@@ -84,6 +84,11 @@ const AdminDashboard = () => {
     setTimeout(() => setMessage({ type: "", text: "" }), 5000);
   };
 
+  const generateRandomCode = () => {
+    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setExamForm({...examForm, access_code: randomCode});
+  };
+
   const handleCreateExam = async (e) => {
     e.preventDefault();
     try {
@@ -101,7 +106,7 @@ const AdminDashboard = () => {
       
       if (response.ok) {
         showMessage("success", "Exam created successfully!");
-        setExamForm({ code: "", subject: "", exam_name: "", duration: 60, start_time: "" });
+        setExamForm({ code: "", access_code: "", subject: "", exam_name: "", duration: 60, start_time: "" });
         fetchAllExams();
       } else {
         showMessage("error", "Failed to create exam.");
@@ -236,6 +241,13 @@ const AdminDashboard = () => {
                   <input type="text" value={examForm.code} onChange={(e) => setExamForm({...examForm, code: e.target.value})} required />
                 </div>
                 <div className="form-group">
+                  <label>Access Code (6-digit)</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input type="text" value={examForm.access_code} onChange={(e) => setExamForm({...examForm, access_code: e.target.value})} maxLength={6} required style={{ flex: 1 }} />
+                    <button type="button" onClick={generateRandomCode} className="admin-submit-btn" style={{ padding: '0 15px', width: 'auto' }}>Generate</button>
+                  </div>
+                </div>
+                <div className="form-group">
                   <label>Subject (e.g., Machine Learning)</label>
                   <input type="text" value={examForm.subject} onChange={(e) => setExamForm({...examForm, subject: e.target.value})} required />
                 </div>
@@ -301,6 +313,7 @@ const AdminDashboard = () => {
                     <tr>
                       <th>ID</th>
                       <th>Code</th>
+                      <th>Access Code</th>
                       <th>Subject</th>
                       <th>Duration</th>
                       <th>Start Time</th>
@@ -311,6 +324,7 @@ const AdminDashboard = () => {
                       <tr key={ex.id}>
                         <td>{ex.id}</td>
                         <td>{ex.code}</td>
+                        <td>{ex.access_code}</td>
                         <td>{ex.subject}</td>
                         <td>{ex.duration} min</td>
                         <td>{new Date(ex.start_time.endsWith("Z") ? ex.start_time : `${ex.start_time}Z`).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>

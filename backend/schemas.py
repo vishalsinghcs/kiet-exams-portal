@@ -56,6 +56,7 @@ class Token(BaseModel):
 # 7. Exams schemas
 class ExamBase(BaseModel):
     code: str
+    access_code: str
     subject: str
     exam_name: str
     duration: int
@@ -74,6 +75,9 @@ class ExamResponse(ExamBase):
 class ExamAssign(BaseModel):
     email: EmailStr
     exam_id: int
+
+class VerifyExamCodeRequest(BaseModel):
+    code: str
 
 class AssignedExamResponse(BaseModel):
     id: int
