@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard, Plus, UserPlus, Shield, List, Activity,
-  LogOut, Settings, ChevronDown, Bell, BarChart2
+  LogOut, Settings, ChevronDown, Bell, BarChart2,
+  Users, FileText, Calendar
 } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
 import "./AdminDashboard.css";
@@ -37,9 +38,10 @@ const AdminDashboard = () => {
   const { logout, token } = useAuth();
 
   const [user, setUser]         = useState(null);
-  const [activeTab, setActiveTab] = useState("create_exam");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading]   = useState(true);
   const [exams, setExams]       = useState([]);
+  const [stats, setStats]       = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -73,6 +75,7 @@ const AdminDashboard = () => {
           const data = await response.json();
           if (!data.is_admin) { navigate("/dashboard"); return; }
           setUser(data);
+          fetchAdminStats();
           fetchAllExams();
         } else {
           logout();
@@ -88,6 +91,15 @@ const AdminDashboard = () => {
   }, [token, navigate, logout]);
 
   /* ── Data fetchers ── */
+  const fetchAdminStats = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) setStats(await response.json());
+    } catch (e) { console.error(e); }
+  };
+
   const fetchAllExams = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/admin/exams/all`, {
@@ -286,13 +298,101 @@ const AdminDashboard = () => {
             <div className={`admin-alert alert-${message.type}`}>{message.text}</div>
           )}
 
-          {/* ── Dashboard placeholder ── */}
+          {/* ── Dashboard Home ── */}
           {activeTab === "dashboard" && (
-            <div className="admin-card">
-              <h2 className="admin-section-title">Welcome back, {user.name}!</h2>
-              <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
-                Use the sidebar to create exams, assign them to students, and manage results.
-              </p>
+            <div className="admin-dashboard-home">
+              <div className="admin-welcome-section">
+                <h2 className="admin-section-title" style={{ marginBottom: "8px" }}>Welcome back, {user.name}!</h2>
+                <p style={{ color: "var(--text-muted)" }}>
+                  Here's what's happening with your exams today.
+                </p>
+              </div>
+
+              {/* Stats Row */}
+              <div className="admin-stats-grid">
+                <div className="admin-stat-card glass-panel">
+                  <div className="stat-icon-wrapper blue">
+                    <FileText size={24} />
+                  </div>
+                  <div className="stat-content">
+                    <p className="stat-label">Total Exams</p>
+                    <h3 className="stat-value">{stats ? stats.total_exams : "-"}</h3>
+                  </div>
+                </div>
+
+                <div className="admin-stat-card glass-panel">
+                  <div className="stat-icon-wrapper green">
+                    <Users size={24} />
+                  </div>
+                  <div className="stat-content">
+                    <p className="stat-label">Total Students</p>
+                    <h3 className="stat-value">{stats ? stats.total_students : "-"}</h3>
+                  </div>
+                </div>
+
+                <div className="admin-stat-card glass-panel">
+                  <div className="stat-icon-wrapper purple">
+                    <Calendar size={24} />
+                  </div>
+                  <div className="stat-content">
+                    <p className="stat-label">Total Enrollments</p>
+                    <h3 className="stat-value">{stats ? stats.total_enrollments : "-"}</h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Exams Section */}
+              <div className="admin-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 className="admin-section-title" style={{ margin: 0 }}>Recent Exams</h3>
+                  <button className="admin-text-btn" onClick={() => setActiveTab("all_exams")}>View All</button>
+                </div>
+                
+                {exams.length > 0 ? (
+                  <div className="admin-table-container">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Code</th>
+                          <th>Subject</th>
+                          <th>Start Time (IST)</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {exams.slice(0, 5).map(ex => {
+                          const startTime = new Date(ex.start_time.endsWith("Z") ? ex.start_time : `${ex.start_time}Z`);
+                          const now = new Date();
+                          let status = "Upcoming";
+                          let statusClass = "status-upcoming";
+                          
+                          if (now > startTime) {
+                            const endTime = new Date(startTime.getTime() + ex.duration * 60000);
+                            if (now < endTime) {
+                              status = "Ongoing";
+                              statusClass = "status-ongoing";
+                            } else {
+                              status = "Completed";
+                              statusClass = "status-completed";
+                            }
+                          }
+
+                          return (
+                            <tr key={ex.id}>
+                              <td><span className="exam-code-badge">{ex.code}</span></td>
+                              <td style={{ fontWeight: 500 }}>{ex.subject}</td>
+                              <td>{startTime.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })}</td>
+                              <td><span className={`status-badge ${statusClass}`}>{status}</span></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "20px" }}>No exams created yet.</p>
+                )}
+              </div>
             </div>
           )}
 
