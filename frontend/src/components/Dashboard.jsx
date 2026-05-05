@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, KeyRound, Clock, Calendar, PlayCircle, BookOpen, Shield } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
-import logo from "../assets/KIET-Logo.jpg";
 import "./Dashboard.css";
 
 // Dynamic times removed - now using live database data
@@ -273,7 +272,7 @@ const Dashboard = () => {
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
         <div className="dashboard-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src={logo} alt="KIET Logo" style={{ height: '30px', borderRadius: '4px' }} />
+          <img src="/examly_logo.png" alt="Examly Logo" style={{ height: '30px', borderRadius: '4px' }} />
           Exams
         </div>
         

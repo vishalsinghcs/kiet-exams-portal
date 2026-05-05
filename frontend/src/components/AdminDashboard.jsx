@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { LogOut, ShieldAlert, Plus, UserPlus, Shield, Activity, List, ChevronDown, Settings } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
 import "./AdminDashboard.css";
-import logo from "../assets/KIET-Logo.jpg";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -167,7 +166,7 @@ const AdminDashboard = () => {
     <div className="admin-page">
       <nav className="admin-navbar">
         <div className="admin-brand">
-          <img src={logo} alt="KIET Logo" className="admin-logo-img" />
+          <img src="/examly_logo_trans.png" alt="Examly Logo" className="admin-logo-img" />
           Admin Portal
         </div>
         <div className="admin-profile" ref={dropdownRef}>
