@@ -1,17 +1,152 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Menu, FileText, Code, UploadCloud, ChevronRight } from "lucide-react";
+import { Menu, FileText, Code, UploadCloud, ChevronRight, Lock, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./ExamEnvironment.css";
 
 const ExamEnvironment = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
 
+  // Access Gate State
+  const [codeVerified, setCodeVerified] = useState(false);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState("");
+  const inputRefs = useRef([]);
+
   // Sidebar state
   const [isSidebarPinned, setIsSidebarPinned] = useState(false);
   
   // View state: 'question' | 'coding' | 'result'
   const [activeView, setActiveView] = useState("question");
+
+  const handleCodeChange = (index, value) => {
+    if (value.length > 1) return; // Only 1 digit
+    if (!/^\d*$/.test(value)) return; // Only numbers
+    
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+    setError("");
+
+    // Auto focus next
+    if (value !== "" && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && code[index] === "" && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const verifyCode = (e) => {
+    e.preventDefault();
+    const fullCode = code.join("");
+    if (fullCode.length !== 6) {
+      setError("Please enter the complete 6-digit code.");
+      return;
+    }
+    
+    setIsVerifying(true);
+    
+    // Mock backend verification
+    setTimeout(() => {
+      setIsVerifying(false);
+      // Hardcoded mock pass code
+      if (fullCode === "123456") {
+        setCodeVerified(true);
+      } else {
+        setError("Incorrect code. Please ask your invigilator.");
+        setCode(["", "", "", "", "", ""]);
+        inputRefs.current[0].focus();
+      }
+    }, 1000);
+  };
+
+  if (!codeVerified) {
+    return (
+      <div className="exam-environment-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0F172A' }}>
+        <AnimatePresence>
+          <motion.div 
+            className="gate-container"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            style={{ 
+              background: '#1E293B', padding: '40px', borderRadius: '24px', 
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)', maxWidth: '500px', width: '90%',
+              textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)'
+            }}
+          >
+            <div style={{ width: '64px', height: '64px', background: 'rgba(59,130,246,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Lock size={32} color="#3B82F6" />
+            </div>
+            
+            <h1 style={{ color: '#F8FAFC', margin: '0 0 8px', fontSize: '1.8rem' }}>Enter Exam Code</h1>
+            <p style={{ color: '#94A3B8', margin: '0 0 24px', fontSize: '1rem' }}>Please enter the 6-digit access code provided by your invigilator.</p>
+            
+            <div style={{ background: 'rgba(15,23,42,0.5)', padding: '16px', borderRadius: '12px', marginBottom: '32px' }}>
+              <h3 style={{ margin: '0 0 4px', color: '#E2E8F0', fontSize: '1.1rem' }}>Machine Learning — Mid Semester</h3>
+              <p style={{ margin: 0, color: '#64748B', fontSize: '0.9rem' }}>CS401 · CSE AI · Section B</p>
+            </div>
+
+            <form onSubmit={verifyCode}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
+                {code.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={el => inputRefs.current[index] = el}
+                    type="text"
+                    inputMode="numeric"
+                    value={digit}
+                    onChange={(e) => handleCodeChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    style={{
+                      width: '50px', height: '60px', fontSize: '24px', textAlign: 'center',
+                      background: '#0F172A', border: `2px solid ${error ? '#EF4444' : '#334155'}`,
+                      color: '#F8FAFC', borderRadius: '12px', fontWeight: 'bold', outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = error ? '#EF4444' : '#3B82F6'}
+                    onBlur={(e) => e.target.style.borderColor = error ? '#EF4444' : '#334155'}
+                  />
+                ))}
+              </div>
+              
+              {error && (
+                <motion.p 
+                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                  style={{ color: '#EF4444', fontSize: '0.9rem', margin: '0 0 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  <AlertCircle size={16} /> {error}
+                </motion.p>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#F59E0B', fontSize: '0.9rem', marginBottom: '32px', padding: '12px', background: 'rgba(245,158,11,0.1)', borderRadius: '8px' }}>
+                <AlertCircle size={18} />
+                <span>You have <strong>3 Hours</strong> to complete this exam once started.</span>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isVerifying}
+                style={{ 
+                  width: '100%', padding: '16px', borderRadius: '12px', background: '#3B82F6', 
+                  color: 'white', fontWeight: 'bold', fontSize: '1.1rem', border: 'none', cursor: 'pointer',
+                  opacity: isVerifying ? 0.7 : 1
+                }}
+              >
+                {isVerifying ? "Verifying..." : "Unlock Exam"}
+              </button>
+            </form>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className="exam-environment-page">

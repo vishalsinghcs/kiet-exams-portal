@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, KeyRound, Clock, Calendar, PlayCircle, BookOpen, Shield } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
+import logo from "../assets/examly_logo.png";
 import "./Dashboard.css";
 
 // Dynamic times removed - now using live database data
@@ -329,9 +330,15 @@ const Dashboard = () => {
 
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
+<<<<<<< HEAD
         <div className="dashboard-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <img src="/examly_logo.png" alt="Examly Logo" style={{ height: '30px', borderRadius: '4px' }} />
           Exams
+=======
+        <div className="dashboard-brand">
+          <img src={logo} alt="Examly Logo" style={{ height: '30px', borderRadius: '4px' }} />
+          <span className="brand-text-dark">Examly</span>
+>>>>>>> be63f53 (updated ui of admin dashboard)
         </div>
         
         <div className="profile-container" ref={dropdownRef}>

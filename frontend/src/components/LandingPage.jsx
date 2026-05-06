@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
+import logo from "../assets/examly_logo_trans.png";
+
 import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 
 const LandingPage = () => {
@@ -39,8 +41,8 @@ const LandingPage = () => {
       {/* Navbar */}
       <nav className="landing-navbar glass-panel">
         <div className="navbar-brand">
-          <img src="/examly_logo_trans.png" alt="Examly Logo" className="brand-logo-img" />
-          <span className="brand-text">KIET Exams</span>
+          <img src={logo} alt="Examly Logo" className="brand-logo-img" />
+          <span className="brand-text">Examly Platform</span>
         </div>
         <div className="navbar-actions">
           <Link to="/login" className="nav-btn nav-login-btn">
