@@ -204,6 +204,31 @@ const ExamEnvironment = () => {
                 </p>
               </div>
             )}
+
+            {/* Extra Sections */}
+            {(() => {
+              try {
+                const extras = typeof exam.extra_sections === 'string' 
+                  ? JSON.parse(exam.extra_sections) 
+                  : (exam.extra_sections || []);
+                return extras.map((section, idx) => (
+                  <div key={idx} data-color-mode="dark" className="question-section" style={{ marginTop: '32px' }}>
+                    <h2 style={{ 
+                      fontSize: '1.4rem', 
+                      color: '#F8FAFC',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)', 
+                      paddingBottom: '12px', 
+                      marginBottom: '16px' 
+                    }}>
+                      {section.title}
+                    </h2>
+                    <MDEditor.Markdown source={section.content} style={{ background: 'transparent', color: 'inherit' }} />
+                  </div>
+                ));
+              } catch (e) {
+                return null;
+              }
+            })()}
           </div>
         </div>
 

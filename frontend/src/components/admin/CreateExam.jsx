@@ -1,80 +1,84 @@
 import React, { useState } from "react";
-import MDEditor from '@uiw/react-md-editor';
-import { UploadCloud, X, Plus, Clock, FileKey, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { 
+  FileText, Plus, Trash2, UploadCloud, Clock, Calendar, 
+  ShieldCheck, ArrowRight, Eye, Info 
+} from "lucide-react";
+import MDEditor from "@uiw/react-md-editor";
 import AdminLayout from "./AdminLayout";
-import { API_BASE_URL } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../utils/api";
 
 const CreateExam = () => {
   const { token } = useAuth();
-  const navigate = useNavigate();
-
-  const [examForm, setExamForm] = useState({
-    code: "", subject: "", exam_name: "", duration: 60, start_time: "", access_code: ""
+  
+  // Basic Form State
+  const [form, setForm] = useState({
+    code: "",
+    subject: "",
+    exam_name: "",
+    duration: "180",
+    start_time: "",
+    access_code: "",
+    overview: "## Introduction\nWelcome to the exam. Please read the instructions carefully.",
   });
-  const [overview, setOverview] = useState("**Instructions:**\n- All questions are compulsory.\n- No negative marking.");
-  const [datasetFile, setDatasetFile] = useState(null);
-  const [csvFile, setCsvFile] = useState(null);
+
+  // Dynamic Sections
+  const [extraSections, setExtraSections] = useState([]);
+
+  // File State
+  const [dataset, setDataset] = useState(null);
+  const [sampleCsv, setSampleCsv] = useState(null);
+
+  // Status State
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [status, setStatus] = useState({ type: "", message: "" });
 
-  const showMessage = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: "", text: "" }), 5000);
+  const handleAddSection = () => {
+    setExtraSections([...extraSections, { title: "New Section", content: "Write section content here..." }]);
   };
 
-  const handleFileDrop = (e, type) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (type === 'dataset') setDatasetFile(file);
-    else setCsvFile(file);
+  const handleRemoveSection = (index) => {
+    setExtraSections(extraSections.filter((_, i) => i !== index));
   };
 
-  const handleFileInput = (e, type) => {
-    const file = e.target.files[0];
-    if (type === 'dataset') setDatasetFile(file);
-    else setCsvFile(file);
+  const handleSectionChange = (index, field, value) => {
+    const updated = [...extraSections];
+    updated[index][field] = value;
+    setExtraSections(updated);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate: exactly 6 numeric digits
-    if (!/^\d{6}$/.test(examForm.access_code)) {
-      showMessage("error", "Access code must be exactly 6 numeric digits.");
+    if (form.access_code.length !== 6 || !/^\d+$/.test(form.access_code)) {
+      setStatus({ type: "error", message: "Access code must be exactly 6 digits." });
       return;
     }
 
-    if (submitting) return; // Guard against double-submit
     setSubmitting(true);
+    setStatus({ type: "", message: "" });
 
     try {
-      const formattedTime = new Date(examForm.start_time).toISOString();
+      const formData = new FormData();
+      Object.keys(form).forEach(key => formData.append(key, form[key]));
+      formData.append("extra_sections", JSON.stringify(extraSections));
+      if (dataset) formData.append("dataset", dataset);
+      if (sampleCsv) formData.append("sample_csv", sampleCsv);
+
       const response = await fetch(`${API_BASE_URL}/admin/exams`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...examForm,
-          start_time: formattedTime,
-          overview: overview
-        })
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
       });
 
       if (response.ok) {
-        showMessage("success", "Exam created successfully!");
-        setExamForm({ code: "", subject: "", exam_name: "", duration: 60, start_time: "", access_code: "" });
-        setOverview("");
-        setTimeout(() => navigate("/admin/my-exams"), 1500);
+        setStatus({ type: "success", message: "Exam created successfully!" });
+        // Optional: Reset form or navigate
       } else {
         const err = await response.json();
-        showMessage("error", err.detail || "Failed to create exam.");
+        setStatus({ type: "error", message: err.detail || "Failed to create exam." });
       }
-    } catch (e) {
-      showMessage("error", "An error occurred connecting to the server.");
+    } catch (err) {
+      setStatus({ type: "error", message: "Connection error. Please try again." });
     } finally {
       setSubmitting(false);
     }
@@ -82,196 +86,139 @@ const CreateExam = () => {
 
   return (
     <AdminLayout title="Create New Exam">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
+      <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "32px", height: "calc(100vh - 160px)" }}>
+        
+        {/* Left Column: Form Fields */}
+        <div style={{ overflowY: "auto", paddingRight: "12px" }}>
+          
+          {status.message && (
+            <div className={`admin-alert alert-${status.type}`} style={{ marginBottom: '24px' }}>
+              {status.message}
+            </div>
+          )}
 
-        {/* Main Form Area */}
-        <div className="admin-card" style={{ marginBottom: 0 }}>
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-
-              <div className="admin-input-group" style={{ marginBottom: 0 }}>
+          <div className="admin-card" style={{ marginBottom: "24px" }}>
+            <h2 className="admin-card-title"><Info size={18} /> Basic Information</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "20px" }}>
+              <div className="admin-input-group">
                 <label className="admin-label">Subject Code</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  placeholder="e.g. CS401"
-                  value={examForm.code}
-                  onChange={e => setExamForm({...examForm, code: e.target.value})}
-                  required
-                />
+                <input className="admin-input" placeholder="e.g. CS401" value={form.code} onChange={e => setForm({...form, code: e.target.value})} required />
               </div>
-
-              <div className="admin-input-group" style={{ marginBottom: 0 }}>
+              <div className="admin-input-group">
                 <label className="admin-label">Subject Name</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  placeholder="e.g. Machine Learning"
-                  value={examForm.subject}
-                  onChange={e => setExamForm({...examForm, subject: e.target.value})}
-                  required
-                />
+                <input className="admin-input" placeholder="e.g. Machine Learning" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} required />
               </div>
-
-              <div className="admin-input-group" style={{ marginBottom: 0 }}>
-                <label className="admin-label">Exam Name</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  placeholder="e.g. Mid Semester"
-                  value={examForm.exam_name}
-                  onChange={e => setExamForm({...examForm, exam_name: e.target.value})}
-                  required
-                />
+              <div className="admin-input-group">
+                <label className="admin-label">Exam Title</label>
+                <input className="admin-input" placeholder="e.g. Mid-Semester Exam" value={form.exam_name} onChange={e => setForm({...form, exam_name: e.target.value})} required />
               </div>
-
-              <div className="admin-input-group" style={{ marginBottom: 0 }}>
-                <label className="admin-label">Access Code (6-digit, numbers only)</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  placeholder="e.g. 482910"
-                  maxLength={6}
-                  value={examForm.access_code}
-                  onChange={e => setExamForm({...examForm, access_code: e.target.value.replace(/\D/g, '')})}
-                  required
-                  style={{
-                    letterSpacing: examForm.access_code ? '6px' : 'normal',
-                    fontWeight: examForm.access_code ? 700 : 400,
-                  }}
-                />
-                <span style={{
-                  fontSize: '0.78rem',
-                  marginTop: '4px',
-                  display: 'block',
-                  color: examForm.access_code.length === 6 ? '#10B981' : '#94A3B8',
-                  fontWeight: examForm.access_code.length === 6 ? 600 : 400,
-                }}>
-                  {examForm.access_code.length}/6 digits{examForm.access_code.length === 6 ? ' ✓ Ready' : ''}
-                </span>
+              <div className="admin-input-group">
+                <label className="admin-label">Access Code (6-digit)</label>
+                <input className="admin-input" placeholder="e.g. 123456" maxLength={6} value={form.access_code} onChange={e => setForm({...form, access_code: e.target.value.replace(/\D/g, "")})} required />
               </div>
-
-              <div className="admin-input-group" style={{ marginBottom: 0 }}>
-                <label className="admin-label"><Clock size={14} style={{ display: 'inline', marginRight: '4px' }}/> Duration (Minutes)</label>
-                <input
-                  type="number"
-                  className="admin-input"
-                  min="1" max="300"
-                  value={examForm.duration}
-                  onChange={e => setExamForm({...examForm, duration: e.target.value})}
-                  required
-                />
+              <div className="admin-input-group">
+                <label className="admin-label">Duration (min)</label>
+                <div style={{ position: "relative" }}>
+                  <Clock size={16} style={{ position: "absolute", left: "12px", top: "12px", color: "#94A3B8" }} />
+                  <input type="number" className="admin-input" style={{ paddingLeft: "36px" }} value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} required />
+                </div>
               </div>
-
-              <div className="admin-input-group" style={{ marginBottom: 0 }}>
-                <label className="admin-label">Start Time</label>
-                <input
-                  type="datetime-local"
-                  className="admin-input"
-                  value={examForm.start_time}
-                  onChange={e => setExamForm({...examForm, start_time: e.target.value})}
-                  required
-                />
+              <div className="admin-input-group">
+                <label className="admin-label">Start Date & Time</label>
+                <div style={{ position: "relative" }}>
+                  <Calendar size={16} style={{ position: "absolute", left: "12px", top: "12px", color: "#94A3B8" }} />
+                  <input type="datetime-local" className="admin-input" style={{ paddingLeft: "36px" }} value={form.start_time} onChange={e => setForm({...form, start_time: e.target.value})} required />
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Markdown Editor */}
-            <div className="admin-input-group" data-color-mode="light">
-              <label className="admin-label">Exam Overview & Questions</label>
-              <MDEditor
-                value={overview}
-                onChange={setOverview}
-                height={300}
-                style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #E2E8F0', boxShadow: 'none' }}
-              />
+          <div className="admin-card" style={{ marginBottom: "24px" }}>
+            <h2 className="admin-card-title"><FileText size={18} /> Exam Overview (Markdown)</h2>
+            <div data-color-mode="light" style={{ marginTop: "20px" }}>
+              <MDEditor value={form.overview} onChange={val => setForm({...form, overview: val})} height={300} />
             </div>
+          </div>
 
-            {/* File Upload Zones */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '32px' }}>
-
-              <div
-                style={{
-                  border: `2px dashed ${datasetFile ? '#10B981' : '#CBD5E1'}`,
-                  borderRadius: '12px', padding: '32px 20px', textAlign: 'center',
-                  backgroundColor: datasetFile ? '#ECFDF5' : '#F8FAFC',
-                  transition: 'all 0.2s', position: 'relative'
-                }}
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => handleFileDrop(e, 'dataset')}
-              >
-                {datasetFile ? (
-                  <>
-                    <CheckCircle2 size={32} color="#10B981" style={{ margin: '0 auto 12px' }} />
-                    <p style={{ margin: 0, fontWeight: 600, color: '#065F46' }}>{datasetFile.name}</p>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#047857' }}>{(datasetFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                    <button type="button" onClick={() => setDatasetFile(null)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#10B981' }}><X size={20}/></button>
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud size={32} color="#64748B" style={{ margin: '0 auto 12px' }} />
-                    <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#475569' }}>Upload Dataset (.zip)</p>
-                    <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: '#94A3B8' }}>Max size: 500MB</p>
-                    <label className="admin-btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', cursor: 'pointer', background: '#E2E8F0', color: '#475569' }}>
-                      Browse Files
-                      <input type="file" style={{ display: 'none' }} accept=".zip" onChange={e => handleFileInput(e, 'dataset')} />
-                    </label>
-                  </>
-                )}
+          {extraSections.map((section, idx) => (
+            <div key={idx} className="admin-card" style={{ marginBottom: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <input 
+                  className="admin-input" 
+                  style={{ border: "none", fontSize: "1.1rem", fontWeight: "bold", padding: 0, background: "transparent" }}
+                  value={section.title}
+                  onChange={e => handleSectionChange(idx, "title", e.target.value)}
+                />
+                <button type="button" onClick={() => handleRemoveSection(idx)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer" }}>
+                  <Trash2 size={18} />
+                </button>
               </div>
-
-              <div
-                style={{
-                  border: `2px dashed ${csvFile ? '#10B981' : '#CBD5E1'}`,
-                  borderRadius: '12px', padding: '32px 20px', textAlign: 'center',
-                  backgroundColor: csvFile ? '#ECFDF5' : '#F8FAFC',
-                  transition: 'all 0.2s', position: 'relative'
-                }}
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => handleFileDrop(e, 'csv')}
-              >
-                {csvFile ? (
-                  <>
-                    <CheckCircle2 size={32} color="#10B981" style={{ margin: '0 auto 12px' }} />
-                    <p style={{ margin: 0, fontWeight: 600, color: '#065F46' }}>{csvFile.name}</p>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#047857' }}>{(csvFile.size / 1024).toFixed(2)} KB</p>
-                    <button type="button" onClick={() => setCsvFile(null)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#10B981' }}><X size={20}/></button>
-                  </>
-                ) : (
-                  <>
-                    <FileKey size={32} color="#64748B" style={{ margin: '0 auto 12px' }} />
-                    <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#475569' }}>Sample Submission (.csv)</p>
-                    <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: '#94A3B8' }}>Format validator file</p>
-                    <label className="admin-btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', cursor: 'pointer', background: '#E2E8F0', color: '#475569' }}>
-                      Browse Files
-                      <input type="file" style={{ display: 'none' }} accept=".csv" onChange={e => handleFileInput(e, 'csv')} />
-                    </label>
-                  </>
-                )}
+              <div data-color-mode="light">
+                <MDEditor value={section.content} onChange={val => handleSectionChange(idx, "content", val)} height={200} />
               </div>
-
             </div>
+          ))}
 
-            <div style={{ marginTop: '32px', borderTop: '1px solid #E2E8F0', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                {message.text && (
-                  <div className={`admin-alert alert-${message.type}`}>
-                    {message.text}
-                  </div>
-                )}
-              </div>
-              <button
-                type="submit"
-                className="admin-btn-primary"
-                disabled={submitting}
-                style={{ padding: '14px 32px', fontSize: '1rem', opacity: submitting ? 0.7 : 1 }}
-              >
-                <Plus size={18} /> {submitting ? "Publishing..." : "Publish Exam"}
-              </button>
-            </div>
-          </form>
+          <button type="button" className="admin-btn-primary" style={{ width: "100%", background: "#F1F5F9", color: "#475569", marginBottom: "32px", border: "2px dashed #CBD5E1" }} onClick={handleAddSection}>
+            <Plus size={18} /> Add Extra Section
+          </button>
         </div>
 
-      </div>
+        {/* Right Column: Files & Live Preview */}
+        <div style={{ overflowY: "auto" }}>
+          
+          <div className="admin-card" style={{ marginBottom: "24px" }}>
+            <h2 className="admin-card-title"><UploadCloud size={18} /> Resources</h2>
+            <div style={{ marginTop: "20px", display: "grid", gap: "16px" }}>
+              
+              <div className="file-upload-zone">
+                <label style={{ display: "block", padding: "20px", border: "2px dashed #E2E8F0", borderRadius: "12px", textAlign: "center", cursor: "pointer" }}>
+                  <UploadCloud size={24} color="#94A3B8" style={{ margin: "0 auto 8px" }} />
+                  <p style={{ margin: 0, fontSize: "0.9rem", color: "#64748B" }}>
+                    {dataset ? dataset.name : "Upload Dataset ZIP"}
+                  </p>
+                  <input type="file" accept=".zip" hidden onChange={e => setDataset(e.target.files[0])} />
+                </label>
+              </div>
+
+              <div className="file-upload-zone">
+                <label style={{ display: "block", padding: "20px", border: "2px dashed #E2E8F0", borderRadius: "12px", textAlign: "center", cursor: "pointer" }}>
+                  <FileText size={24} color="#94A3B8" style={{ margin: "0 auto 8px" }} />
+                  <p style={{ margin: 0, fontSize: "0.9rem", color: "#64748B" }}>
+                    {sampleCsv ? sampleCsv.name : "Upload Sample Submission CSV"}
+                  </p>
+                  <input type="file" accept=".csv" hidden onChange={e => setSampleCsv(e.target.files[0])} />
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <div className="admin-card" style={{ background: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+            <h2 className="admin-card-title"><Eye size={18} /> Live Preview</h2>
+            <div style={{ marginTop: "20px", padding: "20px", background: "#FFFFFF", borderRadius: "8px", border: "1px solid #F1F5F9", minHeight: "300px" }}>
+              <h1 style={{ fontSize: "1.5rem", margin: "0 0 8px" }}>{form.exam_name || "Untitled Exam"}</h1>
+              <p style={{ color: "#64748B", fontSize: "0.9rem", marginBottom: "24px" }}>
+                {form.code} {form.subject ? `· ${form.subject}` : ""} {form.duration ? `· ${form.duration} mins` : ""}
+              </p>
+              <div data-color-mode="light" className="markdown-preview">
+                <MDEditor.Markdown source={form.overview} />
+                {extraSections.map((sec, i) => (
+                  <div key={i} style={{ marginTop: "24px" }}>
+                    <h2 style={{ fontSize: "1.2rem", borderBottom: "1px solid #F1F5F9", paddingBottom: "8px" }}>{sec.title}</h2>
+                    <MDEditor.Markdown source={sec.content} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" disabled={submitting} className="admin-btn-primary" style={{ width: "100%", marginTop: "24px", height: "56px", fontSize: "1.1rem" }}>
+            {submitting ? "Processing..." : "Create & Launch Exam"} <ArrowRight size={20} />
+          </button>
+        </div>
+
+      </form>
     </AdminLayout>
   );
 };

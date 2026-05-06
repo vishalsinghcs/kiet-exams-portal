@@ -259,9 +259,41 @@ def get_my_exams(current_user: models.User = Depends(get_current_user), db: Sess
         })
     return results
 
+from fastapi import Form, File, UploadFile
+import storage
+
 @app.post("/admin/exams", response_model=schemas.ExamResponse)
-def create_exam(exam: schemas.ExamCreate, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    db_exam = models.Exam(**exam.model_dump())
+async def create_exam(
+    code: str = Form(...),
+    access_code: str = Form(...),
+    subject: str = Form(...),
+    exam_name: str = Form(...),
+    duration: int = Form(...),
+    start_time: str = Form(...),
+    overview: str = Form(None),
+    extra_sections: str = Form(None),
+    dataset: UploadFile = File(None),
+    sample_csv: UploadFile = File(None),
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    # Upload files if provided
+    dataset_path = await storage.upload_file(dataset, "datasets") if dataset else None
+    sample_csv_path = await storage.upload_file(sample_csv, "samples") if sample_csv else None
+
+    db_exam = models.Exam(
+        code=code,
+        access_code=access_code,
+        subject=subject,
+        exam_name=exam_name,
+        duration=duration,
+        start_time=datetime.fromisoformat(start_time.replace("Z", "+00:00")),
+        overview=overview,
+        extra_sections=extra_sections,
+        dataset_path=dataset_path,
+        sample_csv_path=sample_csv_path,
+        created_by=admin.id
+    )
     db.add(db_exam)
     db.commit()
     db.refresh(db_exam)
@@ -297,6 +329,38 @@ def assign_exam(assign_data: schemas.ExamAssign, admin: models.User = Depends(ge
 def get_all_exams(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
     exams = db.query(models.Exam).order_by(models.Exam.created_at.desc()).all()
     return exams
+
+@app.put("/admin/exams/{exam_id}", response_model=schemas.ExamResponse)
+def update_exam(exam_id: int, exam_data: schemas.ExamCreate, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    # Reject edit if the exam has already started
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    exam_start = exam.start_time.replace(tzinfo=timezone.utc) if exam.start_time.tzinfo is None else exam.start_time
+    if now >= exam_start:
+        raise HTTPException(status_code=400, detail="Cannot edit an exam that has already started")
+
+    for field, value in exam_data.model_dump().items():
+        setattr(exam, field, value)
+
+    db.commit()
+    db.refresh(exam)
+    return exam
+
+@app.delete("/admin/exams/{exam_id}")
+def delete_exam(exam_id: int, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    # Cascade delete enrollments first
+    db.query(models.ExamEnrollment).filter(models.ExamEnrollment.exam_id == exam_id).delete()
+    db.delete(exam)
+    db.commit()
+    return {"message": "Exam deleted successfully"}
 
 @app.post("/users/me/exams/{exam_id}/verify-code")
 def verify_exam_code(exam_id: int, request: schemas.VerifyExamCodeRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
