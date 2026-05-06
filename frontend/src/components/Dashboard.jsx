@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, KeyRound, Clock, Calendar, PlayCircle, BookOpen, Shield } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
+import logo from "../assets/examly_logo.png";
 import "./Dashboard.css";
 
 // Dynamic times removed - now using live database data

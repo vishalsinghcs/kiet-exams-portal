@@ -1,40 +1,25 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { Routes, Route, Navigate, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { LogOut, ShieldAlert, Plus, UserPlus, Shield, Activity, List, ChevronDown, Settings } from "lucide-react";
 import { API_BASE_URL } from "../utils/api";
-import "./AdminDashboard.css";
+
+import AdminDashboardHome from "./admin/AdminDashboardHome";
+import CreateExam from "./admin/CreateExam";
+import AssignExam from "./admin/AssignExam";
+import ViewExams from "./admin/ViewExams";
+import TeacherManagement from "./admin/TeacherManagement";
+import ViewResults from "./admin/ViewResults";
+
+// We'll create these later, importing placeholders for now
+const PlaceholderComponent = ({ title }) => (
+  <div className="admin-card"><h2>{title}</h2><p>Component under construction in next phase.</p></div>
+);
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, token } = useAuth();
-  
-  const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("create_exam");
   const [loading, setLoading] = useState(true);
-  const [exams, setExams] = useState([]);
-  
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // Form states
-  const [examForm, setExamForm] = useState({
-    code: "", access_code: "", subject: "", exam_name: "", duration: 60, start_time: ""
-  });
-  const [assignForm, setAssignForm] = useState({ email: "", exam_id: "" });
-  const [elevateEmail, setElevateEmail] = useState("");
-
-  const [message, setMessage] = useState({ type: "", text: "" });
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchAdminProfile = async () => {
@@ -42,301 +27,37 @@ const AdminDashboard = () => {
         const response = await fetch(`${API_BASE_URL}/users/me`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
-        
         if (response.ok) {
           const data = await response.json();
-          if (!data.is_admin) {
-            navigate("/dashboard"); // Redirect non-admins
-            return;
-          }
+          if (!data.is_admin) { navigate("/dashboard"); return; }
           setUser(data);
-          fetchAllExams();
         } else {
           logout();
         }
       } catch (error) {
         console.error("Auth check failed", error);
+        navigate("/dashboard");
       } finally {
         setLoading(false);
       }
     };
-
     if (token) fetchAdminProfile();
     else logout();
   }, [token, navigate, logout]);
 
-  const fetchAllExams = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/exams/all`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (response.ok) {
-        setExams(await response.json());
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const showMessage = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: "", text: "" }), 5000);
-  };
-
-  const generateRandomCode = () => {
-    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setExamForm({...examForm, access_code: randomCode});
-  };
-
-  const handleCreateExam = async (e) => {
-    e.preventDefault();
-    try {
-      // Ensure time includes timezone for backend
-      const formattedTime = new Date(examForm.start_time).toISOString();
-      
-      const response = await fetch(`${API_BASE_URL}/admin/exams`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ ...examForm, start_time: formattedTime })
-      });
-      
-      if (response.ok) {
-        showMessage("success", "Exam created successfully!");
-        setExamForm({ code: "", access_code: "", subject: "", exam_name: "", duration: 60, start_time: "" });
-        fetchAllExams();
-      } else {
-        showMessage("error", "Failed to create exam.");
-      }
-    } catch (e) {
-      showMessage("error", "An error occurred.");
-    }
-  };
-
-  const handleAssignExam = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/exams/assign`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ email: assignForm.email, exam_id: parseInt(assignForm.exam_id) })
-      });
-      
-      const data = await response.json();
-      if (response.ok) {
-        showMessage("success", "Exam assigned successfully!");
-        setAssignForm({ email: "", exam_id: "" });
-      } else {
-        showMessage("error", data.detail || "Failed to assign exam.");
-      }
-    } catch (e) {
-      showMessage("error", "An error occurred.");
-    }
-  };
-
-  const handleElevateUser = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/elevate?email=${elevateEmail}`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      
-      const data = await response.json();
-      if (response.ok) {
-        showMessage("success", data.message);
-        setElevateEmail("");
-      } else {
-        showMessage("error", data.detail || "Failed to elevate user.");
-      }
-    } catch (e) {
-      showMessage("error", "An error occurred.");
-    }
-  };
-
-  if (loading) return <div className="admin-loading">Checking Admin Credentials...</div>;
+  if (loading) return <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#1B2A4A", color: "white" }}>Checking Secure Access...</div>;
   if (!user) return null;
 
   return (
-    <div className="admin-page">
-      <nav className="admin-navbar">
-        <div className="admin-brand">
-          <img src="/examly_logo_trans.png" alt="Examly Logo" className="admin-logo-img" />
-          Admin Portal
-        </div>
-        <div className="admin-profile" ref={dropdownRef}>
-          <div 
-            className="admin-profile-trigger" 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <div className="admin-avatar">
-              {user.name ? user.name.charAt(0).toUpperCase() : "A"}
-            </div>
-            <span className="admin-name">{user.name || "Administrator"}</span>
-            <ChevronDown size={16} className={`dropdown-icon ${dropdownOpen ? 'open' : ''}`} />
-          </div>
-
-          {dropdownOpen && (
-            <div className="admin-profile-dropdown glass-panel">
-              <div className="dropdown-header">
-                <span className="dropdown-email">{user.email}</span>
-                <span className="dropdown-badge">Admin</span>
-              </div>
-              <div className="dropdown-divider"></div>
-              
-              <Link to="/forgot-password" className="dropdown-item">
-                <Settings size={16} /> Reset Password
-              </Link>
-              
-              <button 
-                onClick={() => { logout(); navigate("/admin"); }} 
-                className="dropdown-item dropdown-logout"
-              >
-                <LogOut size={16} /> Logout
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
-
-      <div className="admin-layout">
-        <aside className="admin-sidebar glass-panel">
-          <div className={`sidebar-item ${activeTab === 'create_exam' ? 'active' : ''}`} onClick={() => setActiveTab('create_exam')}>
-            <Plus size={18} /> Create Exam
-          </div>
-          <div className={`sidebar-item ${activeTab === 'assign_exam' ? 'active' : ''}`} onClick={() => setActiveTab('assign_exam')}>
-            <UserPlus size={18} /> Assign Exam
-          </div>
-          <div className={`sidebar-item ${activeTab === 'elevate' ? 'active' : ''}`} onClick={() => setActiveTab('elevate')}>
-            <Shield size={18} /> Manage Admins
-          </div>
-          <div className={`sidebar-item ${activeTab === 'all_exams' ? 'active' : ''}`} onClick={() => setActiveTab('all_exams')}>
-            <List size={18} /> View All Exams
-          </div>
-          <div className="sidebar-divider"></div>
-          <div className="sidebar-item" onClick={() => navigate("/dashboard")}>
-            <Activity size={18} /> Student View
-          </div>
-        </aside>
-
-        <main className="admin-main-content">
-          {message.text && (
-            <div className={`admin-alert alert-${message.type}`}>
-              {message.text}
-            </div>
-          )}
-
-          {activeTab === 'create_exam' && (
-            <div className="admin-card glass-panel">
-              <h2 className="admin-section-title">Create New Exam</h2>
-              <form onSubmit={handleCreateExam} className="admin-form">
-                <div className="form-group">
-                  <label>Exam Code (e.g., CS-402)</label>
-                  <input type="text" value={examForm.code} onChange={(e) => setExamForm({...examForm, code: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label>Access Code (6-digit)</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input type="text" value={examForm.access_code} onChange={(e) => setExamForm({...examForm, access_code: e.target.value})} maxLength={6} required style={{ flex: 1 }} />
-                    <button type="button" onClick={generateRandomCode} className="admin-submit-btn" style={{ padding: '0 15px', width: 'auto' }}>Generate</button>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Subject (e.g., Machine Learning)</label>
-                  <input type="text" value={examForm.subject} onChange={(e) => setExamForm({...examForm, subject: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label>Exam Name (e.g., Mid Semester)</label>
-                  <input type="text" value={examForm.exam_name} onChange={(e) => setExamForm({...examForm, exam_name: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label>Duration (in minutes)</label>
-                  <input type="number" value={examForm.duration} onChange={(e) => setExamForm({...examForm, duration: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label>Start Time (IST)</label>
-                  <input type="datetime-local" value={examForm.start_time} onChange={(e) => setExamForm({...examForm, start_time: e.target.value})} required />
-                </div>
-                <button type="submit" className="admin-submit-btn">Create Exam in Database</button>
-              </form>
-            </div>
-          )}
-
-          {activeTab === 'assign_exam' && (
-            <div className="admin-card glass-panel">
-              <h2 className="admin-section-title">Assign Exam to Student</h2>
-              <form onSubmit={handleAssignExam} className="admin-form">
-                <div className="form-group">
-                  <label>Student Email (@kiet.edu)</label>
-                  <input type="email" value={assignForm.email} onChange={(e) => setAssignForm({...assignForm, email: e.target.value})} required />
-                </div>
-                <div className="form-group">
-                  <label>Select Exam</label>
-                  <select value={assignForm.exam_id} onChange={(e) => setAssignForm({...assignForm, exam_id: e.target.value})} required>
-                    <option value="">-- Choose an Exam --</option>
-                    {exams.map(ex => (
-                      <option key={ex.id} value={ex.id}>{ex.code} - {ex.subject}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" className="admin-submit-btn">Assign Exam</button>
-              </form>
-            </div>
-          )}
-
-          {activeTab === 'elevate' && (
-            <div className="admin-card glass-panel">
-              <h2 className="admin-section-title">Promote User to Admin</h2>
-              <p className="admin-desc">Granting admin privileges will allow this user to create and assign exams.</p>
-              <form onSubmit={handleElevateUser} className="admin-form">
-                <div className="form-group">
-                  <label>User Email (@kiet.edu)</label>
-                  <input type="email" value={elevateEmail} onChange={(e) => setElevateEmail(e.target.value)} required />
-                </div>
-                <button type="submit" className="admin-submit-btn danger-btn">Elevate to Admin</button>
-              </form>
-            </div>
-          )}
-
-          {activeTab === 'all_exams' && (
-            <div className="admin-card glass-panel">
-              <h2 className="admin-section-title">Database Exams</h2>
-              <div className="admin-table-container">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Code</th>
-                      <th>Access Code</th>
-                      <th>Subject</th>
-                      <th>Duration</th>
-                      <th>Start Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {exams.map(ex => (
-                      <tr key={ex.id}>
-                        <td>{ex.id}</td>
-                        <td>{ex.code}</td>
-                        <td>{ex.access_code}</td>
-                        <td>{ex.subject}</td>
-                        <td>{ex.duration} min</td>
-                        <td>{new Date(ex.start_time.endsWith("Z") ? ex.start_time : `${ex.start_time}Z`).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="dashboard" replace />} />
+      <Route path="dashboard" element={<AdminDashboardHome />} />
+      <Route path="create-exam" element={<CreateExam />} />
+      <Route path="assign-exam" element={<AssignExam />} />
+      <Route path="my-exams" element={<ViewExams />} />
+      <Route path="results" element={<ViewResults />} />
+      <Route path="manage-teachers" element={<TeacherManagement />} />
+    </Routes>
   );
 };
 

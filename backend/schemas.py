@@ -106,3 +106,7 @@ class AssignedExamResponse(BaseModel):
     start_time: datetime
     status: str # from ExamEnrollment
 
+class AdminStatsResponse(BaseModel):
+    total_students: int
+    total_exams: int
+    total_enrollments: int

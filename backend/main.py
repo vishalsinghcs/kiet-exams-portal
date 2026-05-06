@@ -226,6 +226,17 @@ def elevate_user(email: str, admin: models.User = Depends(get_admin_user), db: S
     db.commit()
     return {"message": f"{email} is now an admin"}
 
+@app.get("/admin/stats", response_model=schemas.AdminStatsResponse)
+def get_admin_stats(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    total_students = db.query(models.User).filter(models.User.role == "student").count()
+    total_exams = db.query(models.Exam).count()
+    total_enrollments = db.query(models.ExamEnrollment).count()
+    return {
+        "total_students": total_students,
+        "total_exams": total_exams,
+        "total_enrollments": total_enrollments
+    }
+
 # ==================== EXAMS ENDPOINTS ====================
 
 @app.get("/users/me/exams", response_model=list[schemas.AssignedExamResponse])

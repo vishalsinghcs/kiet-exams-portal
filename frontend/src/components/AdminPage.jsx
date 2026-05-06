@@ -126,7 +126,7 @@ const AdminLoginForm = () => {
           <div className="shape-circle-4"></div>
           <div className="shape-circle-5"></div>
           <div className="left-pane-content">
-            <h1 className="brand-kiet">KIET</h1>
+            <h1 className="brand-kiet">EXAMLY</h1>
             <h1 className="brand-exams">ADMIN</h1>
           </div>
         </div>
