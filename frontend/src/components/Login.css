@@ -36,7 +36,7 @@
 .login-card-wrapper {
   position: absolute;
   inset: 0;
-  margin: 3.5rem 12rem;
+  margin: 2rem 12rem; /* Reduced vertical margin to allow more height */
   display: flex;
   border-radius: 16px;
   overflow: hidden;
@@ -168,9 +168,11 @@
   background-color: #fff;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  justify-content: flex-start; /* Start from top if content is tall */
+  padding: 2rem 0; /* Add padding for scroll room */
+  overflow-y: auto; /* Allow scrolling if form is tall */
 }
 
 /* Top-right corner: filled quarter circle */
@@ -233,7 +235,7 @@
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem; /* Reduced from 2.5rem */
 }
 
 .form-title {
@@ -262,8 +264,8 @@
 .input-group-split {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 1.4rem;
+  gap: 0.3rem; /* Reduced from 0.4rem */
+  margin-bottom: 1rem; /* Reduced from 1.4rem */
 }
 
 .input-group-split label {

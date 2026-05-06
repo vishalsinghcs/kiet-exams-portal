@@ -21,24 +21,27 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [branch, setBranch] = useState("");
+  const [section, setSection] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const branches = [
-    "Computer Science and Engineering",
-    "Information Technology",
-    "Electronics and Communication",
-    "Mechanical Engineering",
-    "Civil Engineering",
-    "Computer Science (AI & ML)",
-  ];
+  const branches = ["CSE AI", "CSE AIML"];
+
+  const branchSections = {
+    "CSE AI": ["A", "B", "C", "D"],
+    "CSE AIML": ["A", "B", "C"]
+  };
+
+  const getAvailableSections = () => {
+    return branchSections[branch] || [];
+  };
 
   const handleSignupDetails = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !branch) {
+    if (!name || !email || !password || !branch || !section) {
       setError("All fields are required");
       return;
     }
@@ -49,7 +52,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      await signupUser(name, email, password);
+      await signupUser(name, email, password, branch, section);
       setStep(2); // Move to OTP step
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.");
@@ -67,7 +70,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      const tokenData = await verifyOtp(name, email, password, otp);
+      const tokenData = await verifyOtp(name, email, password, branch, section, otp);
       login(tokenData.access_token);
       navigate("/dashboard");
     } catch (err) {
@@ -139,9 +142,32 @@ const Signup = () => {
                   </div>
                   <div className="input-group-split">
                     <label>Branch</label>
-                    <select value={branch} onChange={(e) => setBranch(e.target.value)} required className="auth-select">
+                    <select 
+                      value={branch} 
+                      onChange={(e) => {
+                        setBranch(e.target.value);
+                        setSection(""); // Reset section when branch changes
+                      }} 
+                      required 
+                      className="auth-select"
+                    >
                       <option value="" disabled>Select your branch</option>
                       {branches.map((b) => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </div>
+                  <div className="input-group-split">
+                    <label>Section</label>
+                    <select 
+                      value={section} 
+                      onChange={(e) => setSection(e.target.value)} 
+                      required 
+                      className="auth-select"
+                      disabled={!branch}
+                    >
+                      <option value="" disabled>{branch ? "Select your section" : "Select branch first"}</option>
+                      {getAvailableSections().map((s) => (
+                        <option key={s} value={s}>Section {s}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="input-group-split">

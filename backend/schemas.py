@@ -7,12 +7,16 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
+    branch: str
+    section: str
 
 # 1b. The rules for verifying signup OTP
 class OTPVerifyRequest(BaseModel):
     name: str
     email: EmailStr
     password: str
+    branch: str
+    section: str
     otp: str
 
     # This is the custom rule to ensure only KIET students can sign up
@@ -30,6 +34,8 @@ class UserResponse(BaseModel):
     is_active: bool
     is_admin: bool
     role: str                  # "student" | "teacher" | "admin"
+    branch: Optional[str] = None
+    section: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -110,3 +116,18 @@ class AdminStatsResponse(BaseModel):
     total_students: int
     total_exams: int
     total_enrollments: int
+
+# Feature 8 — Bulk section assignment
+class SectionAssignRequest(BaseModel):
+    branch: str
+    section: str
+
+class SectionAssignmentResponse(BaseModel):
+    id: int
+    exam_id: int
+    branch: str
+    section: str
+    assigned_at: datetime
+
+    class Config:
+        from_attributes = True

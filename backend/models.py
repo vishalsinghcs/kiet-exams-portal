@@ -12,6 +12,8 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)       # Legacy — kept for backward compat
     role = Column(String, default="student")         # "student" | "teacher" | "admin"
+    branch = Column(String, nullable=True)           # e.g., "CSE AI"
+    section = Column(String, nullable=True)          # e.g., "A"
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class VerificationToken(Base):
@@ -47,4 +49,14 @@ class ExamEnrollment(Base):
     user_id = Column(Integer, index=True) # Foreign key relation mapping
     exam_id = Column(Integer, index=True)
     status = Column(String, default="pending") # pending, completed, missed
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+
+class ExamSectionAssignment(Base):
+    """Tracks which branch+section combos have been bulk-assigned to an exam."""
+    __tablename__ = "exam_section_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    exam_id = Column(Integer, index=True)
+    branch = Column(String)                          # e.g., "CSE AI"
+    section = Column(String)                         # e.g., "A"
     assigned_at = Column(DateTime, default=datetime.utcnow)

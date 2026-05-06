@@ -93,7 +93,13 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pwd = auth.get_password_hash(data.password)
-    new_user = models.User(name=data.name, email=data.email, hashed_password=hashed_pwd)
+    new_user = models.User(
+        name=data.name,
+        email=data.email,
+        hashed_password=hashed_pwd,
+        branch=data.branch,
+        section=data.section
+    )
     
     db.add(new_user)
     
@@ -382,3 +388,115 @@ def verify_exam_code(exam_id: int, request: schemas.VerifyExamCodeRequest, curre
         raise HTTPException(status_code=400, detail="Invalid exam access code")
         
     return {"success": True, "message": "Code verified successfully"}
+
+# ==================== FEATURE 8: BULK SECTION ASSIGNMENT ====================
+
+@app.get("/admin/sections/{branch}/{section}/count")
+def get_section_student_count(
+    branch: str,
+    section: str,
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Returns the number of students in a given branch and section."""
+    count = db.query(models.User).filter(
+        models.User.branch == branch,
+        models.User.section == section,
+        models.User.is_admin == False
+    ).count()
+    return {"branch": branch, "section": section, "count": count}
+
+@app.post("/admin/exams/{exam_id}/assign-section")
+def assign_section_to_exam(
+    exam_id: int,
+    data: schemas.SectionAssignRequest,
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Bulk-assigns all students in a branch+section to an exam."""
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    # Prevent duplicate section assignments
+    existing = db.query(models.ExamSectionAssignment).filter(
+        models.ExamSectionAssignment.exam_id == exam_id,
+        models.ExamSectionAssignment.branch == data.branch,
+        models.ExamSectionAssignment.section == data.section
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"{data.branch} - Section {data.section} is already assigned to this exam")
+
+    # Fetch all students in this branch+section
+    students = db.query(models.User).filter(
+        models.User.branch == data.branch,
+        models.User.section == data.section,
+        models.User.is_admin == False
+    ).all()
+
+    # Bulk create enrollments (skip already-enrolled students)
+    enrolled_count = 0
+    for student in students:
+        already_enrolled = db.query(models.ExamEnrollment).filter(
+            models.ExamEnrollment.user_id == student.id,
+            models.ExamEnrollment.exam_id == exam_id
+        ).first()
+        if not already_enrolled:
+            db.add(models.ExamEnrollment(user_id=student.id, exam_id=exam_id))
+            enrolled_count += 1
+
+    # Record the section assignment
+    db.add(models.ExamSectionAssignment(
+        exam_id=exam_id,
+        branch=data.branch,
+        section=data.section
+    ))
+    db.commit()
+
+    return {
+        "message": f"Successfully assigned {enrolled_count} students from {data.branch} - Section {data.section}",
+        "enrolled_count": enrolled_count
+    }
+
+@app.delete("/admin/exams/{exam_id}/assign-section")
+def remove_section_from_exam(
+    exam_id: int,
+    data: schemas.SectionAssignRequest,
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Removes all enrollments for a specific branch+section from an exam."""
+    # Find students in this branch+section
+    student_ids = [
+        u.id for u in db.query(models.User).filter(
+            models.User.branch == data.branch,
+            models.User.section == data.section
+        ).all()
+    ]
+
+    # Delete their enrollments
+    removed = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.exam_id == exam_id,
+        models.ExamEnrollment.user_id.in_(student_ids)
+    ).delete(synchronize_session=False)
+
+    # Remove the section assignment record
+    db.query(models.ExamSectionAssignment).filter(
+        models.ExamSectionAssignment.exam_id == exam_id,
+        models.ExamSectionAssignment.branch == data.branch,
+        models.ExamSectionAssignment.section == data.section
+    ).delete()
+
+    db.commit()
+    return {"message": f"Removed {removed} enrollments from {data.branch} - Section {data.section}"}
+
+@app.get("/admin/exams/{exam_id}/sections", response_model=list[schemas.SectionAssignmentResponse])
+def get_exam_section_assignments(
+    exam_id: int,
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Returns all branch+section assignments for an exam."""
+    return db.query(models.ExamSectionAssignment).filter(
+        models.ExamSectionAssignment.exam_id == exam_id
+    ).all()
