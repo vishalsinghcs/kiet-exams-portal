@@ -1,16 +1,16 @@
 /* Admin Panel Premium Styling - Qurtubiks Inspired */
 
 :root {
-  --admin-sidebar-bg: #1B2A4A;
+  --admin-sidebar-bg: #1b2a4a;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.06);
   --admin-sidebar-active: rgba(46, 74, 121, 0.55);
   --admin-sidebar-border: rgba(255, 255, 255, 0.06);
-  --admin-text-muted: #CBD5E1;
-  --admin-text-active: #FFFFFF;
-  --admin-brand: #2E4A79;
-  --admin-brand-light: #F4F6F9;
-  --admin-header-bg: #FFFFFF;
-  --admin-header-border: #E8EAED;
+  --admin-text-muted: #cbd5e1;
+  --admin-text-active: #ffffff;
+  --admin-brand: #2e4a79;
+  --admin-brand-light: #f4f6f9;
+  --admin-header-bg: #ffffff;
+  --admin-header-border: #e8eaed;
 }
 
 .admin-layout-container {
@@ -18,7 +18,7 @@
   min-height: 100vh;
   width: 100vw;
   background-color: var(--admin-brand-light);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   overflow: hidden;
 }
 
@@ -53,7 +53,7 @@
 }
 
 .admin-sidebar-title {
-  color: #FFF;
+  color: #fff;
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.5px;
@@ -67,7 +67,7 @@
 .admin-nav-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #64748B;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   margin-bottom: 8px;
@@ -97,7 +97,7 @@
 .admin-nav-item.active {
   background-color: var(--admin-sidebar-active);
   color: var(--admin-text-active);
-  border-left-color: #5C85D6; /* Lighter blue for visibility */
+  border-left-color: #5c85d6; /* Lighter blue for visibility */
 }
 
 .admin-nav-item svg {
@@ -132,7 +132,7 @@
 .admin-profile-avatar {
   width: 36px;
   height: 36px;
-  background-color: #5C85D6;
+  background-color: #5c85d6;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -179,7 +179,7 @@
 .admin-page-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #1E293B;
+  color: #1e293b;
   margin: 0;
 }
 
@@ -192,7 +192,7 @@
 .admin-icon-btn {
   background: none;
   border: none;
-  color: #64748B;
+  color: #64748b;
   cursor: pointer;
   position: relative;
   display: flex;
@@ -202,7 +202,7 @@
 }
 
 .admin-icon-btn:hover {
-  color: #1E293B;
+  color: #1e293b;
 }
 
 .notification-badge {
@@ -211,7 +211,7 @@
   right: -2px;
   width: 8px;
   height: 8px;
-  background-color: #EF4444;
+  background-color: #ef4444;
   border-radius: 50%;
 }
 
@@ -224,9 +224,11 @@
 
 /* Common Card Styles */
 .admin-card {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.025);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.025);
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -241,7 +243,7 @@
 .admin-card-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1E293B;
+  color: #1e293b;
   margin: 0;
 }
 
@@ -261,31 +263,33 @@
 .admin-input {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 0.95rem;
   transition: all 0.2s;
-  color: #1E293B;
-  background-color: #F8FAFC;
+  color: #1e293b;
+  background-color: #f8fafc;
 }
 
 .admin-input:focus {
   outline: none;
   border-color: var(--admin-brand);
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(46, 74, 121, 0.1);
 }
 
 .admin-btn-primary {
   background-color: var(--admin-brand);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 12px 24px;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -298,4 +302,31 @@
 
 .admin-btn-primary:active {
   transform: translateY(1px);
+}
+
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.alert-success {
+  background-color: #ecfdf5;
+  color: #059669;
+  border-color: #10b981;
+}
+
+.alert-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }

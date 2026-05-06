@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -10,24 +10,45 @@ import {
   ShieldCheck,
   Bell,
   LogOut,
-  ChevronDown,
   Activity
 } from "lucide-react";
 import "./admin.css";
+import { API_BASE_URL } from "../../utils/api";
 import logoTrans from "../../assets/examly_logo_trans.png";
 
 const AdminLayout = ({ children, title = "Dashboard" }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
-  
-  // Hardcoded for now until we integrate user context fully
-  const user = { name: "Admin User", email: "admin@kiet.edu", role: "admin" }; 
+  const { logout, token } = useAuth();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/users/me`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          setUser(await res.json());
+        } else {
+          logout();
+        }
+      } catch (e) {
+        console.error("AdminLayout auth check failed", e);
+      }
+    };
+    if (token) fetchProfile();
+    else logout();
+  }, [token, logout]);
 
   const handleLogout = () => {
     logout();
     navigate("/admin");
   };
+
+  // While profile is loading, show a minimal placeholder so layout doesn't crash
+  const displayName = user?.name ?? "Admin";
+  const displayRole = user?.role ?? "admin";
 
   const navItems = [
     { label: "GENERAL", isSection: true },
@@ -36,15 +57,9 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
     { path: "/admin/assign-exam", icon: <Users size={18} />, text: "Assign Exam" },
     { path: "/admin/my-exams", icon: <FolderOpen size={18} />, text: "My Exams" },
     { path: "/admin/results", icon: <BarChart3 size={18} />, text: "Results" },
+    { label: "ADMIN", isSection: true },
+    { path: "/admin/manage-teachers", icon: <ShieldCheck size={18} />, text: "Manage Teachers" },
   ];
-
-  // Only show ADMIN section if role is admin
-  if (user.role === "admin") {
-    navItems.push(
-      { label: "ADMIN", isSection: true },
-      { path: "/admin/manage-teachers", icon: <ShieldCheck size={18} />, text: "Manage Teachers" }
-    );
-  }
 
   return (
     <div className="admin-layout-container">
@@ -64,8 +79,8 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
                 </div>
               );
             }
-            
-            const isActive = location.pathname === item.path || 
+
+            const isActive = location.pathname === item.path ||
                              (item.path === '/admin/dashboard' && location.pathname === '/admin');
 
             return (
@@ -96,12 +111,12 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
         <div className="admin-sidebar-profile" onClick={handleLogout}>
           <div className="admin-profile-info">
             <div className="admin-profile-avatar">
-              {user.name.charAt(0)}
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <span className="admin-profile-name">{user.name}</span>
+              <span className="admin-profile-name">{displayName}</span>
               <span className="admin-profile-role">
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {displayRole.charAt(0).toUpperCase() + displayRole.slice(1)}
               </span>
             </div>
           </div>
@@ -119,11 +134,11 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
               <span className="notification-badge"></span>
             </button>
             <div className="admin-profile-avatar" style={{width: '32px', height: '32px', fontSize: '0.85rem'}}>
-              {user.name.charAt(0)}
+              {displayName.charAt(0).toUpperCase()}
             </div>
           </div>
         </header>
-        
+
         <main className="admin-content-area">
           {children}
         </main>
