@@ -9,7 +9,7 @@ import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
 
 const AdminPage = () => {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, setUser } = useAuth();
   const navigate = useNavigate();
   
   const [isAdmin, setIsAdmin] = useState(null);
@@ -24,6 +24,7 @@ const AdminPage = () => {
           });
           if (res.ok) {
             const data = await res.json();
+            setUser(data); // Store profile in global state
             if (data.role === 'admin' || data.role === 'teacher' || data.is_admin) {
               setIsAdmin(true);
             } else {
@@ -41,7 +42,7 @@ const AdminPage = () => {
       }
     };
     checkRole();
-  }, [isAuthenticated, token, navigate]);
+  }, [isAuthenticated, token, navigate, setUser]);
 
   // If authenticated and verified as admin, show the dashboard
   if (isAuthenticated && isAdmin) {
@@ -83,7 +84,7 @@ const AdminLoginForm = () => {
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         if (profileData.role === 'admin' || profileData.role === 'teacher' || profileData.is_admin) {
-           login(data.access_token); // This updates AuthContext and mounts AdminDashboard automatically
+           login(data.access_token, profileData); // Pass profileData to login
         } else {
            setError("Access Denied: You are not an administrator or teacher.");
            setLoading(false);

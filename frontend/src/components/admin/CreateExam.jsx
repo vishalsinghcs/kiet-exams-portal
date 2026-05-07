@@ -301,7 +301,7 @@ const CreateExam = () => {
             <div className="preview-sidebar" style={{ overflow: 'hidden' }}>
               <div style={{ padding: '20px 16px', borderBottom: '1px solid #f1f5f9' }}>
                 <h3 style={{ color: '#1E293B', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, fontWeight: 800 }}>
-                  Sections
+                  Question Sections
                 </h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>

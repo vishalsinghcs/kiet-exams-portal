@@ -19,27 +19,7 @@ import logoTrans from "../../assets/examly_logo_trans.png";
 const AdminLayout = ({ children, title = "Dashboard" }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, token } = useAuth();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/users/me`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (res.ok) {
-          setUser(await res.json());
-        } else {
-          logout();
-        }
-      } catch (e) {
-        console.error("AdminLayout auth check failed", e);
-      }
-    };
-    if (token) fetchProfile();
-    else logout();
-  }, [token, logout]);
+  const { logout, user } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -48,7 +28,8 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
 
   // While profile is loading, show a minimal placeholder so layout doesn't crash
   const displayName = user?.name ?? "Admin";
-  const displayRole = user?.role ?? "";
+  const isAdmin = user?.role === "admin" || user?.is_admin === true;
+  const displayRole = isAdmin ? "Admin" : (user?.role ?? "");
 
   const navItems = [
     { label: "GENERAL", isSection: true },
@@ -59,7 +40,7 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
     { path: "/admin/results", icon: <BarChart3 size={18} />, text: "Results" },
   ];
 
-  if (displayRole === "admin") {
+  if (isAdmin) {
     navItems.push({ label: "ADMIN", isSection: true });
     navItems.push({ path: "/admin/manage-teachers", icon: <ShieldCheck size={18} />, text: "Manage Teachers" });
   }
