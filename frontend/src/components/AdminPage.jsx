@@ -24,7 +24,7 @@ const AdminPage = () => {
           });
           if (res.ok) {
             const data = await res.json();
-            if (data.is_admin) {
+            if (data.role === 'admin' || data.role === 'teacher' || data.is_admin) {
               setIsAdmin(true);
             } else {
               // Valid user, but NOT an admin. Redirect to student dashboard
@@ -82,10 +82,10 @@ const AdminLoginForm = () => {
       
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        if (profileData.is_admin) {
+        if (profileData.role === 'admin' || profileData.role === 'teacher' || profileData.is_admin) {
            login(data.access_token); // This updates AuthContext and mounts AdminDashboard automatically
         } else {
-           setError("Access Denied: You are not an administrator.");
+           setError("Access Denied: You are not an administrator or teacher.");
            setLoading(false);
         }
       } else {

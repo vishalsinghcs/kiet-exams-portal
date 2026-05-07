@@ -61,6 +61,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class EmailRequest(BaseModel):
+    email: EmailStr
+
 # 7. Exams schemas
 class ExamBase(BaseModel):
     code: str

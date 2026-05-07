@@ -48,7 +48,7 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
 
   // While profile is loading, show a minimal placeholder so layout doesn't crash
   const displayName = user?.name ?? "Admin";
-  const displayRole = user?.role ?? "admin";
+  const displayRole = user?.role ?? "";
 
   const navItems = [
     { label: "GENERAL", isSection: true },
@@ -57,9 +57,12 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
     { path: "/admin/assign-exam", icon: <Users size={18} />, text: "Assign Exam" },
     { path: "/admin/my-exams", icon: <FolderOpen size={18} />, text: "My Exams" },
     { path: "/admin/results", icon: <BarChart3 size={18} />, text: "Results" },
-    { label: "ADMIN", isSection: true },
-    { path: "/admin/manage-teachers", icon: <ShieldCheck size={18} />, text: "Manage Teachers" },
   ];
+
+  if (displayRole === "admin") {
+    navItems.push({ label: "ADMIN", isSection: true });
+    navItems.push({ path: "/admin/manage-teachers", icon: <ShieldCheck size={18} />, text: "Manage Teachers" });
+  }
 
   return (
     <div className="admin-layout-container">

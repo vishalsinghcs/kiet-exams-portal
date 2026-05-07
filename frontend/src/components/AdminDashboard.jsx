@@ -29,7 +29,7 @@ const AdminDashboard = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          if (!data.is_admin) { navigate("/dashboard"); return; }
+          if (!(data.role === 'admin' || data.role === 'teacher' || data.is_admin)) { navigate("/dashboard"); return; }
           setUser(data);
         } else {
           logout();
