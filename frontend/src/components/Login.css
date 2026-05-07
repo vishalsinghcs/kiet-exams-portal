@@ -79,47 +79,47 @@
 }
 
 .form-header {
-  margin-bottom: 2rem;
+  margin-bottom: 3.5rem; /* Increased whitespace */
 }
 
 .form-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #1A1C1E;
+  color: #1a1c1e;
   margin: 0;
-  letter-spacing: -0.5px;
+  letter-spacing: -1px;
 }
 
 .login-form-split {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem; /* Better breathing room between groups */
 }
 
 .input-group-split {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .input-group-split label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #4A4A4A;
+  font-size: 0.75rem; /* Modern, smaller font size */
+  font-weight: 700; /* Semibold/Bold */
+  color: #64748b; /* Modern muted slate color */
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .input-group-split input,
 .auth-select {
-  padding: 1rem 1.25rem; /* Increased padding */
-  border-radius: 8px; /* Consistent subtle radius */
-  border: 1.5px solid #E2E8F0;
+  padding: 1rem 1.25rem;
+  border-radius: 8px; /* Modern subtle radius */
+  border: 1px solid #e2e8f0; /* Subtle full border */
   background-color: #fff;
-  font-size: 1rem;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.2s ease;
-  color: #1A1C1E;
+  color: #1a1c1e;
   font-family: inherit;
   width: 100%;
 }
@@ -168,7 +168,7 @@
   text-align: center;
   font-size: 0.9rem;
   margin-top: 2rem;
-  color: #64748B;
+  color: #64748b;
 }
 
 .switch-auth-split a {
@@ -182,14 +182,14 @@
 }
 
 .error-text {
-  color: #DC2626;
-  background-color: #FEF2F2;
+  color: #dc2626;
+  background-color: #fef2f2;
   padding: 0.75rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
   font-size: 0.85rem;
   text-align: center;
-  border: 1px solid #FEE2E2;
+  border: 1px solid #fee2e2;
 }
 
 /* ===================== RESPONSIVE ===================== */
@@ -202,7 +202,7 @@
 /* ===================== EXTRA UTILS ===================== */
 .forgot-desc {
   font-size: 0.95rem;
-  color: #64748B;
+  color: #64748b;
   margin-bottom: 2rem;
   line-height: 1.5;
 }
