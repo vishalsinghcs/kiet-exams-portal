@@ -500,3 +500,86 @@ def get_exam_section_assignments(
     return db.query(models.ExamSectionAssignment).filter(
         models.ExamSectionAssignment.exam_id == exam_id
     ).all()
+
+# ==================== FEATURE 9: RESULTS PER EXAM ====================
+
+@app.get("/admin/exams/{exam_id}/results", response_model=schemas.ExamResultsResponse)
+def get_exam_results(
+    exam_id: int,
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    # Fetch all enrollments for this exam
+    enrollments = db.query(models.ExamEnrollment, models.User).join(
+        models.User, models.ExamEnrollment.user_id == models.User.id
+    ).filter(models.ExamEnrollment.exam_id == exam_id).all()
+
+    assigned = len(enrollments)
+    submitted = sum(1 for e, u in enrollments if e.status == "Submitted")
+    pending = assigned - submitted
+
+    results_list = []
+    for e, u in enrollments:
+        results_list.append({
+            "id": e.id,
+            "name": u.name,
+            "email": u.email,
+            "branch": u.branch,
+            "section": u.section,
+            "status": e.status,
+            "submitted_at": e.submitted_at,
+            "has_submission": bool(e.submission_path)
+        })
+
+    return {
+        "assigned": assigned,
+        "submitted": submitted,
+        "pending": pending,
+        "results": results_list
+    }
+
+from fastapi.responses import FileResponse
+
+@app.get("/admin/submissions/{enrollment_id}/download")
+def download_submission(
+    enrollment_id: int,
+    admin: models.User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    enrollment = db.query(models.ExamEnrollment).filter(models.ExamEnrollment.id == enrollment_id).first()
+    if not enrollment or not enrollment.submission_path:
+        raise HTTPException(status_code=404, detail="Submission file not found")
+    
+    if not os.path.exists(enrollment.submission_path):
+        raise HTTPException(status_code=404, detail="File missing on server")
+
+    filename = os.path.basename(enrollment.submission_path)
+    return FileResponse(path=enrollment.submission_path, filename=filename, media_type='text/csv')
+
+@app.post("/users/me/exams/{exam_id}/submit")
+async def submit_exam(
+    exam_id: int,
+    submission: UploadFile = File(...),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Verify enrollment
+    enrollment = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.user_id == current_user.id,
+        models.ExamEnrollment.exam_id == exam_id
+    ).first()
+    
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="Not enrolled in this exam")
+    
+    # Store file
+    file_path = await storage.upload_file(submission, f"submissions/{exam_id}")
+    
+    # Update DB
+    enrollment.submission_path = file_path
+    enrollment.submitted_at = datetime.utcnow()
+    enrollment.status = "Submitted"
+    db.commit()
+    
+    return {"message": "Exam submitted successfully"}
+

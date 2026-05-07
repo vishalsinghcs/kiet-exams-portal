@@ -49,6 +49,8 @@ class ExamEnrollment(Base):
     user_id = Column(Integer, index=True) # Foreign key relation mapping
     exam_id = Column(Integer, index=True)
     status = Column(String, default="pending") # pending, completed, missed
+    submission_path = Column(String, nullable=True) # Path to uploaded CSV
+    submitted_at = Column(DateTime, nullable=True) # Time of submission
     assigned_at = Column(DateTime, default=datetime.utcnow)
 
 class ExamSectionAssignment(Base):

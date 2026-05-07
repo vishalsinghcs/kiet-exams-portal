@@ -22,6 +22,41 @@ const ExamEnvironment = () => {
   const [examLoading, setExamLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(null); // seconds remaining
 
+  // Submission state
+  const [submissionFile, setSubmissionFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+
+  const handleSubmission = async () => {
+    if (!submissionFile) return;
+    setIsSubmitting(true);
+    setSubmissionError("");
+    setSubmissionSuccess(false);
+
+    const formData = new FormData();
+    formData.append("submission", submissionFile);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+      });
+
+      if (res.ok) {
+        setSubmissionSuccess(true);
+      } else {
+        const errorData = await res.json();
+        setSubmissionError(errorData.detail || "Failed to submit exam.");
+      }
+    } catch (err) {
+      setSubmissionError("Network error while submitting.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // --- Fetch exam metadata on mount ---
   useEffect(() => {
     const fetchExam = async () => {
@@ -256,9 +291,24 @@ const ExamEnvironment = () => {
             <div className="upload-area">
               <UploadCloud size={48} className="upload-icon" />
               <p>Drag and drop your CSV file here, or click to browse.</p>
-              <input type="file" accept=".csv" className="file-input" />
+              <input 
+                type="file" 
+                accept=".csv" 
+                className="file-input" 
+                onChange={(e) => setSubmissionFile(e.target.files[0])}
+              />
+              {submissionFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold' }}>{submissionFile.name} selected</p>}
             </div>
-            <button className="submit-exam-btn">Submit Final Exam</button>
+            {submissionError && <p style={{ color: '#EF4444', marginTop: '10px' }}>{submissionError}</p>}
+            <button 
+              className="submit-exam-btn" 
+              onClick={handleSubmission}
+              disabled={isSubmitting || !submissionFile}
+              style={{ opacity: (isSubmitting || !submissionFile) ? 0.7 : 1, cursor: (isSubmitting || !submissionFile) ? 'not-allowed' : 'pointer' }}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Final Exam"}
+            </button>
+            {submissionSuccess && <p style={{ color: '#10B981', marginTop: '10px' }}>Exam submitted successfully! You may close this tab.</p>}
           </div>
         </div>
 

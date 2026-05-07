@@ -1,32 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Download, Filter, FileSpreadsheet, Users, CheckCircle, XCircle } from "lucide-react";
 import AdminLayout from "./AdminLayout";
+import { API_BASE_URL } from "../../utils/api";
+import { useAuth } from "../../context/AuthContext";
 
 const ViewResults = () => {
-  const [selectedExam, setSelectedExam] = useState(1);
+  const { token } = useAuth();
+  const [exams, setExams] = useState([]);
+  const [selectedExam, setSelectedExam] = useState(null);
   
-  // Mock Data
-  const exams = [
-    { id: 1, name: "[CS401] Machine Learning - Mid Sem" },
-    { id: 2, name: "[CS402] Cloud Computing - Quiz 1" }
-  ];
+  const [results, setResults] = useState([]);
+  const [stats, setStats] = useState({ assigned: 0, submitted: 0, pending: 0 });
+  const [loading, setLoading] = useState(true);
 
-  const results = [
-    { id: 101, name: "Aarav Sharma", email: "aarav@kiet.edu", branch: "CSE AI", section: "A", status: "Submitted", time: "15 May, 12:30 PM", score: 38 },
-    { id: 102, name: "Isha Singh", email: "isha@kiet.edu", branch: "CSE AI", section: "A", status: "Submitted", time: "15 May, 12:45 PM", score: 40 },
-    { id: 103, name: "Rohan Gupta", email: "rohan@kiet.edu", branch: "CSE AI", section: "B", status: "Not Submitted", time: "-", score: "-" },
-    { id: 104, name: "Neha Verma", email: "neha@kiet.edu", branch: "CSE AIML", section: "A", status: "Submitted", time: "15 May, 01:10 PM", score: 35 },
-  ];
+  // Fetch all exams for dropdown
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/exams/all`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setExams(data);
+          if (data.length > 0) {
+            setSelectedExam(data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch exams:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (token) fetchExams();
+  }, [token]);
 
-  const stats = {
-    assigned: 124,
-    submitted: 108,
-    pending: 16
+  // Fetch results when selected exam changes
+  useEffect(() => {
+    if (!selectedExam) return;
+    
+    const fetchResults = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/exams/${selectedExam}/results`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats({
+            assigned: data.assigned,
+            submitted: data.submitted,
+            pending: data.pending
+          });
+          setResults(data.results);
+        }
+      } catch (err) {
+        console.error("Failed to fetch results:", err);
+      }
+    };
+    
+    fetchResults();
+  }, [selectedExam, token]);
+
+  const handleDownload = async (enrollmentId, studentName) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/submissions/${enrollmentId}/download`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${studentName.replace(/ /g, '_')}_submission.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert("Failed to download file. It might be missing on the server.");
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+      alert("Network error while trying to download.");
+    }
   };
 
-  const handleDownload = (name) => {
-    alert(`Mock Download: ${name}_submission.csv`);
+  const formatTime = (timeStr) => {
+    if (!timeStr) return "—";
+    const d = new Date(timeStr.endsWith("Z") ? timeStr : `${timeStr}Z`);
+    return d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
   };
+
+  if (loading) {
+    return <AdminLayout title="Exam Results & Submissions"><p>Loading...</p></AdminLayout>;
+  }
 
   return (
     <AdminLayout title="Exam Results & Submissions">
@@ -37,10 +105,11 @@ const ViewResults = () => {
           <div className="admin-input-group" style={{ marginBottom: 0, flex: 1, maxWidth: '400px' }}>
             <select 
               className="admin-input" 
-              value={selectedExam}
+              value={selectedExam || ""}
               onChange={e => setSelectedExam(Number(e.target.value))}
             >
-              {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+              {exams.length === 0 && <option value="">No exams available</option>}
+              {exams.map(ex => <option key={ex.id} value={ex.id}>[{ex.code}] {ex.exam_name}</option>)}
             </select>
           </div>
           <button className="admin-btn-primary" style={{ background: '#10B981', display: 'flex', gap: '8px' }}>
@@ -105,13 +174,20 @@ const ViewResults = () => {
               </tr>
             </thead>
             <tbody>
+              {results.length === 0 && (
+                <tr>
+                  <td colSpan="5" style={{ padding: '24px 0', textAlign: 'center', color: '#64748B' }}>
+                    No students assigned to this exam.
+                  </td>
+                </tr>
+              )}
               {results.map(r => (
                 <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '16px 0' }}>
                     <div style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.95rem' }}>{r.name}</div>
                     <div style={{ color: '#64748B', fontSize: '0.8rem' }}>{r.email}</div>
                   </td>
-                  <td style={{ padding: '16px 0', color: '#475569', fontSize: '0.9rem' }}>{r.branch} - {r.section}</td>
+                  <td style={{ padding: '16px 0', color: '#475569', fontSize: '0.9rem' }}>{r.branch || 'N/A'} - {r.section || 'N/A'}</td>
                   <td style={{ padding: '16px 0' }}>
                     <span style={{ 
                       padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700,
@@ -121,13 +197,13 @@ const ViewResults = () => {
                       {r.status}
                     </span>
                   </td>
-                  <td style={{ padding: '16px 0', color: '#64748B', fontSize: '0.9rem' }}>{r.time}</td>
+                  <td style={{ padding: '16px 0', color: '#64748B', fontSize: '0.9rem' }}>{formatTime(r.submitted_at)}</td>
                   <td style={{ padding: '16px 0', textAlign: 'right' }}>
-                    {r.status === 'Submitted' ? (
+                    {r.has_submission ? (
                       <button 
                         className="admin-icon-btn" 
                         style={{ marginLeft: 'auto', color: '#2E4A79' }} 
-                        onClick={() => handleDownload(r.name.replace(' ', '_'))}
+                        onClick={() => handleDownload(r.id, r.name)}
                         title="Download CSV"
                       >
                         <Download size={18} />
@@ -148,3 +224,4 @@ const ViewResults = () => {
 };
 
 export default ViewResults;
+

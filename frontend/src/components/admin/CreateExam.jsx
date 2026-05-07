@@ -110,7 +110,14 @@ const CreateExam = () => {
 
     try {
       const formData = new FormData();
-      Object.keys(form).forEach(key => formData.append(key, form[key]));
+      Object.keys(form).forEach(key => {
+        if (key === 'start_time') {
+          // Convert local datetime input to UTC ISO string for backend
+          formData.append(key, new Date(form[key]).toISOString());
+        } else {
+          formData.append(key, form[key]);
+        }
+      });
       formData.append("extra_sections", JSON.stringify(sections));
       
       if (dataset) formData.append("dataset", dataset);

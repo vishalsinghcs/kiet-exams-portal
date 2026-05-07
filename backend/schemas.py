@@ -131,3 +131,23 @@ class SectionAssignmentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Feature 9 — Results View
+class StudentResult(BaseModel):
+    id: int # Enrollment ID
+    name: str
+    email: str
+    branch: Optional[str] = None
+    section: Optional[str] = None
+    status: str
+    submitted_at: Optional[datetime] = None
+    has_submission: bool = False # simpler flag for frontend
+
+    class Config:
+        from_attributes = True
+
+class ExamResultsResponse(BaseModel):
+    assigned: int
+    submitted: int
+    pending: int
+    results: list[StudentResult]
