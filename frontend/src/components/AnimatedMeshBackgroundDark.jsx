@@ -74,9 +74,9 @@ export default function AdvancedMeshBackground() {
           Math.PI * 2
         );
 
-        ctx.fillStyle = "rgba(80, 80, 200, 0.6)";
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = "rgba(100,100,255,0.5)";
+        ctx.fillStyle = "rgba(79, 70, 229, 0.15)";
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = "transparent";
         ctx.fill();
       }
     }
@@ -118,8 +118,8 @@ export default function AdvancedMeshBackground() {
               particles[j].y
             );
 
-            gradient.addColorStop(0, `rgba(120,120,255,${opacity})`);
-            gradient.addColorStop(1, `rgba(80,80,200,${opacity})`);
+            gradient.addColorStop(0, `rgba(79, 70, 229, ${opacity * 0.15})`);
+            gradient.addColorStop(1, `rgba(79, 70, 229, ${opacity * 0.15})`);
 
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
