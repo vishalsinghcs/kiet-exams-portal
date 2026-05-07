@@ -77,62 +77,26 @@ const Login = () => {
 
   return (
     <div className="login-page">
-
-      {/* ===== FULL-SCREEN BACKGROUND LAYER ===== */}
-      <div className="login-bg">
-        {/* Left background half — dark blue with animated mesh */}
-        <div className="login-bg-left">
-          <AnimatedMeshBackground />
-        </div>
-        {/* Right background half — plain white */}
-        <div className="login-bg-right">
-          <AnimatedMeshBackgroundDark />
-        </div>
-      </div>
-
-      {/* ===== CARD — floats on top with large margins ===== */}
       <motion.div
         className="login-card-wrapper"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        {/* ----- Left pane of card (dark, NO animation) ----- */}
         <div className="login-left-pane">
-
-          {/* Decorative shapes */}
-          <div className="shape-circle-1"></div>
-          <div className="shape-circle-2"></div>
-          <div className="shape-circle-3"></div>
-          <div className="shape-dashes"></div>
-          <div className="shape-dot" style={{ top: "42%", right: "18%" }}></div>
-          <div className="shape-dot" style={{ top: "20%", right: "45%" }}></div>
-          <div className="shape-dot" style={{ bottom: "42%", left: "18%" }}></div>
-          <div className="shape-circle-4"></div>
-          <div className="shape-circle-5"></div>
-
-          {/* Quote text */}
+          <AnimatedMeshBackground />
           <div className="left-pane-content">
-            <h1 className="brand-kiet">KIET</h1>
-            <h1 className="brand-exams">EXAMS</h1>
+            <h1 className="brand-kiet">Next-Gen <br /> ML Assessment</h1>
+            <p className="brand-subtitle">
+              A high-performance environment designed for machine learning, data science, and AI evaluation.
+            </p>
           </div>
         </div>
 
-        {/* ----- Right pane of card (white, form) ----- */}
         <div className="login-right-pane">
-
-          {/* Decorative corner shapes */}
-          <div className="shape-top-right"></div>
-          <div className="shape-top-right-outline"></div>
-          <div className="shape-top-left">
-            <div className="circle-inner"></div>
-          </div>
-
-          {/* Form */}
           <div className="login-form-container">
             <div className="form-header">
               <h2 className="form-title">Login</h2>
-              <div className="title-dot"></div>
             </div>
 
             {error && <p className="error-text">{error}</p>}
