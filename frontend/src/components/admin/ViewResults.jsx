@@ -3,6 +3,7 @@ import { Search, Download, Filter, FileSpreadsheet, Users, CheckCircle, XCircle 
 import AdminLayout from "./AdminLayout";
 import { API_BASE_URL } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
+import MDEditor from "@uiw/react-md-editor";
 
 const ViewResults = () => {
   const { token } = useAuth();
@@ -12,6 +13,10 @@ const ViewResults = () => {
   const [results, setResults] = useState([]);
   const [stats, setStats] = useState({ assigned: 0, submitted: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
+
+  // Preview state
+  const [previewData, setPreviewData] = useState(null);
+  const [previewType, setPreviewType] = useState(null);
 
   // Fetch all exams for dropdown
   useEffect(() => {
@@ -62,9 +67,11 @@ const ViewResults = () => {
     fetchResults();
   }, [selectedExam, token]);
 
-  const handleDownload = async (enrollmentId, studentName) => {
+  const handleDownload = async (enrollmentId, studentName, type) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/submissions/${enrollmentId}/download`, {
+      const endpoint = type === 'csv' ? 'download' : 'notebook';
+      const ext = type === 'csv' ? 'csv' : 'ipynb';
+      const res = await fetch(`${API_BASE_URL}/admin/submissions/${enrollmentId}/${endpoint}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       
@@ -73,7 +80,7 @@ const ViewResults = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${studentName.replace(/ /g, '_')}_submission.csv`;
+        a.download = `${studentName.replace(/ /g, '_')}_submission.${ext}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -83,6 +90,30 @@ const ViewResults = () => {
     } catch (err) {
       console.error("Download error:", err);
       alert("Network error while trying to download.");
+    }
+  };
+
+  const handlePreview = async (enrollmentId, type) => {
+    try {
+      const endpoint = type === 'csv' ? 'download' : 'notebook';
+      const res = await fetch(`${API_BASE_URL}/admin/submissions/${enrollmentId}/${endpoint}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        const text = await res.text();
+        if (type === 'notebook') {
+            setPreviewData(JSON.parse(text));
+        } else {
+            setPreviewData(text);
+        }
+        setPreviewType(type);
+      } else {
+        alert("Failed to load file for preview.");
+      }
+    } catch (err) {
+      console.error("Preview error:", err);
+      alert("Network error while trying to preview.");
     }
   };
 
@@ -199,18 +230,49 @@ const ViewResults = () => {
                   </td>
                   <td style={{ padding: '16px 0', color: '#64748B', fontSize: '0.9rem' }}>{formatTime(r.submitted_at)}</td>
                   <td style={{ padding: '16px 0', textAlign: 'right' }}>
-                    {r.has_submission ? (
-                      <button 
-                        className="admin-icon-btn" 
-                        style={{ marginLeft: 'auto', color: '#2E4A79' }} 
-                        onClick={() => handleDownload(r.id, r.name)}
-                        title="Download CSV"
-                      >
-                        <Download size={18} />
-                      </button>
-                    ) : (
-                      <span style={{ color: '#CBD5E1' }}>—</span>
-                    )}
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      {r.has_submission ? (
+                        <>
+                          <button 
+                            className="admin-icon-btn" 
+                            style={{ color: '#2E4A79', padding: '4px' }} 
+                            onClick={() => handleDownload(r.id, r.name, 'csv')}
+                            title="Download CSV"
+                          >
+                            <Download size={16} />
+                          </button>
+                          <button 
+                            className="admin-icon-btn" 
+                            style={{ color: '#10B981', padding: '4px', fontSize: '0.75rem', fontWeight: 600 }} 
+                            onClick={() => handlePreview(r.id, 'csv')}
+                            title="Preview CSV"
+                          >
+                            Preview
+                          </button>
+                        </>
+                      ) : <span style={{ color: '#CBD5E1', padding: '4px' }}>—</span>}
+                      
+                      {r.has_notebook ? (
+                        <>
+                          <button 
+                            className="admin-icon-btn" 
+                            style={{ color: '#2E4A79', padding: '4px' }} 
+                            onClick={() => handleDownload(r.id, r.name, 'notebook')}
+                            title="Download Notebook"
+                          >
+                            <Download size={16} />
+                          </button>
+                          <button 
+                            className="admin-icon-btn" 
+                            style={{ color: '#F59E0B', padding: '4px', fontSize: '0.75rem', fontWeight: 600 }} 
+                            onClick={() => handlePreview(r.id, 'notebook')}
+                            title="Preview Notebook"
+                          >
+                            Preview
+                          </button>
+                        </>
+                      ) : <span style={{ color: '#CBD5E1', padding: '4px' }}>—</span>}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -219,6 +281,69 @@ const ViewResults = () => {
         </div>
 
       </div>
+
+      {/* Preview Modal */}
+      {previewData && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '40px' }}>
+          <div style={{ background: '#FFFFFF', width: '100%', maxWidth: '1000px', height: '80vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #E2E8F0' }}>
+              <h3 style={{ margin: 0, color: '#1E293B', fontSize: '1.2rem' }}>File Preview ({previewType.toUpperCase()})</h3>
+              <button onClick={() => setPreviewData(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <div style={{ flex: 1, overflow: 'auto', padding: '24px', background: '#F8FAFC' }}>
+              {previewType === 'csv' && (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF' }}>
+                    <tbody>
+                      {previewData.split('\n').map((row, i) => (
+                        <tr key={i}>
+                          {row.split(',').map((cell, j) => (
+                            <td key={j} style={{ border: '1px solid #E2E8F0', padding: '8px', fontSize: '0.85rem' }}>
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {previewType === 'notebook' && previewData.cells && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {previewData.cells.map((cell, idx) => (
+                    <div key={idx} style={{ background: '#FFFFFF', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      {cell.cell_type === 'markdown' ? (
+                        <div data-color-mode="light">
+                          <MDEditor.Markdown source={cell.source.join('')} />
+                        </div>
+                      ) : (
+                        <div>
+                          <pre style={{ background: '#F1F5F9', padding: '12px', borderRadius: '6px', overflowX: 'auto', margin: 0, fontSize: '0.85rem' }}>
+                            <code>{cell.source.join('')}</code>
+                          </pre>
+                          {cell.outputs && cell.outputs.length > 0 && (
+                            <div style={{ marginTop: '10px', padding: '10px', background: '#FEF2F2', borderLeft: '4px solid #EF4444', fontSize: '0.8rem' }}>
+                              {cell.outputs.map((out, oidx) => (
+                                <div key={oidx}>
+                                  {out.text ? out.text.join('') : (out.data && out.data['text/plain'] ? out.data['text/plain'].join('') : 'Output type not supported in preview')}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };

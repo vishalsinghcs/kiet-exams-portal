@@ -24,18 +24,20 @@ const ExamEnvironment = () => {
 
   // Submission state
   const [submissionFile, setSubmissionFile] = useState(null);
+  const [notebookFile, setNotebookFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
   const handleSubmission = async () => {
-    if (!submissionFile) return;
+    if (!submissionFile && !notebookFile) return;
     setIsSubmitting(true);
     setSubmissionError("");
     setSubmissionSuccess(false);
 
     const formData = new FormData();
-    formData.append("submission", submissionFile);
+    if (submissionFile) formData.append("submission", submissionFile);
+    if (notebookFile) formData.append("notebook", notebookFile);
 
     try {
       const res = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
@@ -207,57 +209,56 @@ const ExamEnvironment = () => {
           </div>
         </div>
 
-        {/* Start Coding button visible in question view */}
-        {activeView === 'question' && (
-          <button className="start-coding-btn-fixed" onClick={() => setActiveView("coding")}>
-            Start Coding <ChevronRight size={16} />
-          </button>
-        )}
-
         {/* Question View — renders Markdown overview from DB */}
         <div
           className="view-container question-view"
           style={{ display: activeView === "question" ? "block" : "none" }}
         >
-          <div className="question-header">
+          <div className="question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h1>{examName}</h1>
               <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
                 {examCode} · {examSubject} · {exam.duration} minutes
               </p>
             </div>
+            <button 
+              className="start-coding-btn-fixed" 
+              onClick={() => setActiveView("coding")}
+              style={{ position: 'static', marginTop: '10px' }}
+            >
+              Start Coding <ChevronRight size={16} />
+            </button>
           </div>
-          <div className="question-body">
-            {exam.overview ? (
-              <div data-color-mode="dark" className="question-section">
-                <MDEditor.Markdown source={exam.overview} style={{ background: 'transparent', color: 'inherit' }} />
-              </div>
-            ) : (
-              <div className="question-section">
-                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                  No overview content has been added for this exam yet.
-                </p>
-              </div>
-            )}
-
-            {/* Extra Sections */}
+          
+          <div className="question-body" style={{ display: 'flex', flexDirection: 'column', gap: '32px', background: 'transparent', boxShadow: 'none', border: 'none', padding: '0' }}>
             {(() => {
               try {
                 const extras = typeof exam.extra_sections === 'string' 
                   ? JSON.parse(exam.extra_sections) 
                   : (exam.extra_sections || []);
+                  
+                if (extras.length === 0) {
+                    return (
+                      <div className="question-card">
+                        <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>
+                          No questions or content have been added for this exam yet.
+                        </p>
+                      </div>
+                    );
+                }
+
                 return extras.map((section, idx) => (
-                  <div key={idx} data-color-mode="dark" className="question-section" style={{ marginTop: '32px' }}>
-                    <h2 style={{ 
-                      fontSize: '1.4rem', 
-                      color: '#F8FAFC',
-                      borderBottom: '1px solid rgba(255,255,255,0.1)', 
-                      paddingBottom: '12px', 
-                      marginBottom: '16px' 
-                    }}>
+                  <div key={idx} data-color-mode="light" className="question-card" style={{ 
+                      background: 'transparent', 
+                      padding: '0', 
+                      border: 'none',
+                  }}>
+                    <h3 style={{ color: '#1E293B', marginBottom: '16px', fontSize: '1.45rem', fontWeight: '800', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
                       {section.title}
-                    </h2>
-                    <MDEditor.Markdown source={section.content} style={{ background: 'transparent', color: 'inherit' }} />
+                    </h3>
+                    <div style={{ color: '#334155', fontSize: '1.05rem', lineHeight: '1.8' }}>
+                      <MDEditor.Markdown source={section.content} style={{ background: 'transparent', color: 'inherit' }} />
+                    </div>
                   </div>
                 ));
               } catch (e) {
@@ -285,26 +286,42 @@ const ExamEnvironment = () => {
           className="view-container result-view"
           style={{ display: activeView === "result" ? "flex" : "none" }}
         >
-          <div className="result-card">
+          <div className="result-card" style={{ maxWidth: '600px' }}>
             <h2>Submit Your Work</h2>
-            <p>Upload your generated <code>submission.csv</code> file for evaluation.</p>
-            <div className="upload-area">
-              <UploadCloud size={48} className="upload-icon" />
-              <p>Drag and drop your CSV file here, or click to browse.</p>
-              <input 
-                type="file" 
-                accept=".csv" 
-                className="file-input" 
-                onChange={(e) => setSubmissionFile(e.target.files[0])}
-              />
-              {submissionFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold' }}>{submissionFile.name} selected</p>}
+            <p>Upload your generated <code>submission.csv</code> and Jupyter <code>.ipynb</code> notebook.</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+              <div className="upload-area" style={{ marginBottom: 0 }}>
+                <UploadCloud size={36} className="upload-icon" />
+                <p style={{ fontSize: '0.9rem' }}>Upload CSV File</p>
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  className="file-input" 
+                  onChange={(e) => setSubmissionFile(e.target.files[0])}
+                />
+                {submissionFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold', fontSize: '0.85rem' }}>{submissionFile.name}</p>}
+              </div>
+
+              <div className="upload-area" style={{ marginBottom: 0 }}>
+                <FileText size={36} className="upload-icon" />
+                <p style={{ fontSize: '0.9rem' }}>Upload Notebook (.ipynb)</p>
+                <input 
+                  type="file" 
+                  accept=".ipynb" 
+                  className="file-input" 
+                  onChange={(e) => setNotebookFile(e.target.files[0])}
+                />
+                {notebookFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold', fontSize: '0.85rem' }}>{notebookFile.name}</p>}
+              </div>
             </div>
-            {submissionError && <p style={{ color: '#EF4444', marginTop: '10px' }}>{submissionError}</p>}
+
+            {submissionError && <p style={{ color: '#EF4444', marginTop: '10px', marginBottom: '10px' }}>{submissionError}</p>}
             <button 
               className="submit-exam-btn" 
               onClick={handleSubmission}
-              disabled={isSubmitting || !submissionFile}
-              style={{ opacity: (isSubmitting || !submissionFile) ? 0.7 : 1, cursor: (isSubmitting || !submissionFile) ? 'not-allowed' : 'pointer' }}
+              disabled={isSubmitting || (!submissionFile && !notebookFile)}
+              style={{ opacity: (isSubmitting || (!submissionFile && !notebookFile)) ? 0.7 : 1, cursor: (isSubmitting || (!submissionFile && !notebookFile)) ? 'not-allowed' : 'pointer' }}
             >
               {isSubmitting ? "Submitting..." : "Submit Final Exam"}
             </button>

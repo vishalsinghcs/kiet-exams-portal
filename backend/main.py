@@ -290,7 +290,9 @@ def get_my_exams(current_user: models.User = Depends(get_current_user), db: Sess
             "exam_name": exam.exam_name,
             "duration": exam.duration,
             "start_time": exam.start_time,
-            "status": enrollment.status
+            "status": enrollment.status,
+            "overview": exam.overview,
+            "extra_sections": exam.extra_sections
         })
     return results
 
@@ -580,7 +582,8 @@ def get_exam_results(
             "section": u.section,
             "status": e.status,
             "submitted_at": e.submitted_at,
-            "has_submission": bool(e.submission_path)
+            "has_submission": bool(e.submission_path),
+            "has_notebook": bool(e.notebook_path)
         })
 
     return {
@@ -611,13 +614,36 @@ def download_submission(
     filename = os.path.basename(enrollment.submission_path)
     return FileResponse(path=enrollment.submission_path, filename=filename, media_type='text/csv')
 
+@app.get("/admin/submissions/{enrollment_id}/notebook")
+def download_notebook(
+    enrollment_id: int,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    enrollment = db.query(models.ExamEnrollment).filter(models.ExamEnrollment.id == enrollment_id).first()
+    if not enrollment or not enrollment.notebook_path:
+        raise HTTPException(status_code=404, detail="Notebook file not found")
+    
+    exam = db.query(models.Exam).filter(models.Exam.id == enrollment.exam_id).first()
+    verify_exam_ownership(exam, user)
+    
+    if not os.path.exists(enrollment.notebook_path):
+        raise HTTPException(status_code=404, detail="File missing on server")
+
+    filename = os.path.basename(enrollment.notebook_path)
+    return FileResponse(path=enrollment.notebook_path, filename=filename, media_type='application/x-ipynb+json')
+
 @app.post("/users/me/exams/{exam_id}/submit")
 async def submit_exam(
     exam_id: int,
-    submission: UploadFile = File(...),
+    submission: UploadFile = File(None),
+    notebook: UploadFile = File(None),
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if not submission and not notebook:
+        raise HTTPException(status_code=400, detail="Must upload at least one file (.csv or .ipynb)")
+
     # Verify enrollment
     enrollment = db.query(models.ExamEnrollment).filter(
         models.ExamEnrollment.user_id == current_user.id,
@@ -627,14 +653,16 @@ async def submit_exam(
     if not enrollment:
         raise HTTPException(status_code=403, detail="Not enrolled in this exam")
     
-    # Store file
-    file_path = await storage.upload_file(submission, f"submissions/{exam_id}")
+    # Store files
+    if submission:
+        enrollment.submission_path = await storage.upload_file(submission, f"submissions/{exam_id}")
+    if notebook:
+        enrollment.notebook_path = await storage.upload_file(notebook, f"submissions/{exam_id}")
     
     # Update DB
-    enrollment.submission_path = file_path
     enrollment.submitted_at = datetime.utcnow()
     enrollment.status = "Submitted"
     db.commit()
     
-    return {"message": "Exam submitted successfully"}
+    return {"message": "Successfully submitted files"}
 

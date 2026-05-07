@@ -50,6 +50,7 @@ class ExamEnrollment(Base):
     exam_id = Column(Integer, index=True)
     status = Column(String, default="pending") # pending, completed, missed
     submission_path = Column(String, nullable=True) # Path to uploaded CSV
+    notebook_path = Column(String, nullable=True) # Path to uploaded .ipynb
     submitted_at = Column(DateTime, nullable=True) # Time of submission
     assigned_at = Column(DateTime, default=datetime.utcnow)
 

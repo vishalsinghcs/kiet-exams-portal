@@ -114,6 +114,8 @@ class AssignedExamResponse(BaseModel):
     duration: int
     start_time: datetime
     status: str # from ExamEnrollment
+    overview: Optional[str] = None
+    extra_sections: Optional[str] = None
 
 class AdminStatsResponse(BaseModel):
     total_students: int
@@ -144,7 +146,8 @@ class StudentResult(BaseModel):
     section: Optional[str] = None
     status: str
     submitted_at: Optional[datetime] = None
-    has_submission: bool = False # simpler flag for frontend
+    has_submission: bool = False # simpler flag for frontend csv
+    has_notebook: bool = False # simpler flag for frontend ipynb
 
     class Config:
         from_attributes = True

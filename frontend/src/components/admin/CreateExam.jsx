@@ -221,6 +221,12 @@ const CreateExam = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '60px', alignItems: 'start' }}>
           
           <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: '80vh' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 className="admin-card-title" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FileText size={24} color="var(--admin-brand)" /> Question
+              </h2>
+              <p style={{ color: '#64748B', fontSize: '0.95rem', marginTop: '8px' }}>Add the sections that will make up the question content for the student (e.g. Overview, Objective, Evaluation).</p>
+            </div>
             {sections.map((section, idx) => (
               <div key={section.id} id={section.id} className="exam-section-block" style={{ scrollMarginTop: '80px' }}>
                 
