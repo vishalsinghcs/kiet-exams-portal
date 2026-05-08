@@ -295,8 +295,8 @@ const Dashboard = () => {
       {/* Top Navigation Bar */}
       <nav className="dashboard-navbar">
         <div className="dashboard-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src="/examly_logo.png" alt="Examly Logo" style={{ height: '30px', borderRadius: '4px' }} />
-          Exams
+          <img src="/examly_logo.png" alt="CodeML Logo" style={{ height: '30px', borderRadius: '4px' }} />
+          CodeML
         </div>
         
         <div className="profile-container" ref={dropdownRef}>

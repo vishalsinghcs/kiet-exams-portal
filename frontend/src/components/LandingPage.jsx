@@ -25,8 +25,8 @@ const LandingPage = () => {
       <nav className="landing-navbar">
         <div className="landing-navbar-container">
           <div className="navbar-brand">
-            <img src={logo} alt="Examly Logo" className="brand-logo-img" />
-            <span className="brand-text">Examly Platform</span>
+            <img src={logo} alt="CodeML Logo" className="brand-logo-img" />
+            <span className="brand-text">CodeML Portal</span>
           </div>
           <div className="navbar-actions">
             <Link to="/login" className="nav-btn nav-login-btn">

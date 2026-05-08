@@ -117,35 +117,37 @@ const Signup = () => {
                     <label>KIET Email</label>
                     <input type="email" placeholder="student@kiet.edu" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
-                  <div className="input-group-split">
-                    <label>Branch</label>
-                    <select 
-                      value={branch} 
-                      onChange={(e) => {
-                        setBranch(e.target.value);
-                        setSection(""); // Reset section when branch changes
-                      }} 
-                      required 
-                      className="auth-select"
-                    >
-                      <option value="" disabled>Select your branch</option>
-                      {branches.map((b) => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                  </div>
-                  <div className="input-group-split">
-                    <label>Section</label>
-                    <select 
-                      value={section} 
-                      onChange={(e) => setSection(e.target.value)} 
-                      required 
-                      className="auth-select"
-                      disabled={!branch}
-                    >
-                      <option value="" disabled>{branch ? "Select your section" : "Select branch first"}</option>
-                      {getAvailableSections().map((s) => (
-                        <option key={s} value={s}>Section {s}</option>
-                      ))}
-                    </select>
+                  <div className="form-row-split">
+                    <div className="input-group-split">
+                      <label>Branch</label>
+                      <select 
+                        value={branch} 
+                        onChange={(e) => {
+                          setBranch(e.target.value);
+                          setSection(""); 
+                        }} 
+                        required 
+                        className="auth-select"
+                      >
+                        <option value="" disabled>Select Branch</option>
+                        {branches.map((b) => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                    </div>
+                    <div className="input-group-split">
+                      <label>Section</label>
+                      <select 
+                        value={section} 
+                        onChange={(e) => setSection(e.target.value)} 
+                        required 
+                        className="auth-select"
+                        disabled={!branch}
+                      >
+                        <option value="" disabled>{branch ? "Select Section" : "..."}</option>
+                        {getAvailableSections().map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="input-group-split">
                     <label>Password</label>

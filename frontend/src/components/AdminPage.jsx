@@ -101,47 +101,26 @@ const AdminLoginForm = () => {
 
   return (
     <div className="login-page">
-      <div className="login-bg">
-        <div className="login-bg-left">
-          <AnimatedMeshBackground />
-        </div>
-        <div className="login-bg-right">
-          <AnimatedMeshBackgroundDark />
-        </div>
-      </div>
-
       <motion.div
         className="login-card-wrapper"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
         <div className="login-left-pane">
-          <div className="shape-circle-1"></div>
-          <div className="shape-circle-2"></div>
-          <div className="shape-circle-3"></div>
-          <div className="shape-dashes"></div>
-          <div className="shape-dot" style={{ top: "42%", right: "18%" }}></div>
-          <div className="shape-dot" style={{ top: "20%", right: "45%" }}></div>
-          <div className="shape-dot" style={{ bottom: "42%", left: "18%" }}></div>
-          <div className="shape-circle-4"></div>
-          <div className="shape-circle-5"></div>
+          <AnimatedMeshBackground />
           <div className="left-pane-content">
-            <h1 className="brand-kiet">EXAMLY</h1>
-            <h1 className="brand-exams">ADMIN</h1>
+            <h1 className="brand-kiet">CodeML Admin</h1>
+            <p className="brand-subtitle">
+              Assess. Analyze. Achieve.
+            </p>
           </div>
         </div>
 
         <div className="login-right-pane">
-          <div className="shape-top-right"></div>
-          <div className="shape-top-right-outline"></div>
-          <div className="shape-top-left">
-            <div className="circle-inner"></div>
-          </div>
           <div className="login-form-container">
             <div className="form-header">
               <h2 className="form-title">Admin Portal</h2>
-              <div className="title-dot"></div>
             </div>
 
             {error && <p className="error-text">{error}</p>}

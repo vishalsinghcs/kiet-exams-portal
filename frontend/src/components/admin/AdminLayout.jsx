@@ -50,8 +50,8 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
-          <img src={logoTrans} alt="Examly Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
-          <span className="admin-sidebar-title">Examly Admin</span>
+          <img src={logoTrans} alt="CodeML Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+          <span className="admin-sidebar-title">CodeML Admin</span>
         </div>
 
         <nav className="admin-nav-menu">

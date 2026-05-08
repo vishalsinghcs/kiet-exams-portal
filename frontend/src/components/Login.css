@@ -64,22 +64,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* Center form vertically */
-  padding: 2rem;
+  justify-content: center;
+  padding: 4rem 2rem; /* Increased vertical padding for top/bottom space */
   overflow-y: auto;
 }
 
 /* ===================== FORM CONTAINER ===================== */
 .login-form-container {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px; /* Slightly wider for better side-by-side layout */
   padding: 1rem;
   position: relative;
   z-index: 10;
 }
 
 .form-header {
-  margin-bottom: 3.5rem; /* Increased whitespace */
+  margin-bottom: 3rem;
 }
 
 .form-title {
@@ -93,7 +93,19 @@
 .login-form-split {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Better breathing room between groups */
+  gap: 1.5rem;
+}
+
+/* New row style for side-by-side inputs */
+.form-row-split {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.form-row-split .input-group-split {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .input-group-split {
