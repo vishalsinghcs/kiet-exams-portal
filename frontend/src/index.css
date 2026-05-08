@@ -248,15 +248,28 @@ a:hover {
 
 /* Navbar */
 .landing-navbar {
+  width: 100%;
+  height: 72px; /* Fixed structural boundary */
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid #f1f5f9; /* Defined bottom boundary */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.landing-navbar-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 10px; /* Increased gutter for better alignment */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 40px;
-  background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid var(--glass-border);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  width: 100%;
+  height: 100%;
 }
 
 .navbar-brand {
@@ -266,49 +279,51 @@ a:hover {
 }
 
 .brand-logo-img {
-  height: 30px;
+  height: 32px;
   width: auto;
   object-fit: contain;
 }
 
 .brand-text {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--text-main);
-  letter-spacing: 0.5px;
+  letter-spacing: -0.5px;
 }
 
 .navbar-actions {
   display: flex;
-  gap: 15px;
+  gap: 20px;
 }
 
 .nav-btn {
-  padding: 8px 20px;
-  border-radius: var(--radius-full);
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .nav-login-btn {
   background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  border: 1px solid transparent;
 }
 
 .nav-login-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
 }
 
 .nav-signup-btn {
-  background: var(--accent-color);
+  background: var(--primary-color);
   color: #fff;
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 .nav-signup-btn:hover {
-  background: var(--accent-hover);
+  background: var(--primary-hover);
   color: #fff;
-  box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Hero Section */
@@ -317,7 +332,8 @@ a:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60px 20px;
+  justify-content: center;
+  padding: 80px 20px;
   max-width: var(--max-width);
   margin: 0 auto;
   width: 100%;
@@ -325,107 +341,149 @@ a:hover {
 
 .hero-section {
   text-align: center;
-  max-width: 800px;
-  margin-bottom: 80px;
+  max-width: 900px;
+  margin-bottom: 40px; /* Reduced from 80px */
 }
 
 .hero-title {
-  font-size: 3.5rem;
-  font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 20px;
-  background: linear-gradient(135deg, #202124 0%, var(--primary-color) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 4rem;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  margin-bottom: 24px;
+  color: #1A1C1E;
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
   color: var(--text-muted);
-  margin-bottom: 40px;
+  margin-bottom: 48px;
   line-height: 1.6;
+  font-weight: 400;
 }
 
 .hero-cta {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   justify-content: center;
 }
 
 .hero-btn {
-  padding: 14px 32px;
-  border-radius: var(--radius-full);
-  font-weight: 600;
-  font-size: 1.1rem;
+  padding: 16px 0; /* Vertical padding only */
+  min-width: 180px; /* Standardized width for symmetry */
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .primary-cta {
   background: var(--primary-color);
   color: white;
-  box-shadow: 0 4px 15px var(--primary-glow);
+  box-shadow: 0 8px 24px var(--primary-glow);
 }
 
 .primary-cta:hover {
   background: var(--primary-hover);
   color: white;
-  box-shadow: 0 6px 20px var(--primary-glow);
   transform: translateY(-2px);
+  box-shadow: 0 12px 30px var(--primary-glow);
 }
 
 .secondary-cta {
-  background: var(--glass-bg);
-  color: var(--text-main);
+  background: transparent;
+  color: var(--text-muted);
   border: 1px solid var(--glass-border);
 }
 
 .secondary-cta:hover {
-  background: var(--surface-color-light);
+  background: #fff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
   transform: translateY(-2px);
 }
 
-/* Features Grid */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
+/* Value Prop Section */
+.value-prop-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
+  max-width: 1100px;
+  gap: 40px;
+  margin-top: 40px;
 }
 
-.feature-card {
-  padding: 30px;
-  text-align: left;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
+.step-card {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.4);
-  border-color: rgba(177, 59, 255, 0.3);
-}
-
-.feature-icon {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-}
-
-.feature-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 12px;
+.step-icon-wrapper {
+  width: 52px; /* Reduced from 64px */
+  height: 52px;
+  background: #fff;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; /* Slightly tighter radius */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--primary-color);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
 }
 
-.feature-desc {
+.step-card:hover .step-icon-wrapper {
+  transform: scale(1.1);
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
+.step-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.step-card p {
+  font-size: 0.9rem;
   color: var(--text-muted);
   line-height: 1.5;
 }
 
+.step-divider {
+  width: 60px;
+  height: 2px;
+  background: var(--glass-border);
+  margin-bottom: 60px;
+}
+
 /* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .landing-navbar {
+    padding: 20px 40px;
+  }
+  
+  .value-prop-section {
+    flex-direction: column;
+    gap: 60px;
+  }
+  
+  .step-divider {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-title {
-    font-size: 2.5rem;
+    font-size: 2.75rem;
   }
 
   .hero-cta {
@@ -433,10 +491,6 @@ a:hover {
   }
 
   .navbar-brand .brand-text {
-    display: none; /* Hide text on small screens */
-  }
-
-  .landing-navbar {
-    padding: 15px 20px;
+    display: none;
   }
 }

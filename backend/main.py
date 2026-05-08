@@ -93,7 +93,13 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pwd = auth.get_password_hash(data.password)
-    new_user = models.User(name=data.name, email=data.email, hashed_password=hashed_pwd)
+    new_user = models.User(
+        name=data.name,
+        email=data.email,
+        hashed_password=hashed_pwd,
+        branch=data.branch,
+        section=data.section
+    )
     
     db.add(new_user)
     
@@ -212,19 +218,59 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
 # ==================== ADMIN ENDPOINTS ====================
 
 def get_admin_user(current_user: models.User = Depends(get_current_user)):
-    if not current_user.is_admin:
+    if current_user.role != "admin" and not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
     return current_user
 
-@app.post("/admin/elevate")
-def elevate_user(email: str, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == email).first()
+def get_teacher_or_admin(current_user: models.User = Depends(get_current_user)):
+    if current_user.role not in ("teacher", "admin") and not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher or Admin privileges required")
+    return current_user
+
+def verify_exam_ownership(exam: models.Exam, user: models.User):
+    # Admins bypass ownership check. Teachers only access their own exams.
+    if user.role != "admin" and not user.is_admin:
+        if exam.created_by != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access Denied: You can only manage your own exams.")
+
+@app.get("/admin/teachers", response_model=list[schemas.UserResponse])
+def get_teachers(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    return db.query(models.User).filter(models.User.role == "teacher").all()
+
+@app.post("/admin/teachers")
+def add_teacher(request: schemas.EmailRequest, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.role == "admin" or user.is_admin:
+        raise HTTPException(status_code=400, detail="Cannot modify an admin user")
     
-    user.is_admin = True
+    user.role = "teacher"
     db.commit()
-    return {"message": f"{email} is now an admin"}
+    return {"message": f"{request.email} is now a teacher."}
+
+@app.delete("/admin/teachers/{user_id}")
+def revoke_teacher(user_id: int, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role != "teacher":
+        raise HTTPException(status_code=400, detail="User is not a teacher")
+    
+    user.role = "student"
+    db.commit()
+    return {"message": "Teacher access revoked."}
+
+@app.get("/admin/stats", response_model=schemas.AdminStatsResponse)
+def get_admin_stats(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    total_students = db.query(models.User).filter(models.User.role == "student").count()
+    total_exams = db.query(models.Exam).count()
+    total_enrollments = db.query(models.ExamEnrollment).count()
+    return {
+        "total_students": total_students,
+        "total_exams": total_exams,
+        "total_enrollments": total_enrollments
+    }
 
 # ==================== EXAMS ENDPOINTS ====================
 
@@ -244,33 +290,69 @@ def get_my_exams(current_user: models.User = Depends(get_current_user), db: Sess
             "exam_name": exam.exam_name,
             "duration": exam.duration,
             "start_time": exam.start_time,
-            "status": enrollment.status
+            "status": enrollment.status,
+            "overview": exam.overview,
+            "extra_sections": exam.extra_sections
         })
     return results
 
+from fastapi import Form, File, UploadFile
+import storage
+
 @app.post("/admin/exams", response_model=schemas.ExamResponse)
-def create_exam(exam: schemas.ExamCreate, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    db_exam = models.Exam(**exam.model_dump())
+async def create_exam(
+    code: str = Form(...),
+    access_code: str = Form(...),
+    subject: str = Form(...),
+    exam_name: str = Form(...),
+    duration: int = Form(...),
+    start_time: str = Form(...),
+    overview: str = Form(None),
+    extra_sections: str = Form(None),
+    dataset: UploadFile = File(None),
+    sample_csv: UploadFile = File(None),
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    # Upload files if provided
+    dataset_path = await storage.upload_file(dataset, "datasets") if dataset else None
+    sample_csv_path = await storage.upload_file(sample_csv, "samples") if sample_csv else None
+
+    db_exam = models.Exam(
+        code=code,
+        access_code=access_code,
+        subject=subject,
+        exam_name=exam_name,
+        duration=duration,
+        start_time=datetime.fromisoformat(start_time.replace("Z", "+00:00")),
+        overview=overview,
+        extra_sections=extra_sections,
+        dataset_path=dataset_path,
+        sample_csv_path=sample_csv_path,
+        created_by=user.id
+    )
     db.add(db_exam)
     db.commit()
     db.refresh(db_exam)
     return db_exam
 
 @app.post("/admin/exams/assign")
-def assign_exam(assign_data: schemas.ExamAssign, admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
+def assign_exam(assign_data: schemas.ExamAssign, user: models.User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
     # 1. Find user by email
-    user = db.query(models.User).filter(models.User.email == assign_data.email).first()
-    if not user:
+    student = db.query(models.User).filter(models.User.email == assign_data.email).first()
+    if not student:
         raise HTTPException(status_code=404, detail="User not found")
         
     # 2. Check if exam exists
     exam = db.query(models.Exam).filter(models.Exam.id == assign_data.exam_id).first()
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
+    
+    verify_exam_ownership(exam, user)
         
     # 3. Check if already assigned
     existing = db.query(models.ExamEnrollment).filter(
-        models.ExamEnrollment.user_id == user.id,
+        models.ExamEnrollment.user_id == student.id,
         models.ExamEnrollment.exam_id == exam.id
     ).first()
     if existing:
@@ -283,6 +365,304 @@ def assign_exam(assign_data: schemas.ExamAssign, admin: models.User = Depends(ge
     return {"message": "Exam assigned successfully"}
 
 @app.get("/admin/exams/all", response_model=list[schemas.ExamResponse])
-def get_all_exams(admin: models.User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    exams = db.query(models.Exam).order_by(models.Exam.created_at.desc()).all()
+def get_all_exams(user: models.User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
+    query = db.query(models.Exam)
+    if user.role != "admin" and not user.is_admin:
+        query = query.filter(models.Exam.created_by == user.id)
+    exams = query.order_by(models.Exam.created_at.desc()).all()
     return exams
+
+@app.put("/admin/exams/{exam_id}", response_model=schemas.ExamResponse)
+def update_exam(exam_id: int, exam_data: schemas.ExamCreate, user: models.User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    verify_exam_ownership(exam, user)
+
+    # Reject edit if the exam has already started
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    exam_start = exam.start_time.replace(tzinfo=timezone.utc) if exam.start_time.tzinfo is None else exam.start_time
+    if now >= exam_start:
+        raise HTTPException(status_code=400, detail="Cannot edit an exam that has already started")
+
+    for field, value in exam_data.model_dump().items():
+        setattr(exam, field, value)
+
+    db.commit()
+    db.refresh(exam)
+    return exam
+
+@app.delete("/admin/exams/{exam_id}")
+def delete_exam(exam_id: int, user: models.User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    verify_exam_ownership(exam, user)
+
+    # Cascade delete enrollments first
+    db.query(models.ExamEnrollment).filter(models.ExamEnrollment.exam_id == exam_id).delete()
+    db.delete(exam)
+    db.commit()
+    return {"message": "Exam deleted successfully"}
+
+@app.post("/users/me/exams/{exam_id}/verify-code")
+def verify_exam_code(exam_id: int, request: schemas.VerifyExamCodeRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 1. Verify user is enrolled
+    enrollment = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.user_id == current_user.id,
+        models.ExamEnrollment.exam_id == exam_id
+    ).first()
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You are not enrolled in this exam")
+    
+    # 2. Check if exam exists
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+        
+    # 3. Verify access code
+    if exam.access_code != request.code:
+        raise HTTPException(status_code=400, detail="Invalid exam access code")
+        
+    return {"success": True, "message": "Code verified successfully"}
+
+# ==================== FEATURE 8: BULK SECTION ASSIGNMENT ====================
+
+@app.get("/admin/sections/{branch}/{section}/count")
+def get_section_student_count(
+    branch: str,
+    section: str,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    """Returns the number of students in a given branch and section."""
+    count = db.query(models.User).filter(
+        models.User.branch == branch,
+        models.User.section == section,
+        models.User.is_admin == False
+    ).count()
+    return {"branch": branch, "section": section, "count": count}
+
+@app.post("/admin/exams/{exam_id}/assign-section")
+def assign_section_to_exam(
+    exam_id: int,
+    data: schemas.SectionAssignRequest,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    """Bulk-assigns all students in a branch+section to an exam."""
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    verify_exam_ownership(exam, user)
+
+    # Prevent duplicate section assignments
+    existing = db.query(models.ExamSectionAssignment).filter(
+        models.ExamSectionAssignment.exam_id == exam_id,
+        models.ExamSectionAssignment.branch == data.branch,
+        models.ExamSectionAssignment.section == data.section
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"{data.branch} - Section {data.section} is already assigned to this exam")
+
+    # Fetch all students in this branch+section
+    students = db.query(models.User).filter(
+        models.User.branch == data.branch,
+        models.User.section == data.section,
+        models.User.is_admin == False
+    ).all()
+
+    # Bulk create enrollments (skip already-enrolled students)
+    enrolled_count = 0
+    for student in students:
+        already_enrolled = db.query(models.ExamEnrollment).filter(
+            models.ExamEnrollment.user_id == student.id,
+            models.ExamEnrollment.exam_id == exam_id
+        ).first()
+        if not already_enrolled:
+            db.add(models.ExamEnrollment(user_id=student.id, exam_id=exam_id))
+            enrolled_count += 1
+
+    # Record the section assignment
+    db.add(models.ExamSectionAssignment(
+        exam_id=exam_id,
+        branch=data.branch,
+        section=data.section
+    ))
+    db.commit()
+
+    return {
+        "message": f"Successfully assigned {enrolled_count} students from {data.branch} - Section {data.section}",
+        "enrolled_count": enrolled_count
+    }
+
+@app.delete("/admin/exams/{exam_id}/assign-section")
+def remove_section_from_exam(
+    exam_id: int,
+    data: schemas.SectionAssignRequest,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    """Removes all enrollments for a specific branch+section from an exam."""
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    verify_exam_ownership(exam, user)
+    
+    # Find students in this branch+section
+    student_ids = [
+        u.id for u in db.query(models.User).filter(
+            models.User.branch == data.branch,
+            models.User.section == data.section
+        ).all()
+    ]
+
+    # Delete their enrollments
+    removed = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.exam_id == exam_id,
+        models.ExamEnrollment.user_id.in_(student_ids)
+    ).delete(synchronize_session=False)
+
+    # Remove the section assignment record
+    db.query(models.ExamSectionAssignment).filter(
+        models.ExamSectionAssignment.exam_id == exam_id,
+        models.ExamSectionAssignment.branch == data.branch,
+        models.ExamSectionAssignment.section == data.section
+    ).delete()
+
+    db.commit()
+    return {"message": f"Removed {removed} enrollments from {data.branch} - Section {data.section}"}
+
+@app.get("/admin/exams/{exam_id}/sections", response_model=list[schemas.SectionAssignmentResponse])
+def get_exam_section_assignments(
+    exam_id: int,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    """Returns all branch+section assignments for an exam."""
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    verify_exam_ownership(exam, user)
+    
+    return db.query(models.ExamSectionAssignment).filter(
+        models.ExamSectionAssignment.exam_id == exam_id
+    ).all()
+
+# ==================== FEATURE 9: RESULTS PER EXAM ====================
+
+@app.get("/admin/exams/{exam_id}/results", response_model=schemas.ExamResultsResponse)
+def get_exam_results(
+    exam_id: int,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    exam = db.query(models.Exam).filter(models.Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    verify_exam_ownership(exam, user)
+    
+    # Fetch all enrollments for this exam
+    enrollments = db.query(models.ExamEnrollment, models.User).join(
+        models.User, models.ExamEnrollment.user_id == models.User.id
+    ).filter(models.ExamEnrollment.exam_id == exam_id).all()
+
+    assigned = len(enrollments)
+    submitted = sum(1 for e, u in enrollments if e.status == "Submitted")
+    pending = assigned - submitted
+
+    results_list = []
+    for e, u in enrollments:
+        results_list.append({
+            "id": e.id,
+            "name": u.name,
+            "email": u.email,
+            "branch": u.branch,
+            "section": u.section,
+            "status": e.status,
+            "submitted_at": e.submitted_at,
+            "has_submission": bool(e.submission_path),
+            "has_notebook": bool(e.notebook_path)
+        })
+
+    return {
+        "assigned": assigned,
+        "submitted": submitted,
+        "pending": pending,
+        "results": results_list
+    }
+
+from fastapi.responses import FileResponse
+
+@app.get("/admin/submissions/{enrollment_id}/download")
+def download_submission(
+    enrollment_id: int,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    enrollment = db.query(models.ExamEnrollment).filter(models.ExamEnrollment.id == enrollment_id).first()
+    if not enrollment or not enrollment.submission_path:
+        raise HTTPException(status_code=404, detail="Submission file not found")
+    
+    exam = db.query(models.Exam).filter(models.Exam.id == enrollment.exam_id).first()
+    verify_exam_ownership(exam, user)
+    
+    if not os.path.exists(enrollment.submission_path):
+        raise HTTPException(status_code=404, detail="File missing on server")
+
+    filename = os.path.basename(enrollment.submission_path)
+    return FileResponse(path=enrollment.submission_path, filename=filename, media_type='text/csv')
+
+@app.get("/admin/submissions/{enrollment_id}/notebook")
+def download_notebook(
+    enrollment_id: int,
+    user: models.User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    enrollment = db.query(models.ExamEnrollment).filter(models.ExamEnrollment.id == enrollment_id).first()
+    if not enrollment or not enrollment.notebook_path:
+        raise HTTPException(status_code=404, detail="Notebook file not found")
+    
+    exam = db.query(models.Exam).filter(models.Exam.id == enrollment.exam_id).first()
+    verify_exam_ownership(exam, user)
+    
+    if not os.path.exists(enrollment.notebook_path):
+        raise HTTPException(status_code=404, detail="File missing on server")
+
+    filename = os.path.basename(enrollment.notebook_path)
+    return FileResponse(path=enrollment.notebook_path, filename=filename, media_type='application/x-ipynb+json')
+
+@app.post("/users/me/exams/{exam_id}/submit")
+async def submit_exam(
+    exam_id: int,
+    submission: UploadFile = File(None),
+    notebook: UploadFile = File(None),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not submission and not notebook:
+        raise HTTPException(status_code=400, detail="Must upload at least one file (.csv or .ipynb)")
+
+    # Verify enrollment
+    enrollment = db.query(models.ExamEnrollment).filter(
+        models.ExamEnrollment.user_id == current_user.id,
+        models.ExamEnrollment.exam_id == exam_id
+    ).first()
+    
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="Not enrolled in this exam")
+    
+    # Store files
+    if submission:
+        enrollment.submission_path = await storage.upload_file(submission, f"submissions/{exam_id}")
+    if notebook:
+        enrollment.notebook_path = await storage.upload_file(notebook, f"submissions/{exam_id}")
+    
+    # Update DB
+    enrollment.submitted_at = datetime.utcnow()
+    enrollment.status = "Submitted"
+    db.commit()
+    
+    return {"message": "Successfully submitted files"}
+

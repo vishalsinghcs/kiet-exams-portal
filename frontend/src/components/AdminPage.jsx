@@ -9,7 +9,7 @@ import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 import "./Login.css";
 
 const AdminPage = () => {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, setUser } = useAuth();
   const navigate = useNavigate();
   
   const [isAdmin, setIsAdmin] = useState(null);
@@ -24,7 +24,8 @@ const AdminPage = () => {
           });
           if (res.ok) {
             const data = await res.json();
-            if (data.is_admin) {
+            setUser(data); // Store profile in global state
+            if (data.role === 'admin' || data.role === 'teacher' || data.is_admin) {
               setIsAdmin(true);
             } else {
               // Valid user, but NOT an admin. Redirect to student dashboard
@@ -41,7 +42,7 @@ const AdminPage = () => {
       }
     };
     checkRole();
-  }, [isAuthenticated, token, navigate]);
+  }, [isAuthenticated, token, navigate, setUser]);
 
   // If authenticated and verified as admin, show the dashboard
   if (isAuthenticated && isAdmin) {
@@ -82,10 +83,10 @@ const AdminLoginForm = () => {
       
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        if (profileData.is_admin) {
-           login(data.access_token); // This updates AuthContext and mounts AdminDashboard automatically
+        if (profileData.role === 'admin' || profileData.role === 'teacher' || profileData.is_admin) {
+           login(data.access_token, profileData); // Pass profileData to login
         } else {
-           setError("Access Denied: You are not an administrator.");
+           setError("Access Denied: You are not an administrator or teacher.");
            setLoading(false);
         }
       } else {
@@ -100,47 +101,26 @@ const AdminLoginForm = () => {
 
   return (
     <div className="login-page">
-      <div className="login-bg">
-        <div className="login-bg-left">
-          <AnimatedMeshBackground />
-        </div>
-        <div className="login-bg-right">
-          <AnimatedMeshBackgroundDark />
-        </div>
-      </div>
-
       <motion.div
         className="login-card-wrapper"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
         <div className="login-left-pane">
-          <div className="shape-circle-1"></div>
-          <div className="shape-circle-2"></div>
-          <div className="shape-circle-3"></div>
-          <div className="shape-dashes"></div>
-          <div className="shape-dot" style={{ top: "42%", right: "18%" }}></div>
-          <div className="shape-dot" style={{ top: "20%", right: "45%" }}></div>
-          <div className="shape-dot" style={{ bottom: "42%", left: "18%" }}></div>
-          <div className="shape-circle-4"></div>
-          <div className="shape-circle-5"></div>
+          <AnimatedMeshBackground />
           <div className="left-pane-content">
-            <h1 className="brand-kiet">KIET</h1>
-            <h1 className="brand-exams">ADMIN</h1>
+            <h1 className="brand-kiet">CodeML Admin</h1>
+            <p className="brand-subtitle">
+              Assess. Analyze. Achieve.
+            </p>
           </div>
         </div>
 
         <div className="login-right-pane">
-          <div className="shape-top-right"></div>
-          <div className="shape-top-right-outline"></div>
-          <div className="shape-top-left">
-            <div className="circle-inner"></div>
-          </div>
           <div className="login-form-container">
             <div className="form-header">
               <h2 className="form-title">Admin Portal</h2>
-              <div className="title-dot"></div>
             </div>
 
             {error && <p className="error-text">{error}</p>}

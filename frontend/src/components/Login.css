@@ -1,57 +1,32 @@
 /* Login.css */
 
 /* ===================== PAGE WRAPPER ===================== */
-/* Full viewport, everything stacks on top of each other */
 .login-page {
   position: relative;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background-color: #fff;
 }
 
-/* ===================== BACKGROUND LAYER ===================== */
-/* Sits behind the card, fills the entire screen */
-.login-bg {
-  position: absolute;
-  inset: 0;
-  display: flex;
-}
-
-.login-bg-left {
-  flex: 0 0 50%;
-  position: relative;
-  overflow: hidden;
-  background-color: #0d0d3b;
-}
-
-.login-bg-right {
-  flex: 0 0 50%;
-  position: relative;
-  overflow: hidden;
-  background-color: #ffffff;
-}
-
-/* ===================== FLOATING CARD ===================== */
-/* Sits on top of the background with large margins */
+/* ===================== FULL-SCREEN SPLIT LAYOUT ===================== */
 .login-card-wrapper {
-  position: absolute;
-  inset: 0;
-  margin: 3.5rem 12rem;
   display: flex;
-  border-radius: 16px;
+  height: 100vh;
+  width: 100%;
   overflow: hidden;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
 }
 
-/* ===================== LEFT PANE (card, no animation) ===================== */
+/* ===================== LEFT PANE (Branding) ===================== */
 .login-left-pane {
-  flex: 0 0 50%;
+  flex: 0 0 45%;
   background-color: #0d0d3b;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
-  padding: 3rem;
+  justify-content: center;
+  padding: 4rem;
   color: #fff;
 }
 
@@ -59,286 +34,158 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  text-align: center;
+  text-align: left;
+  max-width: 500px;
 }
 
 .brand-kiet {
-  font-size: 5rem;
+  font-size: 3.5rem;
   font-weight: 900;
   color: #fff;
-  line-height: 1;
+  line-height: 1.1;
   margin: 0;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: -1px;
 }
 
-.brand-exams {
-  font-size: 5rem;
-  font-weight: 900;
-  color: rgb(255, 255, 255);
-  line-height: 1;
-  margin: 0;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.brand-subtitle {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 1.5rem;
+  line-height: 1.6;
+  max-width: 400px;
 }
 
-/* ---- Left pane decorative shapes ---- */
-.shape-circle-1 {
-  position: absolute;
-  top: -60px;
-  left: -60px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-.shape-circle-2 {
-  position: absolute;
-  top: 3%;
-  right: -40px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  border: 20px solid rgba(255, 255, 255, 0.18);
-  background: transparent;
-}
-
-.shape-circle-3 {
-  position: absolute;
-  top: 38%;
-  left: -50px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 14px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
-}
-
-.shape-dashes {
-  position: absolute;
-  top: 22%;
-  right: 22%;
-}
-
-.shape-dashes::before,
-.shape-dashes::after {
-  content: '';
-  display: block;
-  width: 28px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 2px;
-  margin-bottom: 5px;
-  transform: rotate(-35deg);
-}
-
-.shape-dot {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.shape-circle-4 {
-  position: absolute;
-  bottom: -60px;
-  left: -60px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-.shape-circle-5 {
-  position: absolute;
-  bottom: -30px;
-  right: 10%;
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  border: 18px solid rgba(255, 255, 255, 0.18);
-  background: transparent;
-}
-
-/* ===================== RIGHT PANE (card, form) ===================== */
+/* ===================== RIGHT PANE (Form) ===================== */
 .login-right-pane {
   flex: 1;
   background-color: #fff;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  padding: 4rem 2rem; /* Increased vertical padding for top/bottom space */
+  overflow-y: auto;
 }
 
-/* Top-right corner: filled quarter circle */
-.shape-top-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 110px;
-  height: 110px;
-  background-color: #0d0d3b;
-  border-bottom-left-radius: 110px;
-  z-index: 1;
-}
-
-/* Thin arc: wraps around the filled quarter — sits at the same top/right corner */
-.shape-top-right-outline {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 145px;
-  height: 145px;
-  border-bottom-left-radius: 145px;
-  border: 2px solid #0d0d3b;
-  background: transparent;
-  z-index: 0;
-}
-
-/* Top-left of right pane: hollow circle with filled dot inside */
-.shape-top-left {
-  position: absolute;
-  top: 18%;
-  left: 14%;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-}
-
-.circle-inner {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background-color: #bbb;
-}
-
-/* ===================== FORM ===================== */
+/* ===================== FORM CONTAINER ===================== */
 .login-form-container {
   width: 100%;
-  max-width: 420px;
-  padding: 2rem 2.5rem;
+  max-width: 440px; /* Slightly wider for better side-by-side layout */
+  padding: 1rem;
   position: relative;
   z-index: 10;
 }
 
 .form-header {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin-bottom: 2.5rem;
+  margin-bottom: 3rem;
 }
 
 .form-title {
-  font-size: 2.8rem;
-  font-weight: 500;
-  color: #222;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a1c1e;
   margin: 0;
-  line-height: 1;
-}
-
-.title-dot {
-  width: 10px;
-  height: 10px;
-  background-color: #e0b0ff;
-  border-radius: 50%;
-  margin-bottom: 8px;
-  flex-shrink: 0;
+  letter-spacing: -1px;
 }
 
 .login-form-split {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1.5rem;
+}
+
+/* New row style for side-by-side inputs */
+.form-row-split {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.form-row-split .input-group-split {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .input-group-split {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 1.4rem;
+  gap: 0.6rem;
 }
 
 .input-group-split label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #555;
+  font-size: 0.75rem; /* Modern, smaller font size */
+  font-weight: 700; /* Semibold/Bold */
+  color: #64748b; /* Modern muted slate color */
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.input-group-split input {
-  padding: 0.8rem 1rem;
-  border-radius: 6px;
-  border: 1.5px solid #ddd;
+.input-group-split input,
+.auth-select {
+  padding: 1rem 1.25rem;
+  border-radius: 8px; /* Modern subtle radius */
+  border: 1px solid #e2e8f0; /* Subtle full border */
   background-color: #fff;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s ease;
-  color: #333;
+  transition: all 0.2s ease;
+  color: #1a1c1e;
   font-family: inherit;
+  width: 100%;
 }
 
-.input-group-split input:focus {
+.input-group-split input:focus,
+.auth-select:focus {
   border-color: #0d0d3b;
+  box-shadow: 0 0 0 3px rgba(13, 13, 59, 0.05);
 }
 
 .forgot-password-link {
   text-align: right;
-  margin-bottom: 1.5rem;
 }
 
 .forgot-password-link a {
-  font-size: 0.8rem;
-  color: #6c5ce7;
-  font-weight: 400;
+  font-size: 0.85rem;
+  color: #0d0d3b;
+  font-weight: 600;
   text-decoration: none;
-}
-
-.forgot-password-link a:hover {
-  text-decoration: underline;
 }
 
 .submit-btn-split {
   background-color: #0d0d3b;
   color: #fff;
-  border: 2px solid transparent;
+  border: none;
   border-radius: 8px;
   padding: 1rem;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   width: 100%;
-  letter-spacing: 0.05em;
-  transition: all 0.2s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
 }
 
-.submit-btn-split:hover,
-.submit-btn-split:active {
-  background-color: #ffffff;
-  color: #0d0d3b;
-  border-color: #0d0d3b;
+.submit-btn-split:hover {
+  background-color: #1a1a6e;
+  transform: translateY(-1px);
 }
 
 .submit-btn-split:active {
-  transform: scale(0.98);
+  transform: translateY(0);
 }
 
 .switch-auth-split {
   text-align: center;
-  font-size: 0.82rem;
-  margin-top: 2.5rem;
-  color: #999;
+  font-size: 0.9rem;
+  margin-top: 2rem;
+  color: #64748b;
 }
 
 .switch-auth-split a {
-  font-weight: 600;
-  color: #6c5ce7;
+  font-weight: 700;
+  color: #0d0d3b;
   text-decoration: none;
 }
 
@@ -347,89 +194,27 @@
 }
 
 .error-text {
-  color: #e74c3c;
-  margin-bottom: 1rem;
-  font-size: 0.88rem;
+  color: #dc2626;
+  background-color: #fef2f2;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
   text-align: center;
+  border: 1px solid #fee2e2;
 }
 
 /* ===================== RESPONSIVE ===================== */
-@media (max-width: 768px) {
-  .login-card-wrapper {
-    margin: 1.5rem;
-    flex-direction: column;
-  }
+@media (max-width: 992px) {
   .login-left-pane {
-    flex: 0 0 35%;
-  }
-  .login-bg-left {
-    flex: 0 0 100%;
+    display: none;
   }
 }
 
-/* ===================== SELECT DROPDOWN ===================== */
-.auth-select {
-  padding: 0.8rem 1rem;
-  border-radius: 6px;
-  border: 1.5px solid #ddd;
-  background-color: #fff;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s ease;
-  color: #333;
-  font-family: inherit;
-  cursor: pointer;
-  appearance: none;
-  width: 100%;
-}
-
-.auth-select:focus {
-  border-color: #0d0d3b;
-}
-
-/* ===================== FORGOT PASSWORD EXTRAS ===================== */
+/* ===================== EXTRA UTILS ===================== */
 .forgot-desc {
-  font-size: 0.92rem;
-  color: #777;
-  margin-bottom: 1.8rem;
-  line-height: 1.6;
-}
-
-.forgot-success {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.success-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background-color: #0d0d3b;
-  color: #fff;
-  font-size: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.back-to-login-btn {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.85rem 2.5rem;
-  background-color: #0d0d3b;
-  color: #fff;
-  border-radius: 8px;
-  font-weight: 600;
   font-size: 0.95rem;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
+  color: #64748b;
+  margin-bottom: 2rem;
+  line-height: 1.5;
 }
-
-.back-to-login-btn:hover {
-  background-color: #1a1a6e;
-  color: #fff;
-}
-

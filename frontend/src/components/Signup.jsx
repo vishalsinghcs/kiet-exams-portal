@@ -21,24 +21,27 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [branch, setBranch] = useState("");
+  const [section, setSection] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const branches = [
-    "Computer Science and Engineering",
-    "Information Technology",
-    "Electronics and Communication",
-    "Mechanical Engineering",
-    "Civil Engineering",
-    "Computer Science (AI & ML)",
-  ];
+  const branches = ["CSE AI", "CSE AIML"];
+
+  const branchSections = {
+    "CSE AI": ["A", "B", "C", "D"],
+    "CSE AIML": ["A", "B", "C"]
+  };
+
+  const getAvailableSections = () => {
+    return branchSections[branch] || [];
+  };
 
   const handleSignupDetails = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !branch) {
+    if (!name || !email || !password || !branch || !section) {
       setError("All fields are required");
       return;
     }
@@ -49,7 +52,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      await signupUser(name, email, password);
+      await signupUser(name, email, password, branch, section);
       setStep(2); // Move to OTP step
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.");
@@ -67,7 +70,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      const tokenData = await verifyOtp(name, email, password, otp);
+      const tokenData = await verifyOtp(name, email, password, branch, section, otp);
       login(tokenData.access_token);
       navigate("/dashboard");
     } catch (err) {
@@ -79,51 +82,28 @@ const Signup = () => {
 
   return (
     <div className="login-page">
-      <div className="login-bg">
-        <div className="login-bg-left">
-          <AnimatedMeshBackground />
-        </div>
-        <div className="login-bg-right">
-          <AnimatedMeshBackgroundDark />
-        </div>
-      </div>
-
       <motion.div
         className="login-card-wrapper"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
         <div className="login-left-pane">
-          <div className="shape-circle-1"></div>
-          <div className="shape-circle-2"></div>
-          <div className="shape-circle-3"></div>
-          <div className="shape-dashes"></div>
-          <div className="shape-dot" style={{ top: "42%", right: "18%" }}></div>
-          <div className="shape-dot" style={{ top: "20%", right: "45%" }}></div>
-          <div className="shape-dot" style={{ bottom: "42%", left: "18%" }}></div>
-          <div className="shape-circle-4"></div>
-          <div className="shape-circle-5"></div>
-
+          <AnimatedMeshBackground />
           <div className="left-pane-content">
-            <h1 className="brand-kiet">KIET</h1>
-            <h1 className="brand-exams">EXAMS</h1>
+            <h1 className="brand-kiet">Next-Gen <br /> ML Assessment</h1>
+            <p className="brand-subtitle">
+              A high-performance environment designed for machine learning, data science, and AI evaluation.
+            </p>
           </div>
         </div>
 
         <div className="login-right-pane">
-          <div className="shape-top-right"></div>
-          <div className="shape-top-right-outline"></div>
-          <div className="shape-top-left">
-            <div className="circle-inner"></div>
-          </div>
-
           <div className="login-form-container">
             {step === 1 ? (
               <>
                 <div className="form-header">
-                  <h2 className="form-title">Sign Up</h2>
-                  <div className="title-dot"></div>
+                  <h2 className="form-title">Create Account</h2>
                 </div>
 
                 {error && <p className="error-text">{error}</p>}
@@ -137,12 +117,37 @@ const Signup = () => {
                     <label>KIET Email</label>
                     <input type="email" placeholder="student@kiet.edu" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
-                  <div className="input-group-split">
-                    <label>Branch</label>
-                    <select value={branch} onChange={(e) => setBranch(e.target.value)} required className="auth-select">
-                      <option value="" disabled>Select your branch</option>
-                      {branches.map((b) => <option key={b} value={b}>{b}</option>)}
-                    </select>
+                  <div className="form-row-split">
+                    <div className="input-group-split">
+                      <label>Branch</label>
+                      <select 
+                        value={branch} 
+                        onChange={(e) => {
+                          setBranch(e.target.value);
+                          setSection(""); 
+                        }} 
+                        required 
+                        className="auth-select"
+                      >
+                        <option value="" disabled>Select Branch</option>
+                        {branches.map((b) => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                    </div>
+                    <div className="input-group-split">
+                      <label>Section</label>
+                      <select 
+                        value={section} 
+                        onChange={(e) => setSection(e.target.value)} 
+                        required 
+                        className="auth-select"
+                        disabled={!branch}
+                      >
+                        <option value="" disabled>{branch ? "Select Section" : "..."}</option>
+                        {getAvailableSections().map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="input-group-split">
                     <label>Password</label>

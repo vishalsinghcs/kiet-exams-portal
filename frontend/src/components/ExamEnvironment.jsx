@@ -1,23 +1,144 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Menu, FileText, Code, UploadCloud, ChevronRight } from "lucide-react";
+import { Menu, FileText, Code, UploadCloud, ChevronRight, Clock } from "lucide-react";
+import MDEditor from "@uiw/react-md-editor";
+import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../utils/api";
 import "./ExamEnvironment.css";
 
 const ExamEnvironment = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   // Sidebar state
   const [isSidebarPinned, setIsSidebarPinned] = useState(false);
-  
+
   // View state: 'question' | 'coding' | 'result'
   const [activeView, setActiveView] = useState("question");
+
+  // Exam data from backend
+  const [exam, setExam] = useState(null);
+  const [examLoading, setExamLoading] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(null); // seconds remaining
+
+  // Submission state
+  const [submissionFile, setSubmissionFile] = useState(null);
+  const [notebookFile, setNotebookFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+
+  const handleSubmission = async () => {
+    if (!submissionFile && !notebookFile) return;
+    setIsSubmitting(true);
+    setSubmissionError("");
+    setSubmissionSuccess(false);
+
+    const formData = new FormData();
+    if (submissionFile) formData.append("submission", submissionFile);
+    if (notebookFile) formData.append("notebook", notebookFile);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+      });
+
+      if (res.ok) {
+        setSubmissionSuccess(true);
+      } else {
+        const errorData = await res.json();
+        setSubmissionError(errorData.detail || "Failed to submit exam.");
+      }
+    } catch (err) {
+      setSubmissionError("Network error while submitting.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // --- Fetch exam metadata on mount ---
+  useEffect(() => {
+    const fetchExam = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/users/me/exams`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const exams = await res.json();
+          const found = exams.find(e => String(e.id) === String(examId));
+          setExam(found || null);
+        }
+      } catch (e) {
+        console.error("Failed to fetch exam", e);
+      } finally {
+        setExamLoading(false);
+      }
+    };
+    if (token) fetchExam();
+  }, [token, examId]);
+
+  // --- Countdown timer ---
+  useEffect(() => {
+    if (!exam) return;
+    const startStr = exam.start_time || exam.startTime;
+    if (!startStr) return;
+
+    const endTime = new Date(
+      startStr.endsWith("Z") ? startStr : `${startStr}Z`
+    ).getTime() + exam.duration * 60 * 1000;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0) clearInterval(interval);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [exam]);
+
+  const formatTime = (seconds) => {
+    if (seconds === null) return "--:--:--";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
+  // --- Loading state ---
+  if (examLoading) {
+    return (
+      <div className="exam-environment-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0F172A' }}>
+        <p style={{ color: '#94A3B8', fontSize: '1.1rem' }}>Loading exam...</p>
+      </div>
+    );
+  }
+
+  if (!exam) {
+    return (
+      <div className="exam-environment-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0F172A' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: '#EF4444', fontSize: '1.1rem', marginBottom: '12px' }}>Exam not found or you are not enrolled.</p>
+          <button onClick={() => navigate("/dashboard")} style={{ color: '#3B82F6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>
+            ← Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const examName = exam.exam_name || exam.examName || "";
+  const examCode = exam.code || "";
+  const examSubject = exam.subject || "";
 
   return (
     <div className="exam-environment-page">
       {/* Sidebar */}
       <div className={`exam-sidebar ${isSidebarPinned ? 'pinned' : ''}`}>
-        <button 
+        <button
           className="hamburger-btn"
           onClick={() => setIsSidebarPinned(!isSidebarPinned)}
         >
@@ -25,7 +146,7 @@ const ExamEnvironment = () => {
         </button>
 
         <div className="sidebar-nav">
-          <div 
+          <div
             className={`sidebar-nav-item ${activeView === 'question' ? 'active' : ''}`}
             onClick={() => setActiveView("question")}
           >
@@ -33,7 +154,7 @@ const ExamEnvironment = () => {
             <span className="nav-text">Question</span>
           </div>
 
-          <div 
+          <div
             className={`sidebar-nav-item ${activeView === 'coding' ? 'active' : ''}`}
             onClick={() => setActiveView("coding")}
           >
@@ -41,7 +162,7 @@ const ExamEnvironment = () => {
             <span className="nav-text">Coding</span>
           </div>
 
-          <div 
+          <div
             className={`sidebar-nav-item ${activeView === 'result' ? 'active' : ''}`}
             onClick={() => setActiveView("result")}
           >
@@ -49,126 +170,111 @@ const ExamEnvironment = () => {
             <span className="nav-text">Result</span>
           </div>
         </div>
+
+        {/* Timer in expanded sidebar */}
+        {isSidebarPinned && (
+          <div style={{
+            marginTop: 'auto', padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', gap: '8px',
+            color: timeLeft !== null && timeLeft < 600 ? '#EF4444' : '#94A3B8',
+            fontSize: '0.95rem', fontWeight: 700, fontFamily: 'monospace'
+          }}>
+            <Clock size={16} />
+            <span>{formatTime(timeLeft)}</span>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
       <div className={`exam-main-content${isSidebarPinned ? ' sidebar-pinned' : ''}`}>
-        
-        {/* Fixed Start Coding Button - Only visible in question view */}
-        {activeView === 'question' && (
-          <button className="start-coding-btn-fixed" onClick={() => setActiveView("coding")}>
-            Start Coding <ChevronRight size={16} />
-          </button>
-        )}
 
-        {/* Question View */}
-        <div 
-          className="view-container question-view" 
+        {/* Timer bar at the top */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 10,
+          background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(8px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '8px 24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+        }}>
+          <span style={{ color: '#64748B', fontSize: '0.9rem' }}>
+            {examCode} — {examSubject}
+          </span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            color: timeLeft !== null && timeLeft < 600 ? '#EF4444' : '#F8FAFC',
+            fontFamily: 'monospace', fontWeight: 700, fontSize: '1.1rem'
+          }}>
+            <Clock size={18} />
+            {formatTime(timeLeft)}
+          </div>
+        </div>
+
+        {/* Question View — renders Markdown overview from DB */}
+        <div
+          className="view-container question-view"
           style={{ display: activeView === "question" ? "block" : "none" }}
         >
-            <div className="question-header">
-              <div>
-                <h1>AI309E_ICV_MSE2</h1>
-                <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>Second Mid-Semester Examination, Introduction to Computer Vision, Department of CSE (AI & AIML), KIET Group of Institutions</p>
-              </div>
+          <div className="question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1>{examName}</h1>
+              <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
+                {examCode} · {examSubject} · {exam.duration} minutes
+              </p>
             </div>
-            <div className="question-body">
-              
-              <div className="question-section">
-                <h2>Overview</h2>
-                <p>The <strong>Department of Computer Science and Engineering (AI & AIML) at KIET Group of Institutions</strong> proudly presents the Mid-Semester Computer Vision Competition — a practical, performance-driven challenge hosted on Kaggle.</p>
-                <p>This competition serves as part of the Mid-Semester Evaluation and is designed to assess your technical skills and conceptual understanding in the field of Computer Vision.</p>
-                <p>In this competition, you are provided with an image dataset containing two categories: cats and dogs. The training dataset consists of labeled images organized into respective class folders, while the test dataset contains a shuffled mix of unlabeled images. Your task is to develop a Convolutional Neural Network (CNN)-based model that accurately classifies each image as either a cat or a dog. Participants are encouraged to design, train, and optimize CNN architectures to achieve the best possible performance.</p>
-                <p>All the necessary details regarding this Examination are given below.</p>
-              </div>
-
-              <div className="question-section">
-                <h2>Objectives</h2>
-                <p>Your task is to build a Convolutional Neural Network (CNN) model capable of accurately classifying images as either cats or dogs using the given dataset.</p>
-                <p>You are required to write code for:</p>
-                <ul>
-                  <li>Data Loading and Image Preprocessing.</li>
-                  <li>Data Visualization and Exploratory Analysis.</li>
-                  <li>Image Resizing and Normalization.</li>
-                  <li>Data Augmentation (to improve generalization).</li>
-                  <li>Splitting Training and Validation sets.</li>
-                  <li>Model Building using CNN Architecture.</li>
-                  <li>Model Training.</li>
-                  <li>Evaluation of Model Performance (Accuracy/Loss).</li>
-                  <li>Hyper-parameter Tuning (e.g., layers, filters, learning rate, batch size).</li>
-                  <li>Generating Predictions for Test Dataset.</li>
-                </ul>
-              </div>
-
-              <div className="question-section">
-                <h2>Deliverables</h2>
-                <p>You must submit the following:</p>
-                <ol style={{ marginLeft: "20px", color: "var(--text-muted)", marginBottom: "15px" }}>
-                  <li style={{ marginBottom: "8px" }}><strong>Prediction.csv:</strong> (both through Competition Webpage and Google form): Final CSV containing predictions for the test data.</li>
-                  <li style={{ marginBottom: "8px" }}><strong>Notebook(.ipynb):</strong> (through Google Form): Clear and documented code including all the steps mentioned above.</li>
-                  <li style={{ marginBottom: "8px" }}><strong>Quiz:</strong> (through Google Form): Completed form with answers reflecting conceptual understanding.</li>
-                </ol>
-              </div>
-
-              <div className="question-section">
-                <h2>Evaluation Metric</h2>
-                <p>Submissions will be evaluated using the Accuracy metric.</p>
-                <p>A higher Accuracy value indicates better model performance.</p>
-              </div>
-
-              <div className="question-section">
-                <h2>Submission Format for Prediction CSV</h2>
-                <p>Your final submission must be a CSV file structured as follows:</p>
-                <div className="code-block">
-                  id,class<br/>
-                  1.jpg,Cat<br/>
-                  2.jpg,Cat<br/>
-                  3.jpg,Cat<br/>
-                  ...
-                </div>
-              </div>
-
-              <div className="question-section">
-                <h2>Marking Scheme (Total: 40 Marks)</h2>
-                <table className="evaluation-table">
-                  <thead>
-                    <tr>
-                      <th>Component</th>
-                      <th>Marks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Data Preprocessing and Augmentation</td>
-                      <td>10</td>
-                    </tr>
-                    <tr>
-                      <td>Model Selection/Algorithm</td>
-                      <td>10</td>
-                    </tr>
-                    <tr>
-                      <td>Results and Evaluation</td>
-                      <td>10</td>
-                    </tr>
-                    <tr>
-                      <td>Google Form Submission</td>
-                      <td>10</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p style={{ marginTop: "15px", fontSize: "0.9rem" }}><strong>Note:</strong> Google Form Submission is mandatory for evaluation. Failure to do this will result in Zero marks.</p>
-              </div>
-
-            </div>
+            <button 
+              className="start-coding-btn-fixed" 
+              onClick={() => setActiveView("coding")}
+              style={{ position: 'static', marginTop: '10px' }}
+            >
+              Start Coding <ChevronRight size={16} />
+            </button>
           </div>
+          
+          <div className="question-body" style={{ display: 'flex', flexDirection: 'column', gap: '32px', background: 'transparent', boxShadow: 'none', border: 'none', padding: '0' }}>
+            {(() => {
+              try {
+                const extras = typeof exam.extra_sections === 'string' 
+                  ? JSON.parse(exam.extra_sections) 
+                  : (exam.extra_sections || []);
+                  
+                if (extras.length === 0) {
+                    return (
+                      <div className="question-card">
+                        <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>
+                          No questions or content have been added for this exam yet.
+                        </p>
+                      </div>
+                    );
+                }
+
+                return extras.map((section, idx) => (
+                  <div key={idx} data-color-mode="light" className="question-card" style={{ 
+                      background: 'transparent', 
+                      padding: '0', 
+                      border: 'none',
+                  }}>
+                    <h3 style={{ color: '#1E293B', marginBottom: '16px', fontSize: '1.45rem', fontWeight: '800', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+                      {section.title}
+                    </h3>
+                    <div style={{ color: '#334155', fontSize: '1.05rem', lineHeight: '1.8' }}>
+                      <MDEditor.Markdown source={section.content} style={{ background: 'transparent', color: 'inherit' }} />
+                    </div>
+                  </div>
+                ));
+              } catch (e) {
+                return null;
+              }
+            })()}
+          </div>
+        </div>
 
         {/* Coding View */}
-        <div 
-          className="view-container coding-view" 
+        <div
+          className="view-container coding-view"
           style={{ display: activeView === "coding" ? "flex" : "none" }}
         >
-          <iframe 
-            src="https://piyushmtech2252.github.io/ML_ARENA/lab/index.html" 
+          <iframe
+            src="https://piyushmtech2252.github.io/ML_ARENA/lab/index.html"
             title="JupyterLite Coding Environment"
             className="coding-iframe"
             allow="cross-origin-isolated; clipboard-read; clipboard-write"
@@ -176,19 +282,50 @@ const ExamEnvironment = () => {
         </div>
 
         {/* Result View */}
-        <div 
-          className="view-container result-view" 
+        <div
+          className="view-container result-view"
           style={{ display: activeView === "result" ? "flex" : "none" }}
         >
-          <div className="result-card">
+          <div className="result-card" style={{ maxWidth: '600px' }}>
             <h2>Submit Your Work</h2>
-            <p>Upload your generated <code>submission.csv</code> file for evaluation.</p>
-            <div className="upload-area">
-              <UploadCloud size={48} className="upload-icon" />
-              <p>Drag and drop your CSV file here, or click to browse.</p>
-              <input type="file" accept=".csv" className="file-input" />
+            <p>Upload your generated <code>submission.csv</code> and Jupyter <code>.ipynb</code> notebook.</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+              <div className="upload-area" style={{ marginBottom: 0 }}>
+                <UploadCloud size={36} className="upload-icon" />
+                <p style={{ fontSize: '0.9rem' }}>Upload CSV File</p>
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  className="file-input" 
+                  onChange={(e) => setSubmissionFile(e.target.files[0])}
+                />
+                {submissionFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold', fontSize: '0.85rem' }}>{submissionFile.name}</p>}
+              </div>
+
+              <div className="upload-area" style={{ marginBottom: 0 }}>
+                <FileText size={36} className="upload-icon" />
+                <p style={{ fontSize: '0.9rem' }}>Upload Notebook (.ipynb)</p>
+                <input 
+                  type="file" 
+                  accept=".ipynb" 
+                  className="file-input" 
+                  onChange={(e) => setNotebookFile(e.target.files[0])}
+                />
+                {notebookFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold', fontSize: '0.85rem' }}>{notebookFile.name}</p>}
+              </div>
             </div>
-            <button className="submit-exam-btn">Submit Final Exam</button>
+
+            {submissionError && <p style={{ color: '#EF4444', marginTop: '10px', marginBottom: '10px' }}>{submissionError}</p>}
+            <button 
+              className="submit-exam-btn" 
+              onClick={handleSubmission}
+              disabled={isSubmitting || (!submissionFile && !notebookFile)}
+              style={{ opacity: (isSubmitting || (!submissionFile && !notebookFile)) ? 0.7 : 1, cursor: (isSubmitting || (!submissionFile && !notebookFile)) ? 'not-allowed' : 'pointer' }}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Final Exam"}
+            </button>
+            {submissionSuccess && <p style={{ color: '#10B981', marginTop: '10px' }}>Exam submitted successfully! You may close this tab.</p>}
           </div>
         </div>
 

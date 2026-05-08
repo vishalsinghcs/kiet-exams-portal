@@ -303,3 +303,161 @@
     white-space: nowrap;
   }
 }
+
+/* ===== PASSKEY MODAL ===== */
+.passkey-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.passkey-modal {
+  background: var(--surface-color);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  animation: modal-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.passkey-modal h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.passkey-modal p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+.passkey-lock-icon {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* OTP digit boxes */
+.otp-boxes {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.otp-box {
+  width: 52px;
+  height: 64px;
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-color-light);
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+  caret-color: transparent;
+}
+
+.otp-box:focus {
+  border-color: var(--primary-color);
+  background: var(--surface-color);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+.otp-box.otp-filled {
+  border-color: var(--primary-color);
+  background: var(--surface-color);
+}
+
+.otp-box.otp-error {
+  border-color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.otp-box:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Shake animation on wrong code */
+@keyframes otp-shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-8px); }
+  30%       { transform: translateX(8px); }
+  45%       { transform: translateX(-6px); }
+  60%       { transform: translateX(6px); }
+  75%       { transform: translateX(-3px); }
+  90%       { transform: translateX(3px); }
+}
+
+.otp-shake {
+  animation: otp-shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.passkey-error {
+  color: var(--danger-color);
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  min-height: 20px;
+}
+
+.passkey-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.passkey-submit-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.passkey-submit-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.passkey-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.passkey-cancel-btn {
+  padding: 12px 20px;
+  background: transparent;
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.passkey-cancel-btn:hover {
+  background: var(--surface-color-light);
+  color: var(--text-main);
+}

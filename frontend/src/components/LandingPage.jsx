@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
-import logo from "../assets/KIET-Logo.jpg";
+import { Upload, Code2, Send } from "lucide-react";
+import logo from "../assets/examly_logo_trans.png";
 
 import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 
@@ -17,40 +18,24 @@ const LandingPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const cards = [
-    {
-      title: "Upcoming Hackathons",
-      description: "Join the latest coding challenges and win exciting prizes.",
-      icon: "🏆",
-    },
-    {
-      title: "Trending Datasets",
-      description: "Explore curated datasets for your next ML project.",
-      icon: "📊",
-    },
-    {
-      title: "Global Leaderboard",
-      description: "See where you stand among top coders in the college.",
-      icon: "🌟",
-    },
-  ];
-
   return (
     <div className="landing-page-wrapper">
       <AnimatedMeshBackgroundDark />
       {/* Navbar */}
-      <nav className="landing-navbar glass-panel">
-        <div className="navbar-brand">
-          <img src={logo} alt="KIET Logo" className="brand-logo-img" />
-          <span className="brand-text">KIET Exams</span>
-        </div>
-        <div className="navbar-actions">
-          <Link to="/login" className="nav-btn nav-login-btn">
-            Login
-          </Link>
-          <Link to="/signup" className="nav-btn nav-signup-btn">
-            Sign Up
-          </Link>
+      <nav className="landing-navbar">
+        <div className="landing-navbar-container">
+          <div className="navbar-brand">
+            <img src={logo} alt="CodeML Logo" className="brand-logo-img" />
+            <span className="brand-text">CodeML Portal</span>
+          </div>
+          <div className="navbar-actions">
+            <Link to="/login" className="nav-btn nav-login-btn">
+              Login
+            </Link>
+            <Link to="/signup" className="nav-btn nav-signup-btn">
+              Sign Up
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -63,7 +48,7 @@ const LandingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            The Ultimate KIET Coding & ML Arena
+            The Ultimate <br /> ML Exam Portal
           </motion.h1>
           <motion.p
             className="hero-subtitle"
@@ -71,7 +56,8 @@ const LandingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Level up your coding skills. Participate in college-wide hackathons, coding challenges, and ML competitions.
+            A high-performance assessment platform for machine learning. <br /> 
+            Seamlessly manage datasets, solve complex challenges, and submit notebooks.
           </motion.p>
           <motion.div
             className="hero-cta"
@@ -80,28 +66,48 @@ const LandingPage = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             <Link to="/signup" className="hero-btn primary-cta">
-              Register Now - It's Free
+              Get Started
             </Link>
             <Link to="/login" className="hero-btn secondary-cta">
-              Explore Competitions
+              Portal Login
             </Link>
           </motion.div>
         </div>
 
-        {/* Feature Cards Grid */}
-        <motion.div
-          className="features-grid"
+        {/* Value Proposition Section */}
+        <motion.div 
+          className="value-prop-section"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
-          {cards.map((card, index) => (
-            <div key={index} className="feature-card glass-panel">
-              <div className="feature-icon">{card.icon}</div>
-              <h3 className="feature-title">{card.title}</h3>
-              <p className="feature-desc">{card.description}</p>
+          <div className="step-card">
+            <div className="step-icon-wrapper">
+              <Upload size={22} />
             </div>
-          ))}
+            <h3>1. Download Data</h3>
+            <p>Access curated datasets and problem statements directly from the portal.</p>
+          </div>
+          
+          <div className="step-divider"></div>
+
+          <div className="step-card">
+            <div className="step-icon-wrapper">
+              <Code2 size={22} />
+            </div>
+            <h3>2. Solve & Develop</h3>
+            <p>Build your ML models and generate predictions in your local environment.</p>
+          </div>
+
+          <div className="step-divider"></div>
+
+          <div className="step-card">
+            <div className="step-icon-wrapper">
+              <Send size={22} />
+            </div>
+            <h3>3. Submit Results</h3>
+            <p>Upload your predictions and Jupyter notebooks for automated evaluation.</p>
+          </div>
         </motion.div>
       </main>
     </div>
