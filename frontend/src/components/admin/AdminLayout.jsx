@@ -10,11 +10,10 @@ import {
   ShieldCheck,
   Bell,
   LogOut,
-  Activity
+  Activity,
 } from "lucide-react";
 import "./admin.css";
 import { API_BASE_URL } from "../../utils/api";
-import logoTrans from "../../assets/examly_logo_trans.png";
 
 const AdminLayout = ({ children, title = "Dashboard" }) => {
   const location = useLocation();
@@ -33,16 +32,36 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
 
   const navItems = [
     { label: "GENERAL", isSection: true },
-    { path: "/admin/dashboard", icon: <LayoutDashboard size={18} />, text: "Dashboard" },
-    { path: "/admin/create-exam", icon: <FileEdit size={18} />, text: "Create Exam" },
-    { path: "/admin/assign-exam", icon: <Users size={18} />, text: "Assign Exam" },
-    { path: "/admin/my-exams", icon: <FolderOpen size={18} />, text: "My Exams" },
+    {
+      path: "/admin/dashboard",
+      icon: <LayoutDashboard size={18} />,
+      text: "Dashboard",
+    },
+    {
+      path: "/admin/create-exam",
+      icon: <FileEdit size={18} />,
+      text: "Create Exam",
+    },
+    {
+      path: "/admin/assign-exam",
+      icon: <Users size={18} />,
+      text: "Assign Exam",
+    },
+    {
+      path: "/admin/my-exams",
+      icon: <FolderOpen size={18} />,
+      text: "My Exams",
+    },
     { path: "/admin/results", icon: <BarChart3 size={18} />, text: "Results" },
   ];
 
   if (isAdmin) {
     navItems.push({ label: "ADMIN", isSection: true });
-    navItems.push({ path: "/admin/manage-teachers", icon: <ShieldCheck size={18} />, text: "Manage Teachers" });
+    navItems.push({
+      path: "/admin/manage-teachers",
+      icon: <ShieldCheck size={18} />,
+      text: "Manage Teachers",
+    });
   }
 
   return (
@@ -50,7 +69,7 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
-          <img src={logoTrans} alt="CodeML Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+          <img src="/codeml_logo_trans.png" alt="CodeML Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           <span className="admin-sidebar-title">CodeML Admin</span>
         </div>
 
@@ -64,8 +83,10 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
               );
             }
 
-            const isActive = location.pathname === item.path ||
-                             (item.path === '/admin/dashboard' && location.pathname === '/admin');
+            const isActive =
+              location.pathname === item.path ||
+              (item.path === "/admin/dashboard" &&
+                location.pathname === "/admin");
 
             return (
               <Link
@@ -80,12 +101,20 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
           })}
         </nav>
 
-        <div style={{ marginTop: 'auto', padding: '0 16px', marginBottom: '16px' }}>
-          <div style={{ height: '1px', background: 'var(--admin-sidebar-border)', margin: '0 0 16px 0' }}></div>
+        <div
+          style={{ marginTop: "auto", padding: "0 16px", marginBottom: "16px" }}
+        >
+          <div
+            style={{
+              height: "1px",
+              background: "var(--admin-sidebar-border)",
+              margin: "0 0 16px 0",
+            }}
+          ></div>
           <Link
             to="/dashboard"
             className="admin-nav-item"
-            style={{ color: '#94A3B8' }}
+            style={{ color: "#94A3B8" }}
           >
             <Activity size={18} />
             <span>Student View</span>
@@ -117,15 +146,16 @@ const AdminLayout = ({ children, title = "Dashboard" }) => {
               <Bell size={20} />
               <span className="notification-badge"></span>
             </button>
-            <div className="admin-profile-avatar" style={{width: '32px', height: '32px', fontSize: '0.85rem'}}>
+            <div
+              className="admin-profile-avatar"
+              style={{ width: "32px", height: "32px", fontSize: "0.85rem" }}
+            >
               {displayName.charAt(0).toUpperCase()}
             </div>
           </div>
         </header>
 
-        <main className="admin-content-area">
-          {children}
-        </main>
+        <main className="admin-content-area">{children}</main>
       </div>
     </div>
   );

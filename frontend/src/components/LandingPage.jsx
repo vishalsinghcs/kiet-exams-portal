@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 import { Upload, Code2, Send } from "lucide-react";
-import logo from "../assets/examly_logo_trans.png";
 
 import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 
@@ -25,8 +24,8 @@ const LandingPage = () => {
       <nav className="landing-navbar">
         <div className="landing-navbar-container">
           <div className="navbar-brand">
-            <img src={logo} alt="CodeML Logo" className="brand-logo-img" />
-            <span className="brand-text">CodeML Portal</span>
+            <img src="/codeml_logo_trans.png" alt="CodeML Logo" className="brand-logo-img" />
+            <span className="brand-text">CodeML</span>
           </div>
           <div className="navbar-actions">
             <Link to="/login" className="nav-btn nav-login-btn">
@@ -56,8 +55,9 @@ const LandingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            A high-performance assessment platform for machine learning. <br /> 
-            Seamlessly manage datasets, solve complex challenges, and submit notebooks.
+            A high-performance assessment platform for machine learning. <br />
+            Seamlessly manage datasets, solve complex challenges, and submit
+            notebooks.
           </motion.p>
           <motion.div
             className="hero-cta"
@@ -75,7 +75,7 @@ const LandingPage = () => {
         </div>
 
         {/* Value Proposition Section */}
-        <motion.div 
+        <motion.div
           className="value-prop-section"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -86,9 +86,12 @@ const LandingPage = () => {
               <Upload size={22} />
             </div>
             <h3>1. Download Data</h3>
-            <p>Access curated datasets and problem statements directly from the portal.</p>
+            <p>
+              Access curated datasets and problem statements directly from the
+              portal.
+            </p>
           </div>
-          
+
           <div className="step-divider"></div>
 
           <div className="step-card">
@@ -96,7 +99,10 @@ const LandingPage = () => {
               <Code2 size={22} />
             </div>
             <h3>2. Solve & Develop</h3>
-            <p>Build your ML models and generate predictions in your local environment.</p>
+            <p>
+              Build your ML models and generate predictions in your local
+              environment.
+            </p>
           </div>
 
           <div className="step-divider"></div>
@@ -106,7 +112,10 @@ const LandingPage = () => {
               <Send size={22} />
             </div>
             <h3>3. Submit Results</h3>
-            <p>Upload your predictions and Jupyter notebooks for automated evaluation.</p>
+            <p>
+              Upload your predictions and Jupyter notebooks for automated
+              evaluation.
+            </p>
           </div>
         </motion.div>
       </main>

@@ -11,7 +11,7 @@ import "./Login.css";
 const AdminPage = () => {
   const { isAuthenticated, token, setUser } = useAuth();
   const navigate = useNavigate();
-  
+
   const [isAdmin, setIsAdmin] = useState(null);
 
   useEffect(() => {
@@ -20,12 +20,16 @@ const AdminPage = () => {
         const currentToken = token || localStorage.getItem("token");
         try {
           const res = await fetch(`${API_BASE_URL}/users/me`, {
-            headers: { "Authorization": `Bearer ${currentToken}` }
+            headers: { Authorization: `Bearer ${currentToken}` },
           });
           if (res.ok) {
             const data = await res.json();
             setUser(data); // Store profile in global state
-            if (data.role === 'admin' || data.role === 'teacher' || data.is_admin) {
+            if (
+              data.role === "admin" ||
+              data.role === "teacher" ||
+              data.is_admin
+            ) {
               setIsAdmin(true);
             } else {
               // Valid user, but NOT an admin. Redirect to student dashboard
@@ -51,7 +55,19 @@ const AdminPage = () => {
 
   // If still checking, show nothing or loading to prevent flash
   if (isAuthenticated && isAdmin === null) {
-    return <div className="admin-loading" style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>Verifying Secure Access...</div>;
+    return (
+      <div
+        className="admin-loading"
+        style={{
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        Verifying Secure Access...
+      </div>
+    );
   }
 
   // Otherwise, render the Admin Login Form!
@@ -75,19 +91,23 @@ const AdminLoginForm = () => {
     setLoading(true);
     try {
       const data = await loginUser(email, password);
-      
+
       // Verify admin status BEFORE authenticating the entire app state
       const profileRes = await fetch(`${API_BASE_URL}/users/me`, {
-        headers: { "Authorization": `Bearer ${data.access_token}` }
+        headers: { Authorization: `Bearer ${data.access_token}` },
       });
-      
+
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        if (profileData.role === 'admin' || profileData.role === 'teacher' || profileData.is_admin) {
-           login(data.access_token, profileData); // Pass profileData to login
+        if (
+          profileData.role === "admin" ||
+          profileData.role === "teacher" ||
+          profileData.is_admin
+        ) {
+          login(data.access_token, profileData); // Pass profileData to login
         } else {
-           setError("Access Denied: You are not an administrator or teacher.");
-           setLoading(false);
+          setError("Access Denied: You are not an administrator or teacher.");
+          setLoading(false);
         }
       } else {
         setError("Failed to verify admin status.");
@@ -111,9 +131,7 @@ const AdminLoginForm = () => {
           <AnimatedMeshBackground />
           <div className="left-pane-content">
             <h1 className="brand-kiet">CodeML Admin</h1>
-            <p className="brand-subtitle">
-              Assess. Analyze. Achieve.
-            </p>
+            <p className="brand-subtitle">Assess. Analyze. Achieve.</p>
           </div>
         </div>
 
@@ -146,7 +164,11 @@ const AdminLoginForm = () => {
                 />
               </div>
 
-              <button type="submit" disabled={loading} className="submit-btn-split">
+              <button
+                type="submit"
+                disabled={loading}
+                className="submit-btn-split"
+              >
                 {loading ? "Authenticating..." : "Secure Login"}
               </button>
             </form>
