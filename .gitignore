@@ -25,6 +25,7 @@ ENV/
 env/
 *.egg-info/
 .eggs/
+uploads/
 
 # Environment Variables
 .env
