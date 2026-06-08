@@ -49,3 +49,6 @@ uploads/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# files
+aws_deployment_guide.md
