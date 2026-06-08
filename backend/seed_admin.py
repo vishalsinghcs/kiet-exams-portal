@@ -18,6 +18,7 @@ with engine.connect() as conn:
         conn.commit()
         print("Added is_admin column.")
     except Exception as e:
+        conn.rollback()
         print("is_admin column likely exists.")
         
     # Re-establish connection/transaction if exception occurred
@@ -25,11 +26,11 @@ with engine.connect() as conn:
         res = conn.execute(text("SELECT * FROM users WHERE email='admin@kiet.edu'")).fetchone()
         if not res:
             hashed_pw = get_password_hash("admin")
-            conn.execute(text(f"INSERT INTO users (name, email, hashed_password, is_active, is_admin) VALUES ('admin', 'admin@kiet.edu', '{hashed_pw}', TRUE, TRUE)"))
+            conn.execute(text(f"INSERT INTO users (name, email, hashed_password, is_active, is_admin, role, created_at) VALUES ('admin', 'admin@kiet.edu', '{hashed_pw}', TRUE, TRUE, 'admin', NOW())"))
             conn.commit()
             print("Admin user created!")
         else:
-            conn.execute(text("UPDATE users SET is_admin = TRUE WHERE email='admin@kiet.edu'"))
+            conn.execute(text("UPDATE users SET is_admin = TRUE, role = 'admin', created_at = COALESCE(created_at, NOW()) WHERE email='admin@kiet.edu'"))
             conn.commit()
             print("Admin user updated to be admin.")
     except Exception as e:

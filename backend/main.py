@@ -17,10 +17,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="KIET Exams Portal")
 
-# Allow the React frontend to talk to this backend
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, change this to your frontend URL
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -608,11 +608,8 @@ def download_submission(
     exam = db.query(models.Exam).filter(models.Exam.id == enrollment.exam_id).first()
     verify_exam_ownership(exam, user)
     
-    if not os.path.exists(enrollment.submission_path):
-        raise HTTPException(status_code=404, detail="File missing on server")
-
     filename = os.path.basename(enrollment.submission_path)
-    return FileResponse(path=enrollment.submission_path, filename=filename, media_type='text/csv')
+    return storage.get_file_response(enrollment.submission_path, filename)
 
 @app.get("/admin/submissions/{enrollment_id}/notebook")
 def download_notebook(
@@ -627,11 +624,8 @@ def download_notebook(
     exam = db.query(models.Exam).filter(models.Exam.id == enrollment.exam_id).first()
     verify_exam_ownership(exam, user)
     
-    if not os.path.exists(enrollment.notebook_path):
-        raise HTTPException(status_code=404, detail="File missing on server")
-
     filename = os.path.basename(enrollment.notebook_path)
-    return FileResponse(path=enrollment.notebook_path, filename=filename, media_type='application/x-ipynb+json')
+    return storage.get_file_response(enrollment.notebook_path, filename)
 
 @app.post("/users/me/exams/{exam_id}/submit")
 async def submit_exam(
