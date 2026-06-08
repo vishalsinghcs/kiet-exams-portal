@@ -318,18 +318,22 @@ const ViewResults = () => {
                     <div key={idx} style={{ background: '#FFFFFF', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                       {cell.cell_type === 'markdown' ? (
                         <div data-color-mode="light">
-                          <MDEditor.Markdown source={cell.source.join('')} />
+                          <MDEditor.Markdown source={Array.isArray(cell.source) ? cell.source.join('') : cell.source || ''} />
                         </div>
                       ) : (
                         <div>
                           <pre style={{ background: '#F1F5F9', padding: '12px', borderRadius: '6px', overflowX: 'auto', margin: 0, fontSize: '0.85rem' }}>
-                            <code>{cell.source.join('')}</code>
+                            <code>{Array.isArray(cell.source) ? cell.source.join('') : cell.source || ''}</code>
                           </pre>
                           {cell.outputs && cell.outputs.length > 0 && (
                             <div style={{ marginTop: '10px', padding: '10px', background: '#FEF2F2', borderLeft: '4px solid #EF4444', fontSize: '0.8rem' }}>
                               {cell.outputs.map((out, oidx) => (
                                 <div key={oidx}>
-                                  {out.text ? out.text.join('') : (out.data && out.data['text/plain'] ? out.data['text/plain'].join('') : 'Output type not supported in preview')}
+                                  {out.text 
+                                    ? (Array.isArray(out.text) ? out.text.join('') : out.text) 
+                                    : (out.data && out.data['text/plain'] 
+                                        ? (Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join('') : out.data['text/plain']) 
+                                        : 'Output type not supported in preview')}
                                 </div>
                               ))}
                             </div>
