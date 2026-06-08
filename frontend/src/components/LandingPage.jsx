@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 import { Upload, Code2, Send } from "lucide-react";
+import { API_BASE_URL } from "../utils/api";
 
 import AnimatedMeshBackgroundDark from "./AnimatedMeshBackgroundDark";
 
@@ -10,11 +11,29 @@ const LandingPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to dashboard if already logged in
+  // Redirect to dashboard or admin if already logged in
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
-    }
+    const checkRoleAndRedirect = async () => {
+      if (isAuthenticated) {
+        const token = localStorage.getItem("token");
+        try {
+          const profileRes = await fetch(`${API_BASE_URL}/users/me`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            if (profileData.is_admin || profileData.role === "admin") {
+              navigate("/admin", { replace: true });
+              return;
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        navigate("/dashboard", { replace: true });
+      }
+    };
+    checkRoleAndRedirect();
   }, [isAuthenticated, navigate]);
 
   return (
