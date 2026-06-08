@@ -123,7 +123,7 @@ const Login = () => {
               </div>
 
               <div className="forgot-password-link">
-                <Link to="/forgot-password">forgot password?</Link>
+                <Link to="/forgot-password">Forgot Password?</Link>
               </div>
 
               <button type="submit" disabled={loading} className="submit-btn-split">
