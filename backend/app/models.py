@@ -60,7 +60,7 @@ class ExamEnrollment(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True, index=True)
     exam_id = Column(UUID(as_uuid=True), ForeignKey("exams.id"), primary_key=True, index=True)
 
-    status = Column(Enum("pending", "submitted", "missed", name="enrollment_status"), default="pending", nullable=False) 
+    status = Column(Enum("pending", "in_progress", "submitted", "missed", name="enrollment_status"), default="pending", nullable=False) 
     
     csv_submission_path = Column(String, nullable=True)
     notebook_submission_path = Column(String, nullable=True)
