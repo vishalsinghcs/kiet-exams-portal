@@ -78,10 +78,11 @@ class ExamSectionAssignment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     exam_id = Column(UUID(as_uuid=True), ForeignKey("exams.id"), nullable=False, index=True)
+    enrollment_year = Column(Integer, nullable=False)
     branch = Column(String, nullable=False)                          # e.g., "CSE AI"
     section = Column(CHAR(1), nullable=False)                         # e.g., "A"
     assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint('exam_id', 'branch', 'section', name='uq_exam_branch_section'),
+        UniqueConstraint('exam_id', 'enrollment_year', 'branch', 'section', name='uq_exam_branch_section'),
     )
