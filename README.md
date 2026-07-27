@@ -1,6 +1,6 @@
 <div align="center">
   <h1>KIET Exams Portal</h1>
-  <p><b>Secure, Scalable Examination Platform</b></p>
+  <p><b>A highly secure, scalable, and enterprise-grade Machine Learning Examination Platform</b></p>
   <p>
     <img src="https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB" alt="React" />
     <img src="https://img.shields.io/badge/Vite-B73BFE?style=flat&logo=vite&logoColor=FFD62E" alt="Vite" />
@@ -9,46 +9,61 @@
     <img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL" />
     <img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis" />
     <img src="https://img.shields.io/badge/Amazon_AWS-232F3E?style=flat&logo=amazon-aws&logoColor=white" alt="AWS" />
+    <img src="https://img.shields.io/badge/OpenTelemetry-000000?style=flat&logo=opentelemetry&logoColor=white" alt="OpenTelemetry" />
+    <img src="https://img.shields.io/badge/New_Relic-008C99?style=flat&logo=newrelic&logoColor=white" alt="New Relic" />
+    <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=github-actions&logoColor=white" alt="GitHub Actions" />
   </p>
 </div>
 
 ## Overview
 
-KIET Exams is a highly secure, scalable Single Page Application (SPA) designed to conduct Machine Learning examinations for over 1000 concurrent students. The platform seamlessly integrates a local Jupyter-lite environment with automated grading systems, providing a robust, competition-style testing experience analogous to Kaggle.
+KIET Exams Portal is a production-ready, highly secure Single Page Application (SPA) designed to conduct Machine Learning examinations for over 1000+ concurrent students. The platform seamlessly embeds a local Jupyter-lite environment directly into the browser and integrates automated Python grading systems on the backend. This creates a robust, Kaggle-style competitive testing environment tailored for academic excellence.
 
-## Key Features
+## Core Engineering Feats
 
-- **Strict Session Management**: Enforces a strict single-device policy. Logging in on a new device instantaneously invalidates previous sessions using Redis caching.
-- **Secure Authentication**: Restricts registration exclusively to authorized college domain emails. Includes automated constraints for exam day registrations.
-- **Embedded ML Environment**: Integrates a full-screen, native-feeling Jupyter notebook environment directly into the web application.
-- **Automated Grading Integration**: Direct ingestion of CSV prediction data to a Python-based scoring algorithm.
-- **Real-Time Leaderboard**: Dynamically ranks students based on model accuracy, fostering a competitive academic environment.
-- **Enterprise-Grade UI/UX**: Features smooth, framer-motion driven fluid animations and a minimalist, professional design language.
+- **Strict Single-Device Concurrency Model**: Implementing an enterprise-grade security layer using **Redis** to enforce a strict single-active-session policy. Logging into a new device instantly invalidates all previous sessions, guaranteeing exam integrity.
+- **Embedded Jupyter-Lite Architecture**: Delivering a full-screen, native-feeling Jupyter notebook experience via embedded `iframe`s running entirely within the client's browser for maximum performance and zero server-side compute overhead.
+- **Automated ML Model Grading pipeline**: Seamless backend integration with native Python execution via **FastAPI**, instantly ingesting student `.csv` predictions and scoring them using custom professor-provided ML evaluation algorithms.
+- **Role-Based Access Control (RBAC)**: A comprehensive, multi-tiered permission system strictly separating privileges among `Admin`, `Teacher`, and `Student`. 
 
-## Architecture & Technology Stack
+## Architecture Deep Dive
 
-### Frontend
+The platform is designed around a modern, decoupled microservices-inspired architecture that prioritizes massive concurrency, high availability, and ultra-low latency.
 
-- **Framework**: React with Vite for rapid development and optimized production builds.
-- **Styling**: Vanilla CSS with modern CSS variables to maintain high performance and granular control over micro-animations.
-- **Animations**: Framer Motion for premium, physics-based UI transitions.
+### 1. The Frontend Layer
+Built on **React + Vite**, the frontend uses strict functional components and state management. 
+- **Delivery**: Compiled assets are stored in an **AWS S3 bucket** and globally distributed via **AWS CloudFront (CDN)**, ensuring sub-100ms load times for students worldwide.
+- **Admin Dashboard**: An Apple UI inspired interface offering rich markdown editing (via `@uiw/react-md-editor`), live previews, section-based bulk exam assignments, and dataset (ZIP/CSV) uploads.
 
-### Backend
+### 2. The Backend Layer
+Powered by **FastAPI (Python)**. Since the scoring algorithms are natively written in Python, FastAPI allows seamless, in-memory execution of these scripts without relying on inter-process communication.
+- **Compute Infrastructure**: Hosted on **AWS Elastic Container Service (ECS)** with multiple tasks to automatically scale the backend tasks horizontally based on traffic spikes.
+- **Reverse Proxy / Load Balancing**: Traffic is intelligently routed via an **Application Load Balancer (ALB)**, sitting behind CloudFront to secure API endpoints with modern HTTPS standards.
 
-- **Framework**: FastAPI (Python) chosen for exceptional asynchronous performance and native compatibility with the automated ML grading scripts.
-- **Database**: PostgreSQL for persistent, relational data storage (User profiles, Submissions, Scores).
-- **Session Store**: Redis for high-speed, volatile session management and immediate token invalidation.
+### 3. The Data Persistence Layer
+- **PostgreSQL (AWS RDS)**: The primary relational database utilized for user profiles, exam metadata, and persistent score tracking. Configured with native SQLAlchemy connection pooling (`pool_size=10`, `max_overflow=20`) to gracefully handle high connection throughput.
+- **Redis (AWS ElastiCache)**: An in-memory key-value store utilized as the volatile session manager, responsible for ultra-fast token invalidation and real-time state consistency.
+- **AWS S3**: Secure, private blob storage for `.zip` datasets and student `.csv` predictions. 
 
-### Infrastructure (AWS)
+## Security & Exam Integrity
 
-- **Content Delivery**: AWS S3 & CloudFront.
-- **Application Servers**: AWS Elastic Container Service (ECS) with AWS Fargate.
-- **Database Services**: Amazon RDS and ElastiCache.
+- **Restricted Registrations**: Enforces server-side regex validation, allowing only authorized college domains (`@kiet.edu`).
+- **Time-Gated Access**: Backend validation automatically rejects registrations and only permits logins on configured "Exam Days" for students.
+- **Dynamic Access Codes**: Exam execution is protected by teacher-distributed 6-digit OTP codes.
 
-## Development Setup
+## Observability & Monitoring
 
-_Instructions for local development and deployment will be added as the project progresses._
+To maintain high reliability during critical exam windows, the platform incorporates enterprise-grade observability:
+- **OpenTelemetry**: Used to instrument distributed tracing across the frontend, backend, and database queries.
+- **New Relic**: Centralized dashboarding for comprehensive logging, metric collection, and Application Performance Monitoring (APM). Identifies latency bottlenecks and monitors system health in real-time.
+
+## CI/CD Pipeline & Deployment
+
+The portal follows modern DevOps principles, utilizing **GitHub Actions** for continuous integration and continuous deployment (CI/CD):
+
+- **Automated Testing**: Whenever a `push` or `merge` occurs on the `main` branch, the pipeline automatically spins up and executes a comprehensive suite of unit and integration tests.
+- **Manual Trigger Deployments**: For production deployments, a manual dispatch trigger is employed. By inputting `start` in the GitHub Actions deployment script, the workflow builds the Docker images, pushes them to AWS ECR, updates ECS Fargate services, builds the frontend, and invalidates the CloudFront cache—automating the entire AWS deployment lifecycle.
 
 ## License
 
-Proprietary software developed for internal academic examination purposes.
+Proprietary software developed for internal academic examination purposes. All rights reserved.
