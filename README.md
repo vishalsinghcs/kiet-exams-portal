@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>KIET Exams Portal</h1>
+  <h1>CodeML - KIET Exams Portal</h1>
   <p><b>A highly secure, scalable, and enterprise-grade Machine Learning Examination Platform</b></p>
   <p>
     <img src="https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB" alt="React" />
