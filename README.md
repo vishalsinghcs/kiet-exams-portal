@@ -62,7 +62,7 @@ To maintain high reliability during critical exam windows, the platform incorpor
 The portal follows modern DevOps principles, utilizing **GitHub Actions** for continuous integration and continuous deployment (CI/CD):
 
 - **Automated Testing**: Whenever a `push` or `merge` occurs on the `main` branch, the pipeline automatically spins up and executes a comprehensive suite of unit and integration tests.
-- **Manual Trigger Deployments**: For production deployments, a manual dispatch trigger is employed. By inputting `start` in the GitHub Actions deployment script, the workflow builds the Docker images, pushes them to AWS ECR, updates ECS Fargate services, builds the frontend, and invalidates the CloudFront cache—automating the entire AWS deployment lifecycle.
+- **Manual Trigger Deployments**: For production deployments, a manual dispatch trigger is employed. By inputting `start` in the GitHub Actions deployment script, the workflow builds the Docker images, pushes them to AWS ECR, updates ECS tasks, builds the frontend, and invalidates the CloudFront cache—automating the entire AWS deployment lifecycle.
 
 ## License
 Proprietary software developed for internal academic examination purposes. All rights reserved.
