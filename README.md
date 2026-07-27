@@ -49,7 +49,7 @@ Powered by **FastAPI (Python)**. Since the scoring algorithms are natively writt
 
 - **Restricted Registrations**: Enforces server-side regex validation, allowing only authorized college domains (`@kiet.edu`).
 - **Time-Gated Access**: Backend validation automatically rejects registrations and only permits logins on configured "Exam Days" for students.
-- **Dynamic Access Codes**: Exam execution is protected by teacher-distributed 6-digit OTP codes.
+- **Dynamic Access Codes**: Exam execution is protected by teacher-distributed 6-digit OTP codes. Teacher can also enforce QR code based exam access in which student can start the exam only when the invigilator scans their QR code before starting the exam in exam room.
 
 ## Observability & Monitoring
 
