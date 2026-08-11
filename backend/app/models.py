@@ -42,7 +42,7 @@ class VerificationToken(Base):
 class Exam(Base):
     __tablename__ = "exams"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     subject_code = Column(String, nullable=False)
     access_code = Column(String, nullable=False)                        # 6-digit passkey
     subject = Column(String, nullable=False)

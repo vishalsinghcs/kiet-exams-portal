@@ -31,3 +31,4 @@ requests==2.33.1
 python-multipart
 email-validator==2.3.0
 alembic==1.18.4
+pyjwt==2.10.1
