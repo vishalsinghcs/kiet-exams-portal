@@ -22,29 +22,41 @@ function App() {
         <AnimatedMeshBackground />
 
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<LandingPage />} />
-          <Route path="*" element={<Navigate to="/home" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["student"]}>
                 <Dashboard />
               </ProtectedRoute>
             }
           />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/admin/*" element={<AdminPage />} />
+          <Route 
+            path="/admin/*" 
+            element={
+              <ProtectedRoute allowedRoles={["teacher", "admin"]}>
+                <AdminPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/exam/:examId" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["student"]}>
                 <ExamEnvironment />
               </ProtectedRoute>
             } 
           />
+          
+          {/* Unknown routes redirect to login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </Router>

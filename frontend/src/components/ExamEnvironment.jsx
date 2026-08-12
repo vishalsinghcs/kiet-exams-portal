@@ -131,7 +131,7 @@ const ExamEnvironment = () => {
   }
 
   const examName = exam.exam_name || exam.examName || "";
-  const examCode = exam.code || "";
+  const examCode = exam.subject_code || exam.code || "";
   const examSubject = exam.subject || "";
 
   return (

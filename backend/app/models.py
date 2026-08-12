@@ -50,6 +50,8 @@ class Exam(Base):
     duration = Column(Integer, nullable=False)                          # in minutes
     start_time = Column(DateTime, nullable=False)
     exam_sections = Column(JSONB, nullable=False)
+    dataset_path = Column(String, nullable=True)
+    sample_csv_path = Column(String, nullable=True)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)         # user.id of creator (teacher/admin)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     

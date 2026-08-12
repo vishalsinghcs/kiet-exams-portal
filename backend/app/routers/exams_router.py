@@ -26,7 +26,6 @@ async def create_exam(
     exam_name: str = Form(...),
     duration: int = Form(...),
     start_time: str = Form(...),
-    overview: str = Form(None),
     extra_sections: str = Form(None),
     dataset: UploadFile = File(None),
     sample_csv: UploadFile = File(None),
@@ -39,19 +38,25 @@ async def create_exam(
     sample_csv_path = await storage.upload_file(sample_csv, "samples") if sample_csv else None
 
     from datetime import datetime
+    import json
+    
+    try:
+        exam_sections_json = json.loads(extra_sections) if extra_sections else []
+    except json.JSONDecodeError:
+        exam_sections_json = []
+
     exam_data = {
-        "code": code,
+        "subject_code": code,
         "access_code": access_code,
         "subject": subject,
         "exam_name": exam_name,
         "duration": duration,
         "start_time": datetime.fromisoformat(start_time.replace("Z", "+00:00")),
-        "overview": overview,
-        "extra_sections": extra_sections,
+        "exam_sections": exam_sections_json,
         "dataset_path": dataset_path,
         "sample_csv_path": sample_csv_path
     }
-    
+
     # Hand off to the Service layer!
     return exam_service.create_exam(db, teacher_id=user.id, exam_data=exam_data)
 
