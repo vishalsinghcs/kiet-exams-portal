@@ -176,7 +176,7 @@ const AdminDashboardHome = () => {
                       <td style={{ padding: '16px 0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ padding: '6px 10px', backgroundColor: '#F1F5F9', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
-                            {exam.code}
+                            {exam.subject_code || exam.code}
                           </div>
                           <span style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.9rem' }}>{exam.exam_name}</span>
                         </div>

@@ -39,9 +39,9 @@ const ViewExams = () => {
   }, [token]);
 
   const filteredExams = exams.filter(ex =>
-    ex.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ex.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ex.exam_name.toLowerCase().includes(searchTerm.toLowerCase())
+    (ex.subject_code || ex.code || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (ex.subject || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (ex.exam_name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleCodeVisibility = (id) => {
@@ -80,7 +80,7 @@ const ViewExams = () => {
   const openEdit = (exam) => {
     setEditError("");
     setEditForm({
-      code: exam.code,
+      code: exam.subject_code || exam.code,
       subject: exam.subject,
       exam_name: exam.exam_name,
       duration: exam.duration,
@@ -129,7 +129,7 @@ const ViewExams = () => {
 
   // --- Delete ---
   const confirmDelete = (exam) => {
-    setDeleteModal({ open: true, examId: exam.id, examName: `${exam.code} — ${exam.exam_name}` });
+    setDeleteModal({ open: true, examId: exam.id, examName: `${exam.subject_code || exam.code} — ${exam.exam_name}` });
   };
 
   const handleDelete = async () => {
@@ -295,7 +295,7 @@ const ViewExams = () => {
                   <div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                       <span style={{ padding: '4px 8px', background: '#F1F5F9', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
-                        {exam.code}
+                        {exam.subject_code || exam.code}
                       </span>
                       <span style={{
                         padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600,

@@ -111,7 +111,7 @@ const Dashboard = () => {
     setDigits(["", "", "", "", "", ""]);
     setPasskeyError("");
     setPasskeyShake(false);
-    setPasskeyModal({ open: true, examId: exam.id, examCode: exam.code });
+    setPasskeyModal({ open: true, examId: exam.id, examCode: exam.subject_code || exam.code });
     setTimeout(() => inputRefs.current[0]?.focus(), 50);
   };
 
@@ -460,7 +460,7 @@ const Dashboard = () => {
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
                   <div className="exam-header">
-                    <span className="exam-code">{exam.code}</span>
+                    <span className="exam-code">{exam.subject_code || exam.code}</span>
                     <span className="exam-type">{exam.examName}</span>
                   </div>
 
