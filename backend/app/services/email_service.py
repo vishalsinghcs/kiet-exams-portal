@@ -11,11 +11,11 @@ def send_otp_email(to_email: str, otp: str, purpose: str = "signup"):
         print(f"WARNING: BREVO_API_KEY not set. Would have sent OTP {otp} to {to_email} for {purpose}")
         return
 
-    subject = "KIET Exams - Verify your email" if purpose == "signup" else "KIET Exams - Password Reset OTP"
+    subject = "CodeML - Verify your email" if purpose == "signup" else "CodeML - Password Reset OTP"
     
     html_content = f"""
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-        <h2>KIET Exams Portal</h2>
+        <h2>CodeML Portal</h2>
         <p>Your One-Time Password (OTP) for {purpose} is:</p>
         <h1 style="color: #0d0d3b; letter-spacing: 5px;">{otp}</h1>
         <p>This code will expire in 15 minutes.</p>
