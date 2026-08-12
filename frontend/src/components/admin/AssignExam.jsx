@@ -161,7 +161,7 @@ const AssignExam = () => {
                 >
                   <option value="">-- Choose Exam --</option>
                   {exams.map(ex => (
-                    <option key={ex.id} value={ex.id}>[{ex.code}] {ex.exam_name}</option>
+                    <option key={ex.id} value={ex.id}>[{ex.subject_code || ex.code}] {ex.exam_name}</option>
                   ))}
                 </select>
               </div>

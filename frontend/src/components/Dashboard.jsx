@@ -70,12 +70,12 @@ const Dashboard = () => {
           const data = await response.json();
           const mappedExams = data.map((ex) => ({
             id: ex.id,
-            code: ex.code,
+            code: ex.subject_code || ex.code,
             subject: ex.subject,
             examName: ex.exam_name,
             duration: ex.duration,
             startTime: ex.start_time,
-            status: ex.status,
+            status: ex.status === "submitted" ? "completed" : ex.status,
           }));
           setExams(mappedExams);
         }
