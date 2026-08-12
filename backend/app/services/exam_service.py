@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from uuid import UUID
 
 from app.repositories.exam_repository import exam_repo
-from app.models import Exam
+from app.models import Exam, User
 
 class ExamService:
 
@@ -28,6 +28,10 @@ class ExamService:
             raise HTTPException(status_code=404, detail="Exam not found")
         if exam.created_by != teacher_id:
             raise HTTPException(status_code=403, detail="Forbidden: You can only assign exams that you created!")
+
+        student_count = db.query(User).filter(User.role == "student", User.branch == branch, User.section == section).count()
+        if student_count == 0:
+            raise HTTPException(status_code=400, detail="Cannot assign an exam to an empty section.")
 
         return exam_repo.assign_exam_to_batch(db, exam_id, enrollment_year, branch, section)
 
