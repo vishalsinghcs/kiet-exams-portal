@@ -12,7 +12,8 @@ app = FastAPI(title="KIET Exams Portal")
 # Allow the React frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, change this to your frontend URL
+    allow_origins=["http://localhost:5173",
+        "https://codeml.vercel.app"],# In production, change this to your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

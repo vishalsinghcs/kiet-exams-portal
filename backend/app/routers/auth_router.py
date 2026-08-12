@@ -23,7 +23,8 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
         otp=data.otp,
         name=data.name,
         password=data.password,
-        reg_no=data.branch + data.section # Adjust based on your schema
+        branch=data.branch,
+        section=data.section
     )
 
 @router.post("/login")

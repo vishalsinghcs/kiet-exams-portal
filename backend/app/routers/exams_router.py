@@ -6,7 +6,7 @@ import os
 from app.database import get_db
 from app import schemas, storage
 from app.dependencies import get_current_user, get_teacher_or_admin
-from app.models import User
+from app.models import User, ExamSectionAssignment, ExamEnrollment
 
 # Import Services & Repositories
 from app.services.exam_service import exam_service
@@ -70,17 +70,37 @@ def delete_exam(exam_id: UUID, user: User = Depends(get_teacher_or_admin), db: S
     """Teacher deletes an exam."""
     return exam_service.delete_exam(db, teacher_id=user.id, exam_id=exam_id)
 
+@router.get("/admin/exams/{exam_id}/sections")
+def get_assigned_sections(exam_id: UUID, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
+    """Fetch all sections assigned to an exam."""
+    return db.query(ExamSectionAssignment).filter(ExamSectionAssignment.exam_id == exam_id).all()
+
+@router.delete("/admin/exams/{exam_id}/assign-section")
+def revoke_assigned_section(exam_id: UUID, data: schemas.SectionAssignRequest, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
+    """Teacher revokes an exam assignment from a batch."""
+    assignment = db.query(ExamSectionAssignment).filter(
+        ExamSectionAssignment.exam_id == exam_id,
+        ExamSectionAssignment.branch == data.branch,
+        ExamSectionAssignment.section == data.section
+    ).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    db.delete(assignment)
+    db.commit()
+    return {"message": "Assignment revoked"}
+
 @router.post("/admin/exams/{exam_id}/assign-section")
 def assign_section_to_exam(exam_id: UUID, data: schemas.SectionAssignRequest, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
     """Teacher assigns an exam to a specific student batch."""
-    return exam_service.assign_exam_to_batch(
+    exam_service.assign_exam_to_batch(
         db, 
         teacher_id=user.id, 
         exam_id=exam_id, 
-        enrollment_year=data.enrollment_year, 
+        enrollment_year=2024, 
         branch=data.branch, 
         section=data.section
     )
+    return {"message": "Exam successfully assigned"}
 
 @router.get("/admin/submissions/{enrollment_id}/download")
 def download_submission(enrollment_id: UUID, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
@@ -103,18 +123,102 @@ def download_notebook(enrollment_id: UUID, user: User = Depends(get_teacher_or_a
     return storage.get_file_response(enrollment.notebook_submission_path, filename)
 
 
+@router.get("/admin/exams/{exam_id}/results", response_model=schemas.ExamResultsResponse)
+def get_exam_results(exam_id: UUID, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
+    """Teacher views the results of all students assigned to an exam."""
+    
+    # 1. Fetch assigned sections
+    assignments = db.query(ExamSectionAssignment).filter(ExamSectionAssignment.exam_id == exam_id).all()
+    if not assignments:
+        return {"assigned": 0, "submitted": 0, "pending": 0, "results": []}
+
+    # 2. Extract branch and section tuples
+    branches_sections = [(a.branch, a.section) for a in assignments]
+
+    # 3. Fetch all students matching the branches and sections
+    students = []
+    for branch, section in branches_sections:
+        students.extend(db.query(User).filter(User.role == "student", User.branch == branch, User.section == section).all())
+
+    # 4. Fetch enrollments for this exam
+    enrollments = db.query(ExamEnrollment).filter(ExamEnrollment.exam_id == exam_id).all()
+    enrollment_map = {e.user_id: e for e in enrollments}
+
+    # 5. Build results
+    results = []
+    assigned_count = len(students)
+    submitted_count = 0
+    pending_count = 0
+
+    for student in students:
+        enrollment = enrollment_map.get(student.id)
+        status = enrollment.status if enrollment else "pending"
+        
+        if status == "submitted":
+            submitted_count += 1
+        else:
+            pending_count += 1
+
+        results.append({
+            "id": enrollment.user_id if enrollment else student.id, 
+            "name": student.name,
+            "email": student.email,
+            "branch": student.branch,
+            "section": student.section,
+            "status": status,
+            "submitted_at": enrollment.submitted_at if enrollment else None,
+            "has_submission": bool(enrollment and enrollment.csv_submission_path),
+            "has_notebook": bool(enrollment and enrollment.notebook_submission_path),
+        })
+
+    return {
+        "assigned": assigned_count,
+        "submitted": submitted_count,
+        "pending": pending_count,
+        "results": results
+    }
+
 # ==========================
 # === STUDENT DASHBOARD ====
 # ==========================
-@router.get("/users/me/exams")
+@router.get("/users/me/exams", response_model=list[schemas.AssignedExamResponse])
 def get_my_exams(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Student fetches exams assigned to their batch."""
-    return exam_service.get_student_available_exams(
+    """Student fetches exams assigned to their batch, with real-time status."""
+    student_year = current_user.enrollment_year if current_user.enrollment_year else 2024
+    
+    exams = exam_service.get_student_available_exams(
         db, 
-        enrollment_year=getattr(current_user, 'enrollment_year', 2024), 
+        enrollment_year=student_year, 
         branch=current_user.branch, 
         section=current_user.section
     )
+    
+    if not exams:
+        return []
+        
+    exam_ids = [ex.id for ex in exams]
+    enrollments = db.query(ExamEnrollment).filter(
+        ExamEnrollment.user_id == current_user.id,
+        ExamEnrollment.exam_id.in_(exam_ids)
+    ).all()
+    
+    enrollment_map = {e.exam_id: e for e in enrollments}
+    
+    response = []
+    for ex in exams:
+        enrollment = enrollment_map.get(ex.id)
+        response.append({
+            "id": ex.id,
+            "subject_code": ex.subject_code,
+            "subject": ex.subject,
+            "exam_name": ex.exam_name,
+            "duration": ex.duration,
+            "start_time": ex.start_time,
+            "exam_sections": ex.exam_sections,
+            "status": enrollment.status if enrollment else "pending"
+        })
+        
+    return response
 
 @router.post("/users/me/exams/{exam_id}/verify-code")
 def verify_exam_code(exam_id: UUID, request: schemas.VerifyExamCodeRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

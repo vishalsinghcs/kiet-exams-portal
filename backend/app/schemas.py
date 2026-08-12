@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
+from uuid import UUID
 
 # 1. The rules for signing up
 class UserCreate(BaseModel):
@@ -28,11 +29,9 @@ class OTPVerifyRequest(BaseModel):
 
 # 2. The rules for what we send back to the user (Notice we don't send the password back!)
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     name: str
     email: str
-    is_active: bool
-    is_admin: bool
     role: str                  # "student" | "teacher" | "admin"
     branch: Optional[str] = None
     section: Optional[str] = None
@@ -66,15 +65,14 @@ class EmailRequest(BaseModel):
 
 # 7. Exams schemas
 class ExamBase(BaseModel):
-    code: str
+    subject_code: str
     access_code: str = Field(..., min_length=6, max_length=6, pattern=r'^\d{6}$')
     subject: str
     exam_name: str
     duration: int
     start_time: datetime
-    # Rich content fields (optional — added in Feature 6)
-    overview: Optional[str] = None
-    extra_sections: Optional[str] = None   # JSON string
+    # Rich content fields
+    exam_sections: Any
 
     @field_validator('access_code')
     def validate_access_code(cls, v):
@@ -90,9 +88,9 @@ class ExamCreate(ExamBase):
     pass
 
 class ExamResponse(ExamBase):
-    id: int
+    id: UUID
     created_at: datetime
-    created_by: Optional[int] = None
+    created_by: Optional[UUID] = None
     dataset_path: Optional[str] = None
     sample_csv_path: Optional[str] = None
 
@@ -107,15 +105,14 @@ class VerifyExamCodeRequest(BaseModel):
     code: str
 
 class AssignedExamResponse(BaseModel):
-    id: int
-    code: str
+    id: UUID
+    subject_code: str
     subject: str
     exam_name: str
     duration: int
     start_time: datetime
     status: str # from ExamEnrollment
-    overview: Optional[str] = None
-    extra_sections: Optional[str] = None
+    exam_sections: Any
 
 class AdminStatsResponse(BaseModel):
     total_students: int
@@ -129,7 +126,7 @@ class SectionAssignRequest(BaseModel):
 
 class SectionAssignmentResponse(BaseModel):
     id: int
-    exam_id: int
+    exam_id: UUID
     branch: str
     section: str
     assigned_at: datetime
@@ -139,7 +136,7 @@ class SectionAssignmentResponse(BaseModel):
 
 # Feature 9 — Results View
 class StudentResult(BaseModel):
-    id: int # Enrollment ID
+    id: UUID # Enrollment ID or User ID
     name: str
     email: str
     branch: Optional[str] = None

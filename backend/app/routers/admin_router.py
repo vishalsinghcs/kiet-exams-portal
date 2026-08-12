@@ -8,7 +8,7 @@ from app.repositories.user_repository import user_repo
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-@router.get("/teachers")
+@router.get("/teachers", response_model=list[schemas.UserResponse])
 def get_teachers(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Fetch a list of all teachers."""
     return user_repo.get_all_by_role(db, role="teacher")
@@ -36,6 +36,12 @@ def revoke_teacher(user_id: str, admin: User = Depends(get_admin_user), db: Sess
         
     user_repo.update(db, user, {"role": "student"})
     return {"message": "Teacher access revoked."}
+
+@router.get("/sections/{branch}/{section}/count")
+def get_section_count(branch: str, section: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Count students in a specific branch and section."""
+    count = db.query(User).filter(User.role == "student", User.branch == branch, User.section == section).count()
+    return {"count": count}
 
 @router.get("/stats")
 def get_admin_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):

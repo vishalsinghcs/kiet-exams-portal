@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from app.models import Exam, ExamSectionAssignment
 from app.repositories.base import CRUDBase
+import sqlalchemy
+from fastapi import HTTPException
 
 class CRUDExam(CRUDBase[Exam]):
 
@@ -20,9 +22,13 @@ class CRUDExam(CRUDBase[Exam]):
             section=section
             )
         db.add(assignment)
-        db.commit()
-        db.refresh(assignment)
-        return assignment
+        try:
+            db.commit()
+            db.refresh(assignment)
+            return assignment
+        except sqlalchemy.exc.IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=400, detail="Cannot reassign an exam to the same branch and section.")
 
     # === GET BATCHES FOR EXAM ===
     def get_batches_for_exam(self, db:Session, exam_id:UUID) -> list[ExamSectionAssignment]:

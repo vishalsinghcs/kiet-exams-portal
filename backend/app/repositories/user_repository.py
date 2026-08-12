@@ -13,4 +13,8 @@ class CRUDUser(CRUDBase[User]):
            Ensure no duplicate registration numbers exist."""
         return db.query(self.model).filter(self.model.registration_number == reg_no).first()
 
+    def get_all_by_role(self, db:Session, role: str) -> list[User]:
+        """Fetch all users that have a specific role."""
+        return db.query(self.model).filter(self.model.role == role).all()
+
 user_repo = CRUDUser(User)
