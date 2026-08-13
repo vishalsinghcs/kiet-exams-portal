@@ -1,6 +1,9 @@
 name: Backend Tests
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -9,6 +12,21 @@ jobs:
   test:
     name: Run Pytest
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -20,8 +38,11 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest httpx
       - name: Run Tests
+        env:
+          DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/test_db"
+          SECRET_KEY: "test_secret_key"
         run: |
           cd backend
-          pytest || echo "Please add pytest cases"
+          pytest -v || echo "Please add pytest cases"
