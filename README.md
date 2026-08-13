@@ -61,8 +61,9 @@ To maintain high reliability during critical exam windows, the platform incorpor
 
 The portal follows modern DevOps principles, utilizing **GitHub Actions** for continuous integration and continuous deployment (CI/CD):
 
-- **Automated Testing**: Whenever a `push` or `merge` occurs on the `main` branch, the pipeline automatically spins up and executes a comprehensive suite of unit and integration tests.
-- **Manual Trigger Deployments**: For production deployments, a manual dispatch trigger is employed. By inputting `start` in the GitHub Actions deployment script, the workflow builds the Docker images, pushes them to AWS ECR, updates ECS tasks, builds the frontend, and invalidates the CloudFront cache—automating the entire AWS deployment lifecycle.
+- **Automated Testing**: Whenever a `push` or `pull_request` occurs on the `main` branch, the `.github/workflows/test.yml` workflow automatically spins up a clean Ubuntu environment, installs Python dependencies, and executes a comprehensive suite of unit and integration tests using **Pytest**.
+- **Continuous Deployment**: When code is successfully pushed to the `main` branch, the `.github/workflows/deploy.yml` workflow strictly enforces that all Pytest tests pass before deploying. Once tests pass, it builds the backend Docker images, pushes them to AWS ECR, and forces a new deployment on ECS. Simultaneously, it builds the frontend React application, synchronizes the static assets to AWS S3, and invalidates the CloudFront cache.
+- **Exam Day Automation**: Given the irregular scheduling of exams, specialized `.github/workflows/aws-exam-day-startup.yml` and `aws-exam-day-shutdown.yml` workflows orchestrate the scaling of the ECS clusters and RDS databases, along with synchronizing live data from Supabase to RDS automatically.
 
 ## License
 Proprietary software developed for internal academic examination purposes. All rights reserved.

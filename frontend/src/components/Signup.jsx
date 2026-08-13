@@ -22,6 +22,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [branch, setBranch] = useState("");
   const [section, setSection] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
@@ -42,7 +43,7 @@ const Signup = () => {
 
   const handleSignupDetails = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !branch || !section) {
+    if (!name || !email || !password || !branch || !section || !registrationNumber) {
       setError("All fields are required");
       return;
     }
@@ -50,10 +51,14 @@ const Signup = () => {
       setError("Only @kiet.edu email addresses are allowed");
       return;
     }
+    if (registrationNumber.length !== 15 || !/^\d+$/.test(registrationNumber)) {
+      setError("Registration number must be exactly 15 digits");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      await signupUser(name, email, password, branch, section);
+      await signupUser(name, email, password, branch, section, registrationNumber);
       setStep(2); // Move to OTP step
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.");
@@ -71,7 +76,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      const tokenData = await verifyOtp(name, email, password, branch, section, otp);
+      const tokenData = await verifyOtp(name, email, password, branch, section, registrationNumber, otp);
       login(tokenData.access_token);
       navigate("/dashboard");
     } catch (err) {
@@ -117,6 +122,10 @@ const Signup = () => {
                   <div className="input-group-split">
                     <label>KIET Email</label>
                     <input type="email" placeholder="student@kiet.edu" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  </div>
+                  <div className="input-group-split">
+                    <label>Registration Number</label>
+                    <input type="text" placeholder="15-digit registration number" maxLength="15" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, ''))} required />
                   </div>
                   <div className="form-row-split">
                     <div className="input-group-split">

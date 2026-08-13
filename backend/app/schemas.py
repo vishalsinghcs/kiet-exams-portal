@@ -10,6 +10,7 @@ class UserCreate(BaseModel):
     password: str
     branch: str
     section: str
+    registration_number: str = Field(..., pattern=r'^\d{15}$')
 
 # 1b. The rules for verifying signup OTP
 class OTPVerifyRequest(BaseModel):
@@ -18,6 +19,7 @@ class OTPVerifyRequest(BaseModel):
     password: str
     branch: str
     section: str
+    registration_number: str = Field(..., pattern=r'^\d{15}$')
     otp: str
 
     # This is the custom rule to ensure only KIET students can sign up
