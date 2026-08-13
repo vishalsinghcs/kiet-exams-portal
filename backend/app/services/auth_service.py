@@ -40,7 +40,7 @@ class AuthService:
         return {"message": "OTP sent successfully to email."}
 
     # === SIGNUP PHASE 2: Verify & Create User ===
-    def complete_signup(self, db: Session, email: str, otp: str, name: str, password: str, branch: str, section: str):
+    def complete_signup(self, db: Session, email: str, otp: str, name: str, password: str, branch: str, section: str, reg_no: str):
         # 1. Verify the OTP is correct
         token = token_repo.get_valid_token(db, email, otp, "signup")
         if not token:
@@ -60,6 +60,7 @@ class AuthService:
             "password_hash": hashed_pw,
             "branch": branch,
             "section": section,
+            "registration_number": reg_no,
             "role": "student"
         })
 
