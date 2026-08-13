@@ -22,7 +22,7 @@ const Login = () => {
           });
           if (profileRes.ok) {
             const profileData = await profileRes.json();
-            if (profileData.is_admin) {
+            if (profileData.role === "admin" || profileData.role === "teacher") {
               navigate("/admin", { replace: true });
               return;
             }
@@ -63,7 +63,7 @@ const Login = () => {
       
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        if (profileData.is_admin) {
+        if (profileData.role === "admin" || profileData.role === "teacher") {
           navigate("/admin");
           return;
         }

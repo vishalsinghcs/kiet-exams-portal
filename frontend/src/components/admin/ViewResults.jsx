@@ -140,7 +140,7 @@ const ViewResults = () => {
               onChange={e => setSelectedExam(Number(e.target.value))}
             >
               {exams.length === 0 && <option value="">No exams available</option>}
-              {exams.map(ex => <option key={ex.id} value={ex.id}>[{ex.code}] {ex.exam_name}</option>)}
+              {exams.map(ex => <option key={ex.id} value={ex.id}>[{ex.subject_code}] {ex.exam_name}</option>)}
             </select>
           </div>
           <button className="admin-btn-primary" style={{ background: '#10B981', display: 'flex', gap: '8px' }}>
