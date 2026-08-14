@@ -63,5 +63,5 @@ jobs:
       - name: Start ECS Backend Tasks
         run: |
           echo "Scaling ECS service to 2 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-exams-backend-service --desired-count 2 --region ap-south-1
           echo "AWS Environment is now fully started and updated!"
