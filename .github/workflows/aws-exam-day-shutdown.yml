@@ -22,7 +22,7 @@ jobs:
       - name: Stop ECS Backend Tasks
         run: |
           echo "Scaling ECS service down to 0 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-exams-backend-service --desired-count 0 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 0 --region ap-south-1
 
       - name: Snapshot and Delete RDS Database
         run: |

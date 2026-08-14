@@ -5,7 +5,7 @@ name: AWS Exam Day Startup
 # The time is in UTC. (IST is UTC + 5:30)
 on:
   schedule:
-    - cron: '30 2 31 12 *' # Placeholder - update before exam
+    - cron: "30 2 31 12 *" # Placeholder - update before exam
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -26,22 +26,22 @@ jobs:
         run: |
           echo "Finding latest snapshot for kiet-exams-db..."
           LATEST_SNAPSHOT=$(aws rds describe-db-snapshots --db-instance-identifier kiet-exams-db --query 'reverse(sort_by(DBSnapshots, &SnapshotCreateTime))[0].DBSnapshotIdentifier' --output text)
-          
+
           if [ "$LATEST_SNAPSHOT" == "None" ] || [ -z "$LATEST_SNAPSHOT" ]; then
             echo "No snapshot found! Cannot restore."
             exit 1
           fi
-          
+
           echo "Finding RDS Security Group ID..."
           SG_ID=$(aws ec2 describe-security-groups --filters Name=group-name,Values=kiet-rds-sg --query "SecurityGroups[0].GroupId" --output text)
-          
+
           echo "Restoring RDS instance from snapshot $LATEST_SNAPSHOT..."
           aws rds restore-db-instance-from-db-snapshot \
             --db-instance-identifier kiet-exams-db \
             --db-snapshot-identifier $LATEST_SNAPSHOT \
             --db-instance-class db.t4g.micro \
             --vpc-security-group-ids $SG_ID
-          
+
       - name: Wait for RDS to be available
         run: |
           echo "Waiting for RDS instance to become available..."
@@ -63,5 +63,5 @@ jobs:
       - name: Start ECS Backend Tasks
         run: |
           echo "Scaling ECS service to 2 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-exams-backend-service --desired-count 2 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1
           echo "AWS Environment is now fully started and updated!"
