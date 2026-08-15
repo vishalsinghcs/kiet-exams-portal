@@ -19,7 +19,7 @@ fi
 
 echo "Step 1: Exporting data from Supabase..."
 # We use docker to guarantee we use PostgreSQL 17 tools, bypassing Ubuntu defaults
-docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" --no-owner --no-acl --clean > /tmp/supabase_backup.sql
+docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-acl --clean > /tmp/supabase_backup.sql
 
 echo "Step 2: Importing data into AWS RDS..."
 # We redirect stdout to /dev/null to avoid massive logs, but keep stderr for errors.
