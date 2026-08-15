@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
-from app.models import Exam, ExamSectionAssignment
+from app.models import Exam, ExamSectionAssignment, ExamEnrollment
 from app.repositories.base import CRUDBase
 import sqlalchemy
 from fastapi import HTTPException
@@ -11,6 +11,14 @@ class CRUDExam(CRUDBase[Exam]):
     def get_all_by_teacher(self, db:Session, teacher_id: UUID) -> list[Exam]:
         """Strictly fetch exams ONLY created by this specific teacher."""
         return db.query(self.model).filter(self.model.created_by == teacher_id).all()
+
+    def delete(self, db: Session, id: UUID) -> Exam | None:
+        """Override delete to manually cascade and remove related assignments and enrollments."""
+        # Delete dependent rows first to prevent ForeignKeyViolation
+        db.query(ExamSectionAssignment).filter(ExamSectionAssignment.exam_id == id).delete()
+        db.query(ExamEnrollment).filter(ExamEnrollment.exam_id == id).delete()
+        # Now delete the exam itself using the parent's delete method
+        return super().delete(db, id)
 
     # === BATCH ASSIGNMENT QUERIES ===
     def assign_exam_to_batch(self, db:Session, exam_id:UUID, enrollment_year:int, branch:str, section:str) -> ExamSectionAssignment:
