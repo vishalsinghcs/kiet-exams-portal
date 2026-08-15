@@ -17,13 +17,12 @@ if [ -z "$RDS_DB_URL" ]; then
 fi
 
 echo "Step 1: Exporting data from AWS RDS..."
-# We use --no-owner and --no-acl to avoid permission issues.
-# We use --clean to drop existing objects before recreating them (ensures full overwrite).
-pg_dump "$RDS_DB_URL" --no-owner --no-acl --clean -f /tmp/rds_backup.sql
+# We use docker to guarantee we use PostgreSQL 17 tools
+docker run --rm postgres:17 pg_dump "$RDS_DB_URL" --no-owner --no-acl --clean > /tmp/rds_backup.sql
 
 echo "Step 2: Importing data into Supabase..."
 # We redirect stdout to /dev/null to avoid massive logs, but keep stderr for errors.
-psql "$SUPABASE_DB_URL" -f /tmp/rds_backup.sql > /dev/null
+docker run --rm -i postgres:17 psql "$SUPABASE_DB_URL" < /tmp/rds_backup.sql > /dev/null
 
 echo "Step 3: Cleaning up..."
 rm /tmp/rds_backup.sql

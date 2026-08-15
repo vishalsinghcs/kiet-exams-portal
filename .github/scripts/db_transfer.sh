@@ -18,13 +18,12 @@ fi
 
 
 echo "Step 1: Exporting data from Supabase..."
-# We use --no-owner and --no-acl to avoid permission issues when restoring to RDS.
-# We use --clean to drop existing objects before recreating them (ensures full overwrite).
-pg_dump "$SUPABASE_DB_URL" --no-owner --no-acl --clean -f /tmp/supabase_backup.sql
+# We use docker to guarantee we use PostgreSQL 17 tools, bypassing Ubuntu defaults
+docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" --no-owner --no-acl --clean > /tmp/supabase_backup.sql
 
 echo "Step 2: Importing data into AWS RDS..."
 # We redirect stdout to /dev/null to avoid massive logs, but keep stderr for errors.
-psql "$RDS_DB_URL" -f /tmp/supabase_backup.sql > /dev/null
+docker run --rm -i postgres:17 psql "$RDS_DB_URL" < /tmp/supabase_backup.sql > /dev/null
 
 echo "Step 3: Cleaning up..."
 rm /tmp/supabase_backup.sql
