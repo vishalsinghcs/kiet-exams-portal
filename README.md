@@ -53,9 +53,12 @@ Powered by **FastAPI (Python)**. Since the scoring algorithms are natively writt
 
 ## Observability & Monitoring
 
-To maintain high reliability during critical exam windows, the platform incorporates enterprise-grade observability:
-- **OpenTelemetry**: Used to instrument distributed tracing across the frontend, backend, and database queries.
-- **New Relic**: Centralized dashboarding for comprehensive logging, metric collection, and Application Performance Monitoring (APM). Identifies latency bottlenecks and monitors system health in real-time.
+To maintain high reliability during critical exam windows, the platform incorporates enterprise-grade observability natively aligned with industry standards:
+- **OpenTelemetry**: Automatically instruments distributed tracing across FastAPI web routes, SQLAlchemy database queries, and Redis caching. Traces (`trace_id`) and Spans (`span_id`) are injected automatically to link events.
+- **Environment-Aware Centralized Logging**: A unified `logger.py` dynamically adjusts formatting based on the `ENV`. 
+  - In **Development/Testing**, it emits detailed, human-readable rich-text logs set to `DEBUG` level.
+  - In **Production**, it emits strictly structured JSON logs set to `INFO`/`WARNING` level. This perfectly aligns with New Relic's JSON parsers without needing complex regex extractors.
+- **New Relic APM**: Consumes standard OTLP (OpenTelemetry Protocol) metrics and logs. Centralized dashboarding provides real-time monitoring of latency bottlenecks, database slow queries, and system health.
 
 ## CI/CD Pipeline & Deployment
 

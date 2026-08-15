@@ -1,16 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 from app.database import engine, Base
 from app.routers import auth_router, users_router, admin_router, exams_router
+from app.utils.logger import logger
+from app.utils.telemetry import setup_telemetry
 
 # Create the tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="KIET Exams Portal")
 
-import os
-
+# Initialize OpenTelemetry and logging instrumentation
+setup_telemetry(app, engine)
+logger.info("Starting KIET Exams Portal backend")
 # Get allowed origins from environment variable, splitting by comma
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://codeml.vercel.app")
 allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
