@@ -34,20 +34,27 @@ jobs:
 
           echo "Finding RDS Security Group ID..."
           SG_ID=$(aws ec2 describe-security-groups --filters Name=group-name,Values=kiet-rds-sg --query "SecurityGroups[0].GroupId" --output text)
+          echo "SG_ID=$SG_ID" >> $GITHUB_ENV
 
           echo "Restoring RDS instance from snapshot $LATEST_SNAPSHOT..."
           aws rds restore-db-instance-from-db-snapshot \
             --db-instance-identifier kiet-exams-db \
             --db-snapshot-identifier $LATEST_SNAPSHOT \
             --db-instance-class db.t4g.micro \
-            --vpc-security-group-ids $SG_ID
+            --vpc-security-group-ids $SG_ID \
+            --publicly-accessible
 
       - name: Wait for RDS to be available
         run: |
           echo "Waiting for RDS instance to become available..."
           aws rds wait db-instance-available --db-instance-identifier kiet-exams-db
 
-
+      - name: Open Firewall Pinhole for GitHub Actions
+        run: |
+          RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
+          echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
+          echo "Authorizing $RUNNER_IP/32 on Security Group $SG_ID..."
+          aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32
 
       - name: Sync Supabase Data to RDS
         env:
@@ -56,6 +63,14 @@ jobs:
         run: |
           chmod +x .github/scripts/db_transfer.sh
           ./.github/scripts/db_transfer.sh
+
+      - name: Close Firewall Pinhole
+        if: always() # Ensure it runs even if the sync fails
+        run: |
+          if [ -n "$RUNNER_IP" ] && [ -n "$SG_ID" ]; then
+            echo "Revoking $RUNNER_IP/32 from Security Group $SG_ID..."
+            aws ec2 revoke-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 || true
+          fi
 
       - name: Start ECS Backend Tasks
         run: |
