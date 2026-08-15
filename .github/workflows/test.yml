@@ -46,4 +46,4 @@ jobs:
           SECRET_KEY: "test_secret_key"
         run: |
           cd backend
-          pytest -v || echo "Please add pytest cases"
+          pytest -v
