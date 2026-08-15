@@ -53,7 +53,6 @@ jobs:
         run: |
           RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
           echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
-          echo "Authorizing $RUNNER_IP/32 on Security Group $SG_ID..."
           aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 > /dev/null
 
       - name: Sync Supabase Data to RDS
@@ -68,7 +67,6 @@ jobs:
         if: always() # Ensure it runs even if the sync fails
         run: |
           if [ -n "$RUNNER_IP" ] && [ -n "$SG_ID" ]; then
-            echo "Revoking $RUNNER_IP/32 from Security Group $SG_ID..."
             aws ec2 revoke-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 > /dev/null || true
           fi
 
