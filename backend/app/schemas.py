@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator, Field
+from pydantic import BaseModel, EmailStr, field_validator, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, Any
 from uuid import UUID
@@ -39,8 +39,7 @@ class UserResponse(BaseModel):
     section: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 3. The rules for Login Request (email + password as JSON)
 class LoginRequest(BaseModel):
@@ -96,8 +95,7 @@ class ExamResponse(ExamBase):
     dataset_path: Optional[str] = None
     sample_csv_path: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ExamAssign(BaseModel):
     email: EmailStr
@@ -133,8 +131,7 @@ class SectionAssignmentResponse(BaseModel):
     section: str
     assigned_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Feature 9 — Results View
 class StudentResult(BaseModel):
@@ -148,8 +145,7 @@ class StudentResult(BaseModel):
     has_submission: bool = False # simpler flag for frontend csv
     has_notebook: bool = False # simpler flag for frontend ipynb
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ExamResultsResponse(BaseModel):
     assigned: int
