@@ -17,24 +17,8 @@ on:
 jobs:
   test:
     name: Run Backend Tests
-    runs-on: ubuntu-latest
     if: ${{ inputs.deploy_backend == true }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install dependencies
-        run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
-      - name: Run Pytest
-        run: |
-          cd backend
-          pytest || echo "No tests found or tests failed. Assuming pass for now until tests are written." # Modify to remove || echo when tests exist.
+    uses: ./.github/workflows/test.yml
 
   deploy-backend:
     name: Deploy Backend to AWS ECS
@@ -67,7 +51,7 @@ jobs:
 
       - name: Force new deployment on Amazon ECS
         run: |
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --force-new-deployment --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --force-new-deployment --region ap-south-1 > /dev/null
 
   deploy-frontend:
     name: Deploy Frontend to AWS S3 & CloudFront
@@ -98,8 +82,8 @@ jobs:
 
       - name: Sync S3 Bucket
         run: |
-          aws s3 sync frontend/dist/ s3://kiet-exams-portal --delete
+          aws s3 sync frontend/dist/ s3://kiet-exams-portal --delete --quiet
 
       - name: Invalidate CloudFront Cache
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*" > /dev/null
