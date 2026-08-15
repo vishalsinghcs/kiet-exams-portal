@@ -42,7 +42,7 @@ jobs:
             --db-snapshot-identifier $LATEST_SNAPSHOT \
             --db-instance-class db.t4g.micro \
             --vpc-security-group-ids $SG_ID \
-            --publicly-accessible
+            --publicly-accessible > /dev/null
 
       - name: Wait for RDS to be available
         run: |
@@ -54,7 +54,7 @@ jobs:
           RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
           echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
           echo "Authorizing $RUNNER_IP/32 on Security Group $SG_ID..."
-          aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32
+          aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 > /dev/null
 
       - name: Sync Supabase Data to RDS
         env:
@@ -69,13 +69,13 @@ jobs:
         run: |
           if [ -n "$RUNNER_IP" ] && [ -n "$SG_ID" ]; then
             echo "Revoking $RUNNER_IP/32 from Security Group $SG_ID..."
-            aws ec2 revoke-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 || true
+            aws ec2 revoke-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 > /dev/null || true
           fi
 
       - name: Start ECS Backend Tasks
         run: |
           echo "Scaling ECS service to 2 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1 > /dev/null
         
       - name: Wait for ECS to become stable
         run : |

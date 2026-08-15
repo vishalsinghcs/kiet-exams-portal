@@ -22,7 +22,7 @@ jobs:
       - name: Stop ECS Backend Tasks
         run: |
           echo "Scaling ECS service down to 0 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 0 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 0 --region ap-south-1 > /dev/null
 
   shutdown-rds:
     name: Snapshot and Delete RDS
@@ -39,7 +39,7 @@ jobs:
         run: |
           echo "Taking final snapshot and deleting RDS instance to save costs..."
           SNAPSHOT_NAME="kiet-exams-db-final-$(date +%s)"
-          aws rds delete-db-instance --db-instance-identifier kiet-exams-db --final-db-snapshot-identifier $SNAPSHOT_NAME
+          aws rds delete-db-instance --db-instance-identifier kiet-exams-db --final-db-snapshot-identifier $SNAPSHOT_NAME > /dev/null
           
           echo "Waiting for RDS instance to be fully deleted..."
           aws rds wait db-instance-deleted --db-instance-identifier kiet-exams-db
