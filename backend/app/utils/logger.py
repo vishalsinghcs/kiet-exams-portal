@@ -12,13 +12,13 @@ def get_logger(name: str = "kiet-exams-backend"):
     if logger.handlers:
         return logger
         
-    # Detailed logs for dev/test, minimal helpful logs for production
-    logger.setLevel(logging.INFO if ENV == "production" else logging.DEBUG)
+    # Detailed logs for dev/test, minimal helpful logs for production/staging
+    logger.setLevel(logging.INFO if ENV in ["aws", "render"] else logging.DEBUG)
     
     log_handler = logging.StreamHandler()
     
-    if ENV == "production":
-        # Production: JSON formatting aligned with New Relic parsing standards
+    if ENV in ["aws", "render"]:
+        # Production/Staging: JSON formatting aligned with New Relic parsing standards
         # Opentelemetry LoggingInstrumentor will inject otelTraceID and otelSpanID
         format_str = '%(asctime)s %(levelname)s %(name)s %(message)s %(otelTraceID)s %(otelSpanID)s %(otelServiceName)s'
         formatter = jsonlogger.JsonFormatter(format_str)
