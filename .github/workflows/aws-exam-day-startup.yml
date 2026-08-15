@@ -76,4 +76,8 @@ jobs:
         run: |
           echo "Scaling ECS service to 2 tasks..."
           aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1
+          
+          echo "Waiting for ECS Tasks to become healthy and stable..."
+          aws ecs wait services-stable --cluster kiet-exams-cluster --services kiet-backend-service --region ap-south-1
+          
           echo "AWS Environment is now fully started and updated!"
