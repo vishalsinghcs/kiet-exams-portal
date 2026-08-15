@@ -1,0 +1,27 @@
+name: Sync RDS to Supabase
+
+# Allows you to trigger this workflow manually from the Actions tab in GitHub
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Transfer Data (RDS -> Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 17 Client
+        run: |
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Sync RDS Data back to Supabase
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          RDS_DB_URL: ${{ secrets.RDS_DB_URL }}
+        run: |
+          chmod +x .github/scripts/db_transfer_rds_to_supabase.sh
+          ./.github/scripts/db_transfer_rds_to_supabase.sh
