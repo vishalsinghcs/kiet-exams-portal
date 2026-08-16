@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import schemas
+from app.utils.logger import logger
 
 # Import our Brain (The Service Layer)
 from app.services.auth_service import auth_service
@@ -11,6 +12,7 @@ router = APIRouter(tags=["Auth"])
 @router.post("/signup")
 def signup_request_otp(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """Step 1: Check email and send a 6-digit OTP."""
+    logger.info(f"Incoming signup request for email: {user.email}")
     # We pass the work directly to the Service Layer!
     return auth_service.initiate_signup(db, email=user.email)
 
@@ -31,6 +33,7 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
 @router.post("/login")
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     """Step 3: Verify password and return a JWT."""
+    logger.info(f"Incoming login request for email: {credentials.email}")
     return auth_service.login(db, email=credentials.email, password=credentials.password)
 
 from fastapi.security import OAuth2PasswordRequestForm

@@ -6,6 +6,7 @@ from app.repositories.token_repository import token_repo
 from app.services.email_service import send_otp_email
 from app.utils.security import get_password_hash, verify_password, create_access_token
 from app.models import VerificationToken, User
+from app.utils.logger import logger
 
 class AuthService:
 
@@ -15,8 +16,10 @@ class AuthService:
 
     # === SIGNUP PHASE 1: Send OTP ===
     def initiate_signup(self, db: Session, email: str):
+        logger.debug(f"Initiating signup for {email}")
         # 1. Check if user already exists
         if user_repo.get_by_email(db, email):
+            logger.warning(f"Signup failed: Email {email} already registered.")
             raise HTTPException(status_code=400, detail="Email already registered")
 
         # 2. Clean up any old OTPs for this email to prevent spam
@@ -41,9 +44,11 @@ class AuthService:
 
     # === SIGNUP PHASE 2: Verify & Create User ===
     def complete_signup(self, db: Session, email: str, otp: str, name: str, password: str, branch: str, section: str, reg_no: str):
+        logger.info(f"Attempting to complete signup for {email}")
         # 1. Verify the OTP is correct
         token = token_repo.get_valid_token(db, email, otp, "signup")
         if not token:
+            logger.warning(f"Signup verification failed: Invalid OTP for {email}")
             raise HTTPException(status_code=400, detail="Invalid OTP")
             
         from datetime import datetime
@@ -71,13 +76,16 @@ class AuthService:
 
     # === LOGIN PHASE ===
     def login(self, db: Session, email: str, password: str):
+        logger.debug(f"Attempting login for {email}")
         # 1. Fetch user
         user = user_repo.get_by_email(db, email)
         if not user:
+            logger.warning(f"Login failed: User not found for email {email}")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # 2. Verify Password
         if not verify_password(password, user.password_hash):
+            logger.warning(f"Login failed: Invalid password for email {email}")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # 3. Generate the JWT (The "Building Key")
@@ -85,6 +93,9 @@ class AuthService:
             "sub": str(user.id),
             "role": user.role
         })
+
+        logger.info(f"Login successful for {email} with role {user.role}")
+
 
         return {
             "access_token": jwt_token,

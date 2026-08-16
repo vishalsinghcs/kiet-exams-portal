@@ -5,47 +5,59 @@ from app import schemas
 from app.dependencies import get_admin_user
 from app.models import User, Exam, ExamEnrollment
 from app.repositories.user_repository import user_repo
+from app.utils.logger import logger
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 @router.get("/teachers", response_model=list[schemas.UserResponse])
 def get_teachers(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Fetch a list of all teachers."""
+    logger.info(f"Admin action: Fetching all teachers [admin_id={admin.id}]")
     return user_repo.get_all_by_role(db, role="teacher")
 
 @router.post("/teachers")
 def add_teacher(request: schemas.EmailRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Promote a student to a teacher."""
+    logger.info(f"Admin action: Promoting user to teacher [admin_id={admin.id} target_email={request.email}]")
     user = user_repo.get_by_email(db, request.email)
     if not user:
+        logger.warning(f"Failed to promote: User not found [admin_id={admin.id} target_email={request.email}]")
         raise HTTPException(status_code=404, detail="User not found")
     if user.role == "admin" or getattr(user, "is_admin", False):
+        logger.warning(f"Failed to promote: Cannot modify admin user [admin_id={admin.id} target_email={request.email}]")
         raise HTTPException(status_code=400, detail="Cannot modify an admin user")
         
     user_repo.update(db, user, {"role": "teacher"})
+    logger.info(f"Successfully promoted user to teacher [admin_id={admin.id} target_email={request.email}]")
     return {"message": f"{request.email} is now a teacher."}
 
 @router.delete("/teachers/{user_id}")
 def revoke_teacher(user_id: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Demote a teacher back to a student."""
+    logger.info(f"Admin action: Demoting teacher to student [admin_id={admin.id} target_user_id={user_id}]")
     user = user_repo.get_by_id(db, user_id)
     if not user:
+        logger.warning(f"Failed to demote: User not found [admin_id={admin.id} target_user_id={user_id}]")
         raise HTTPException(status_code=404, detail="User not found")
     if user.role != "teacher":
+        logger.warning(f"Failed to demote: User is not a teacher [admin_id={admin.id} target_user_id={user_id}]")
         raise HTTPException(status_code=400, detail="User is not a teacher")
         
     user_repo.update(db, user, {"role": "student"})
+    logger.info(f"Successfully demoted teacher [admin_id={admin.id} target_user_id={user_id}]")
     return {"message": "Teacher access revoked."}
 
 @router.get("/sections/{branch}/{section}/count")
 def get_section_count(branch: str, section: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Count students in a specific branch and section."""
+    logger.info(f"Admin action: Fetching section count [admin_id={admin.id} branch={branch} section={section}]")
     count = db.query(User).filter(User.role == "student", User.branch == branch, User.section == section).count()
     return {"count": count}
 
 @router.get("/stats")
 def get_admin_stats(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Quick high-level stats for the admin dashboard."""
+    logger.info(f"Admin action: Fetching platform stats [admin_id={admin.id}]")
     # Basic counting is fine to leave as raw queries since it's just telemetry!
     total_students = db.query(User).filter(User.role == "student").count()
     total_exams = db.query(Exam).count()

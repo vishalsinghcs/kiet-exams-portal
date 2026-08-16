@@ -2,13 +2,16 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from uuid import UUID
 from app.repositories.user_repository import user_repo
+from app.utils.logger import logger
 
 class UserService:
 
     def get_profile(self, db: Session, user_id: UUID) -> dict:
         """Fetch a user profile and strip out sensitive data like passwords."""
+        logger.debug(f"Service: Fetching user profile [user_id={user_id}]")
         user = user_repo.get_by_id(db, user_id)
         if not user:
+            logger.warning(f"Failed to fetch profile: User not found [user_id={user_id}]")
             raise HTTPException(status_code=404, detail="User not found")
             
         # Security Filter: Never return the password_hash!
@@ -25,8 +28,10 @@ class UserService:
         
     def update_profile(self, db: Session, user_id: UUID, update_data: dict):
         """Update basic profile information (like avatar or name)."""
+        logger.debug(f"Service: Updating user profile [user_id={user_id} update_keys={list(update_data.keys())}]")
         user = user_repo.get_by_id(db, user_id)
         if not user:
+            logger.warning(f"Failed to update profile: User not found [user_id={user_id}]")
             raise HTTPException(status_code=404, detail="User not found")
             
         # The dumb repository handles the dynamic update
