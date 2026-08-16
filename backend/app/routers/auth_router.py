@@ -33,6 +33,7 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
 @router.post("/login")
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     """Step 3: Verify password and return a JWT."""
+    logger.info(f"Incoming login request for email: {credentials.email}")
     return auth_service.login(db, email=credentials.email, password=credentials.password)
 
 from fastapi.security import OAuth2PasswordRequestForm

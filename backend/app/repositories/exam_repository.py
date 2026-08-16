@@ -4,6 +4,7 @@ from app.models import Exam, ExamSectionAssignment, ExamEnrollment
 from app.repositories.base import CRUDBase
 import sqlalchemy
 from fastapi import HTTPException
+from app.utils.logger import logger
 
 class CRUDExam(CRUDBase[Exam]):
 
@@ -14,6 +15,7 @@ class CRUDExam(CRUDBase[Exam]):
 
     def delete(self, db: Session, id: UUID) -> Exam | None:
         """Override delete to manually cascade and remove related assignments and enrollments."""
+        logger.debug(f"Database: Deleting exam and cascading to assignments/enrollments [exam_id={id}]")
         # Delete dependent rows first to prevent ForeignKeyViolation
         db.query(ExamSectionAssignment).filter(ExamSectionAssignment.exam_id == id).delete()
         db.query(ExamEnrollment).filter(ExamEnrollment.exam_id == id).delete()
@@ -23,6 +25,7 @@ class CRUDExam(CRUDBase[Exam]):
     # === BATCH ASSIGNMENT QUERIES ===
     def assign_exam_to_batch(self, db:Session, exam_id:UUID, enrollment_year:int, branch:str, section:str) -> ExamSectionAssignment:
         """Assign an exam to a specific branch and section"""
+        logger.debug(f"Database: Creating assignment [exam_id={exam_id} enrollment_year={enrollment_year} branch={branch} section={section}]")
         assignment = ExamSectionAssignment(
             exam_id=exam_id,
             enrollment_year=enrollment_year, 
@@ -37,6 +40,20 @@ class CRUDExam(CRUDBase[Exam]):
         except sqlalchemy.exc.IntegrityError:
             db.rollback()
             raise HTTPException(status_code=400, detail="Cannot reassign an exam to the same branch and section.")
+
+    def revoke_exam_from_batch(self, db:Session, exam_id:UUID, enrollment_year:int, branch:str, section:str):
+        """Revoke an exam assignment from a specific branch and section"""
+        logger.debug(f"Database: Revoking assignment [exam_id={exam_id} enrollment_year={enrollment_year} branch={branch} section={section}]")
+        assignment = db.query(ExamSectionAssignment).filter(
+            ExamSectionAssignment.exam_id == exam_id,
+            ExamSectionAssignment.enrollment_year == enrollment_year,
+            ExamSectionAssignment.branch == branch,
+            ExamSectionAssignment.section == section
+        ).first()
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        db.delete(assignment)
+        db.commit()
 
     # === GET BATCHES FOR EXAM ===
     def get_batches_for_exam(self, db:Session, exam_id:UUID) -> list[ExamSectionAssignment]:

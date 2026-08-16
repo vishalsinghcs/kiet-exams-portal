@@ -7,6 +7,7 @@ class CRUDUser(CRUDBase[User]):
 
     def get_by_email(self, db:Session, email:str) -> User | None:
         """Fetch a user by their email address from Login/Auth."""
+        logger.debug(f"Database: Fetching user by email {email}")
         return db.query(self.model).filter(self.model.email == email).first()
 
     def get_by_registration_number(self, db:Session, reg_no: str) -> User | None:
@@ -16,6 +17,7 @@ class CRUDUser(CRUDBase[User]):
 
     def get_all_by_role(self, db:Session, role: str) -> list[User]:
         """Fetch all users that have a specific role."""
+        logger.debug(f"Database: Fetching all users by role [role={role}]")
         return db.query(self.model).filter(self.model.role == role).all()
 
     def create(self, db: Session, obj_in: dict):

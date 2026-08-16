@@ -76,13 +76,16 @@ class AuthService:
 
     # === LOGIN PHASE ===
     def login(self, db: Session, email: str, password: str):
+        logger.debug(f"Attempting login for {email}")
         # 1. Fetch user
         user = user_repo.get_by_email(db, email)
         if not user:
+            logger.warning(f"Login failed: User not found for email {email}")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # 2. Verify Password
         if not verify_password(password, user.password_hash):
+            logger.warning(f"Login failed: Invalid password for email {email}")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # 3. Generate the JWT (The "Building Key")
@@ -90,6 +93,9 @@ class AuthService:
             "sub": str(user.id),
             "role": user.role
         })
+
+        logger.info(f"Login successful for {email} with role {user.role}")
+
 
         return {
             "access_token": jwt_token,
