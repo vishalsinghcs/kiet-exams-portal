@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "../utils/api";
 
 const AuthContext = createContext();
 
@@ -35,7 +36,19 @@ export const AuthProvider = ({ children }) => {
     if (userData) setUser(userData);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (token) {
+      try {
+        await fetch(`${API_BASE_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.error("Logout API failed", err);
+      }
+    }
     setToken(null);
     setUser(null);
   };

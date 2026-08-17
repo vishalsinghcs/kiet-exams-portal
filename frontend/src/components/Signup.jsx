@@ -31,11 +31,12 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const branches = ["CSE AI", "CSE AIML"];
+  const branches = ["CSE AI", "CSE AIML", "Minor Degree"];
 
   const branchSections = {
     "CSE AI": ["A", "B", "C", "D"],
-    "CSE AIML": ["A", "B", "C"]
+    "CSE AIML": ["A", "B", "C", "D", "E"],
+    "Minor Degree": ["A"]
   };
 
   const getAvailableSections = () => {
@@ -147,8 +148,13 @@ const Signup = () => {
                       <select 
                         value={branch} 
                         onChange={(e) => {
-                          setBranch(e.target.value);
-                          setSection(""); 
+                          const newBranch = e.target.value;
+                          setBranch(newBranch);
+                          if (newBranch === "Minor Degree") {
+                            setSection("A");
+                          } else {
+                            setSection(""); 
+                          }
                         }} 
                         required 
                         className="auth-select"
@@ -164,7 +170,7 @@ const Signup = () => {
                         onChange={(e) => setSection(e.target.value)} 
                         required 
                         className="auth-select"
-                        disabled={!branch}
+                        disabled={!branch || branch === "Minor Degree"}
                       >
                         <option value="" disabled>{branch ? "Select Section" : "..."}</option>
                         {getAvailableSections().map((s) => (

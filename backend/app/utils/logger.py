@@ -5,6 +5,14 @@ from pythonjsonlogger import jsonlogger
 # Default to development if not set
 ENV = os.getenv("ENV", "development").lower()
 
+class OTelFilter(logging.Filter):
+    """Ensures otel variables exist on log records to prevent KeyError crashes when OpenTelemetry isn't fully initialized."""
+    def filter(self, record):
+        if not hasattr(record, 'otelTraceID'): record.otelTraceID = ""
+        if not hasattr(record, 'otelSpanID'): record.otelSpanID = ""
+        if not hasattr(record, 'otelServiceName'): record.otelServiceName = ""
+        return True
+
 def get_logger(name: str = "kiet-exams-backend"):
     logger = logging.getLogger(name)
     
@@ -19,7 +27,6 @@ def get_logger(name: str = "kiet-exams-backend"):
     
     if ENV in ["aws", "render"]:
         # Production/Staging: JSON formatting aligned with New Relic parsing standards
-        # Opentelemetry LoggingInstrumentor will inject otelTraceID and otelSpanID
         format_str = '%(asctime)s %(levelname)s %(name)s %(message)s %(otelTraceID)s %(otelSpanID)s %(otelServiceName)s'
         formatter = jsonlogger.JsonFormatter(format_str)
     else:
@@ -28,6 +35,7 @@ def get_logger(name: str = "kiet-exams-backend"):
         formatter = logging.Formatter(format_str)
         
     log_handler.setFormatter(formatter)
+    log_handler.addFilter(OTelFilter())
     logger.addHandler(log_handler)
     logger.propagate = False  # Prevent Uvicorn's root logger from duplicating our logs
     

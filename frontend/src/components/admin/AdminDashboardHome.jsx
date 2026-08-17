@@ -9,6 +9,9 @@ const AdminDashboardHome = () => {
   const { token } = useAuth();
   const [stats, setStats] = useState(null);
   const [recentExams, setRecentExams] = useState([]);
+  
+  const [logoutIdentifier, setLogoutIdentifier] = useState("");
+  const [logoutMessage, setLogoutMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +57,29 @@ const AdminDashboardHome = () => {
 
     if (token) fetchData();
   }, [token]);
+
+  const handleForceLogout = async () => {
+    if (!logoutIdentifier) return;
+    setLogoutMessage({ text: "Processing...", type: "info" });
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/force-logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ identifier: logoutIdentifier })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLogoutMessage({ text: data.message, type: "success" });
+        setLogoutIdentifier("");
+      } else {
+        setLogoutMessage({ text: data.detail || "Failed to force logout", type: "error" });
+      }
+    } catch (e) {
+      setLogoutMessage({ text: "Network error", type: "error" });
+    }
+    // Clear message after 5 seconds
+    setTimeout(() => setLogoutMessage({ text: "", type: "" }), 5000);
+  };
 
   const statItems = [
     {
@@ -151,6 +177,46 @@ const AdminDashboardHome = () => {
               <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B' }}>124ms Latency</span>
             </div>
           </div>
+        </div>
+
+        {/* Student Session Management */}
+        <div className="admin-card" style={{ marginBottom: 0 }}>
+          <div className="admin-card-header">
+            <h3 className="admin-card-title">Student Session Management</h3>
+          </div>
+          <p style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: '16px' }}>
+            Forcefully log a student out if their session gets stuck (e.g., computer crash). This will clear their active session block.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              className="admin-input" 
+              placeholder="Enter Student Email or Reg No..." 
+              value={logoutIdentifier}
+              onChange={(e) => setLogoutIdentifier(e.target.value)}
+              style={{ maxWidth: '300px', margin: 0 }}
+            />
+            <button 
+              onClick={handleForceLogout} 
+              className="admin-btn-primary" 
+              style={{ padding: '10px 20px', margin: 0 }}
+            >
+              Force Logout
+            </button>
+          </div>
+          {logoutMessage.text && (
+            <div style={{ 
+              marginTop: '12px', 
+              padding: '10px', 
+              borderRadius: '6px', 
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              backgroundColor: logoutMessage.type === 'success' ? '#ECFDF5' : (logoutMessage.type === 'error' ? '#FEF2F2' : '#EFF6FF'),
+              color: logoutMessage.type === 'success' ? '#10B981' : (logoutMessage.type === 'error' ? '#EF4444' : '#3B82F6')
+            }}>
+              {logoutMessage.text}
+            </div>
+          )}
         </div>
 
         {/* Recent Exams Table Card - Below Health */}

@@ -26,6 +26,7 @@ const CreateExam = () => {
     exam_name: "",
     duration: "180",
     start_time: "",
+    start_window_minutes: "30",
     access_code: "",
   });
 
@@ -194,6 +195,10 @@ const CreateExam = () => {
               <div className="admin-input-group">
                 <label className="admin-label">Start Date & Time</label>
                 <input type="datetime-local" className="admin-input" value={form.start_time} onChange={e => setForm({...form, start_time: e.target.value})} required />
+              </div>
+              <div className="admin-input-group">
+                <label className="admin-label">Start Window (mins)</label>
+                <input type="number" className="admin-input" placeholder="e.g. 30" value={form.start_window_minutes} onChange={e => setForm({...form, start_window_minutes: e.target.value})} required />
               </div>
            </div>
 

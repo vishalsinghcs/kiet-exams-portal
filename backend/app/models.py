@@ -18,7 +18,7 @@ class User(Base):
     branch = Column(String, nullable=True)
     section = Column(CHAR(1), nullable=True)
     avatar_path = Column(Text, nullable=True)
-    is_active = Column(Boolean, default=True, nullable=False)        
+    is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -49,6 +49,7 @@ class Exam(Base):
     exam_name = Column(String, nullable=False)
     duration = Column(Integer, nullable=False)                          # in minutes
     start_time = Column(DateTime, nullable=False)
+    start_window_minutes = Column(Integer, nullable=False, default=30)  # Time window to start exam
     exam_sections = Column(JSONB, nullable=False)
     dataset_path = Column(String, nullable=True)
     sample_csv_path = Column(String, nullable=True)
@@ -63,6 +64,7 @@ class ExamEnrollment(Base):
     exam_id = Column(UUID(as_uuid=True), ForeignKey("exams.id"), primary_key=True, index=True)
 
     status = Column(Enum("pending", "in_progress", "submitted", "missed", name="enrollment_status"), default="pending", nullable=False) 
+    login_count = Column(Integer, default=0, nullable=False)
     
     csv_submission_path = Column(String, nullable=True)
     notebook_submission_path = Column(String, nullable=True)
