@@ -167,10 +167,6 @@ class AuthService:
             if redis_client.exists(session_key):
                 logger.warning(f"Login failed: Concurrent session detected for {email}")
                 raise HTTPException(status_code=403, detail="You are already logged in on another device. Please logout first or contact the invigilator.")
-            
-            # Set session in Redis with TTL matching JWT token expiration (e.g. 210 mins)
-            expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 210))
-            redis_client.setex(session_key, timedelta(minutes=expire_minutes), "active")
 
         # 3. Generate the JWT (The "Building Key")
         jwt_token = create_access_token(data={
@@ -191,6 +187,13 @@ class AuthService:
                     enrollment.login_count += 1
                 db.commit()
                 logger.info(f"Incremented login_count for {len(active_enrollments)} active exams for {email}")
+
+        # 5. Set session in Redis ONLY after all DB operations succeed
+        if redis_client and user.role == "student":
+            session_key = f"session:{user.id}"
+            from datetime import timedelta
+            expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 210))
+            redis_client.setex(session_key, timedelta(minutes=expire_minutes), "active")
 
         return {
             "access_token": jwt_token,
