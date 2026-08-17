@@ -28,27 +28,32 @@ const AdminDashboardHome = () => {
         if (statsRes.ok) setStats(await statsRes.json());
         if (examsRes.ok) {
           const all = await examsRes.json();
-          const now = new Date();
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
+          if (Array.isArray(all)) {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
 
-          // 1. Filter for current month only
-          const filtered = all.filter(exam => {
-            const examDate = new Date(exam.start_time.endsWith("Z") ? exam.start_time : `${exam.start_time}Z`);
-            return examDate.getMonth() === currentMonth && examDate.getFullYear() === currentYear;
-          });
+            // 1. Filter for current month only
+            const filtered = all.filter(exam => {
+              const examDate = new Date(exam.start_time.endsWith("Z") ? exam.start_time : `${exam.start_time}Z`);
+              return examDate.getMonth() === currentMonth && examDate.getFullYear() === currentYear;
+            });
 
-          // 2. Sort by Status Priority: Ongoing (1) > Upcoming (2) > Completed (3)
-          const sorted = filtered.sort((a, b) => {
-            const statusA = getExamStatus(a).label;
-            const statusB = getExamStatus(b).label;
-            
-            const priority = { "Ongoing": 1, "Upcoming": 2, "Completed": 3 };
-            return priority[statusA] - priority[statusB];
-          });
+            // 2. Sort by Status Priority: Ongoing (1) > Upcoming (2) > Completed (3)
+            const sorted = filtered.sort((a, b) => {
+              const statusA = getExamStatus(a).label;
+              const statusB = getExamStatus(b).label;
+              
+              const priority = { "Ongoing": 1, "Upcoming": 2, "Completed": 3 };
+              return priority[statusA] - priority[statusB];
+            });
 
-          // 3. Limit to 10
-          setRecentExams(sorted.slice(0, 10));
+            // 3. Limit to 10
+            setRecentExams(sorted.slice(0, 10));
+          } else {
+            console.error("Expected an array of exams, but received:", all);
+            setRecentExams([]);
+          }
         }
       } catch (e) {
         console.error("Dashboard data fetch failed", e);
