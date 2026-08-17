@@ -68,16 +68,22 @@ const Dashboard = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          const mappedExams = data.map((ex) => ({
-            id: ex.id,
-            code: ex.subject_code || ex.code,
-            subject: ex.subject,
-            examName: ex.exam_name,
-            duration: ex.duration,
-            startTime: ex.start_time,
-            status: ex.status === "submitted" ? "completed" : ex.status,
-          }));
-          setExams(mappedExams);
+          // Fix: Prevent React crash if backend returns unexpected JSON (e.g. error object)
+          if (Array.isArray(data)) {
+            const mappedExams = data.map((ex) => ({
+              id: ex.id,
+              code: ex.subject_code || ex.code,
+              subject: ex.subject,
+              examName: ex.exam_name,
+              duration: ex.duration,
+              startTime: ex.start_time,
+              status: ex.status === "submitted" ? "completed" : ex.status,
+            }));
+            setExams(mappedExams);
+          } else {
+            console.error("Expected an array of exams, but received:", data);
+            setExams([]);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch exams", error);
