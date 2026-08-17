@@ -31,6 +31,22 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
         reg_no=data.registration_number
     )
 
+@router.post("/forgot-password")
+def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Step 1: Request Password Reset OTP."""
+    logger.info(f"Incoming forgot password request for email: {request.email}")
+    return auth_service.initiate_forgot_password(db, email=request.email)
+
+@router.post("/reset-password")
+def reset_password(request: schemas.ResetPasswordOTPRequest, db: Session = Depends(get_db)):
+    """Step 2: Submit new password with OTP."""
+    return auth_service.complete_reset_password(
+        db=db,
+        email=request.email,
+        otp=request.otp,
+        new_password=request.new_password
+    )
+
 @router.post("/login")
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     """Step 3: Verify password and return a JWT."""

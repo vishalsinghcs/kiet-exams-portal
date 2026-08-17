@@ -78,6 +78,54 @@ class AuthService:
 
         return {"message": "User created successfully", "user_id": new_user.id}
 
+    # === FORGOT PASSWORD PHASE 1: Send OTP ===
+    def initiate_forgot_password(self, db: Session, email: str):
+        logger.debug(f"Initiating forgot password for {email}")
+        user = user_repo.get_by_email(db, email)
+        if not user:
+            # We return success even if user doesn't exist to prevent email enumeration attacks
+            return {"message": "If the email is registered, an OTP has been sent."}
+
+        token_repo.delete_all_for_user(db, email, token_type="reset_password")
+        
+        otp_code = self._generate_otp()
+        from datetime import datetime, timedelta
+        expires = datetime.utcnow() + timedelta(minutes=15)
+        
+        token_repo.create(db, obj_in={
+            "email": email,
+            "token": otp_code,
+            "token_type": "reset_password",
+            "expires_at": expires
+        })
+
+        send_otp_email(to_email=email, otp=otp_code, purpose="reset_password")
+        return {"message": "If the email is registered, an OTP has been sent."}
+
+    # === FORGOT PASSWORD PHASE 2: Verify & Reset ===
+    def complete_reset_password(self, db: Session, email: str, otp: str, new_password: str):
+        logger.info(f"Attempting to reset password for {email}")
+        token = token_repo.get_valid_token(db, email, otp, "reset_password")
+        if not token:
+            logger.warning(f"Reset password failed: Invalid OTP for {email}")
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+            
+        from datetime import datetime
+        if token.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="OTP has expired")
+
+        user = user_repo.get_by_email(db, email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        hashed_pw = get_password_hash(new_password)
+        user.password_hash = hashed_pw
+        db.commit()
+
+        token_repo.delete_all_for_user(db, email, "reset_password")
+
+        return {"message": "Password reset successfully"}
+
     # === LOGIN PHASE ===
     def login(self, db: Session, email: str, password: str):
         logger.debug(f"Attempting login for {email}")
