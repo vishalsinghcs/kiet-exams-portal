@@ -27,6 +27,7 @@ def verify_signup_otp(data: schemas.OTPVerifyRequest, db: Session = Depends(get_
         password=data.password,
         branch=data.branch,
         section=data.section,
+        enrollment_year=data.enrollment_year,
         reg_no=data.registration_number
     )
 

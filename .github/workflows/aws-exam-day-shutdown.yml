@@ -3,8 +3,8 @@ name: AWS Exam Day Shutdown
 # IMPORTANT: Edit this cron expression to schedule the shutdown after an exam.
 # Example: '30 12 15 8 *' means 06:00 PM IST on August 15th.
 on:
-  schedule:
-    - cron: '30 12 31 12 *' # Placeholder - update after scheduling exam
+#  schedule:
+#    - cron: '30 12 31 12 *' # Placeholder - update after scheduling exam
   workflow_dispatch: # Allows manual trigger
 
 jobs:

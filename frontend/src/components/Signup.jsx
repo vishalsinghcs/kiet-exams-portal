@@ -22,6 +22,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [branch, setBranch] = useState("");
   const [section, setSection] = useState("");
+  const [enrollmentYear, setEnrollmentYear] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,7 +44,7 @@ const Signup = () => {
 
   const handleSignupDetails = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !branch || !section || !registrationNumber) {
+    if (!name || !email || !password || !branch || !section || !enrollmentYear || !registrationNumber) {
       setError("All fields are required");
       return;
     }
@@ -58,7 +59,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      await signupUser(name, email, password, branch, section, registrationNumber);
+      await signupUser(name, email, password, branch, section, parseInt(enrollmentYear), registrationNumber);
       setStep(2); // Move to OTP step
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.");
@@ -76,7 +77,7 @@ const Signup = () => {
     setError("");
     setLoading(true);
     try {
-      const tokenData = await verifyOtp(name, email, password, branch, section, registrationNumber, otp);
+      const tokenData = await verifyOtp(name, email, password, branch, section, parseInt(enrollmentYear), registrationNumber, otp);
       login(tokenData.access_token);
       navigate("/dashboard");
     } catch (err) {
@@ -126,6 +127,19 @@ const Signup = () => {
                   <div className="input-group-split">
                     <label>Registration Number</label>
                     <input type="text" placeholder="15-digit registration number" maxLength="15" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, ''))} required />
+                  </div>
+                  <div className="input-group-split">
+                    <label>Enrollment Year</label>
+                    <select 
+                      value={enrollmentYear} 
+                      onChange={(e) => setEnrollmentYear(e.target.value)} 
+                      required 
+                      className="auth-select"
+                    >
+                      <option value="" disabled>Select Year</option>
+                      <option value="2025">2025</option>
+                      <option value="2026">2026</option>
+                    </select>
                   </div>
                   <div className="form-row-split">
                     <div className="input-group-split">
