@@ -19,6 +19,12 @@ class UserCreate(BaseModel):
             raise ValueError("Section must be 'A' for Minor Degree")
         return self
 
+    @field_validator('email')
+    def validate_kiet_email(cls, v):
+        if not v.endswith('@kiet.edu'):
+            raise ValueError('Registration is restricted to @kiet.edu domains only')
+        return v
+
 # 1b. The rules for verifying signup OTP
 class OTPVerifyRequest(BaseModel):
     name: str
