@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, field_validator, model_validator, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, Any
 from uuid import UUID
@@ -12,6 +12,12 @@ class UserCreate(BaseModel):
     section: str
     registration_number: str = Field(..., pattern=r'^\d{15}$')
 
+    @model_validator(mode='after')
+    def validate_minor_degree_section(self) -> 'UserCreate':
+        if self.branch == "Minor Degree" and self.section != "A":
+            raise ValueError("Section must be 'A' for Minor Degree")
+        return self
+
 # 1b. The rules for verifying signup OTP
 class OTPVerifyRequest(BaseModel):
     name: str
@@ -21,6 +27,12 @@ class OTPVerifyRequest(BaseModel):
     section: str
     registration_number: str = Field(..., pattern=r'^\d{15}$')
     otp: str
+
+    @model_validator(mode='after')
+    def validate_minor_degree_section(self) -> 'OTPVerifyRequest':
+        if self.branch == "Minor Degree" and self.section != "A":
+            raise ValueError("Section must be 'A' for Minor Degree")
+        return self
 
     # This is the custom rule to ensure only KIET students can sign up
     @field_validator('email')
