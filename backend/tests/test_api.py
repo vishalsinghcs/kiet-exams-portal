@@ -10,6 +10,7 @@ def test_student_signup_and_login(client, db_session):
         "password": "testpassword",
         "branch": "CSE AI",
         "section": "A",
+        "enrollment_year": 2025,
         "registration_number": "123456789012345"
     }
     response = client.post("/signup", json=signup_data)
@@ -31,6 +32,7 @@ def test_student_signup_and_login(client, db_session):
         "password": "testpassword",
         "branch": "CSE AI",
         "section": "A",
+        "enrollment_year": 2025,
         "registration_number": "123456789012345",
         "otp": otp
     }
