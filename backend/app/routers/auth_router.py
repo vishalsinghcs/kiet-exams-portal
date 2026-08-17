@@ -41,3 +41,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 def login_swagger(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """A hidden endpoint just for Swagger UI's green Authorize button."""
     return auth_service.login(db, email=form_data.username, password=form_data.password)
+
+from app.utils.security import get_current_user
+from app.models import User
+
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user)):
+    """Logout endpoint to clear the concurrent session from Redis."""
+    logger.info(f"Incoming logout request for user: {current_user.id}")
+    return auth_service.logout(current_user.id)

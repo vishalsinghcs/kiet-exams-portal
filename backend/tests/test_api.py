@@ -49,6 +49,22 @@ def test_student_signup_and_login(client, db_session):
     assert "access_token" in data
     assert data["role"] == "student"
 
+    # 5. Test Concurrent Login Block
+    import os
+    if os.getenv("REDIS_URL"):
+        # Second login attempt should fail
+        second_login_response = client.post("/login", json=login_data)
+        assert second_login_response.status_code == 403
+        assert "already logged in" in second_login_response.json()["detail"]
+        
+        # 6. Test Logout allows subsequent login
+        logout_response = client.post("/logout", headers={"Authorization": f"Bearer {data['access_token']}"})
+        assert logout_response.status_code == 200
+        
+        third_login_response = client.post("/login", json=login_data)
+        assert third_login_response.status_code == 200
+        assert "access_token" in third_login_response.json()
+
 def test_exam_lifecycle(client, db_session):
     # 1. Create Teacher Account directly for testing
     from app.utils.security import get_password_hash
