@@ -19,11 +19,11 @@ export async function loginUser(email, password) {
 /**
  * Step 1: Request Signup OTP
  */
-export async function signupUser(name, email, password, branch, section, registrationNumber) {
+export async function signupUser(name, email, password, branch, section, enrollmentYear, registrationNumber) {
   const res = await fetch(`${API_BASE_URL}/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, branch, section, registration_number: registrationNumber }),
+    body: JSON.stringify({ name, email, password, branch, section, enrollment_year: enrollmentYear, registration_number: registrationNumber }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "Signup failed");
@@ -33,11 +33,11 @@ export async function signupUser(name, email, password, branch, section, registr
 /**
  * Step 2: Verify Signup OTP & Login
  */
-export async function verifyOtp(name, email, password, branch, section, registrationNumber, otp) {
+export async function verifyOtp(name, email, password, branch, section, enrollmentYear, registrationNumber, otp) {
   const res = await fetch(`${API_BASE_URL}/verify-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, branch, section, registration_number: registrationNumber, otp }),
+    body: JSON.stringify({ name, email, password, branch, section, enrollment_year: enrollmentYear, registration_number: registrationNumber, otp }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "Verification failed");
