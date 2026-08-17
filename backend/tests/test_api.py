@@ -98,6 +98,7 @@ def test_exam_lifecycle(client, db_session):
         "exam_name": "Mid Term",
         "duration": "60",
         "start_time": future_time.isoformat(),
+        "start_window_minutes": "30",
         "extra_sections": json.dumps([{"title": "Section A", "questions": []}])
     }
     create_response = client.post("/admin/exams", data=exam_data, headers=headers)

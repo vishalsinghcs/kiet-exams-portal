@@ -22,6 +22,13 @@ class EnrollmentService:
             logger.warning(f"Failed to start exam: Invalid access code [user_id={user_id} exam_id={exam_id}]")
             raise HTTPException(status_code=403, detail="Invalid exam access code!")
 
+        from datetime import timedelta
+        now = datetime.utcnow()
+        
+        # Check if they are trying to start too early
+        if now < exam.start_time:
+            raise HTTPException(status_code=400, detail="The exam has not started yet.")
+
         # 2. Check if the student already started it
         enrollment = enrollment_repo.get_enrollment(db, user_id, exam_id)
         if enrollment:
@@ -32,7 +39,13 @@ class EnrollmentService:
             logger.info(f"Student resumed in-progress exam [user_id={user_id} exam_id={exam_id}]")
             return enrollment
             
-        # 3. First time opening it? Create the Report Card and set to in_progress!
+        # 3. First time opening it? Check if the start window has closed!
+        exam_start_limit = exam.start_time + timedelta(minutes=exam.start_window_minutes)
+        if now > exam_start_limit:
+            logger.warning(f"Failed to start exam: Start window closed [user_id={user_id} exam_id={exam_id}]")
+            raise HTTPException(status_code=400, detail="The start window for this exam has closed.")
+
+        # Create the Report Card and set to in_progress!
         new_enrollment = enrollment_repo.create(db, obj_in={
             "user_id": user_id,
             "exam_id": exam_id,

@@ -72,6 +72,7 @@ class ExamBase(BaseModel):
     exam_name: str
     duration: int
     start_time: datetime
+    start_window_minutes: int = 30
     # Rich content fields
     exam_sections: Any
 
