@@ -4,15 +4,18 @@ from uuid import UUID
 import os
 
 from app.database import get_db
-from app import schemas, storage
+from app import schemas
+from app.services.storage_service import storage_service
 from app.dependencies import get_current_user, get_teacher_or_admin
 from app.models import User, ExamSectionAssignment, ExamEnrollment
 from app.utils.logger import logger
+from datetime import datetime
 
 # Import Services & Repositories
 from app.services.exam_service import exam_service
 from app.services.enrollment_service import enrollment_service
 from app.repositories.enrollment_repository import enrollment_repo
+from app.repositories.exam_repository import exam_repo
 
 router = APIRouter(tags=["Exams"])
 
@@ -35,11 +38,7 @@ async def create_exam(
 ):
     """Teacher creates an exam and uploads dataset files."""
     logger.info(f"Incoming request to create exam from teacher [teacher_id={user.id}]")
-    # Handle File Uploads in the Router
-    dataset_path = await storage.upload_file(dataset, "datasets") if dataset else None
-    sample_csv_path = await storage.upload_file(sample_csv, "samples") if sample_csv else None
-
-    from datetime import datetime
+    
     import json
     
     try:
@@ -55,9 +54,21 @@ async def create_exam(
         "duration": duration,
         "start_time": datetime.fromisoformat(start_time.replace("Z", "+00:00")),
         "exam_sections": exam_sections_json,
-        "dataset_path": dataset_path,
-        "sample_csv_path": sample_csv_path
     }
+
+    # Handle File Uploads via Service
+    dataset_path = None
+    if dataset:
+        logger.info(f"Teacher [user_id={user.id}] uploading dataset.zip at {datetime.utcnow()}")
+        dataset_path = await storage_service.upload_exam_dataset(dataset, exam_data, user)
+        
+    sample_csv_path = None
+    if sample_csv:
+        logger.info(f"Teacher [user_id={user.id}] uploading sample.csv at {datetime.utcnow()}")
+        sample_csv_path = await storage_service.upload_exam_sample_csv(sample_csv, exam_data, user)
+
+    exam_data["dataset_path"] = dataset_path
+    exam_data["sample_csv_path"] = sample_csv_path
 
     # Hand off to the Service layer!
     return exam_service.create_exam(db, teacher_id=user.id, exam_data=exam_data)
@@ -240,12 +251,16 @@ async def upload_exam_file(
     db: Session = Depends(get_db)
 ):
     """Student uploads a file. This does NOT submit the exam."""
-    logger.info(f"Student uploading file [user_id={current_user.id} exam_id={exam_id} file_type={file_type}]")
+    logger.info(f"Student [user_id={current_user.id}] uploading {file_type} submission at {datetime.utcnow()}")
     enrollment = enrollment_repo.get_enrollment(db, current_user.id, exam_id)
     if not enrollment:
         raise HTTPException(status_code=403, detail="You have not started this exam.")
         
-    file_path = await storage.upload_file(file, f"submissions/{exam_id}")
+    exam = exam_repo.get_by_id(db, exam_id)
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found.")
+        
+    file_path = await storage_service.upload_student_submission(file, exam, current_user, file_type)
     
     if file_type == "csv":
         enrollment_repo.update(db, enrollment, {"csv_submission_path": file_path})
