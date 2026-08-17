@@ -370,3 +370,49 @@ def test_login_rate_limiting(client, db_session):
     res4 = client.post("/login", json={"email": email, "password": "correctpassword"})
     assert res4.status_code == 429
     assert "15 minutes" in res4.json()["detail"].lower()
+
+def test_forgot_and_reset_password(client, db_session):
+    import uuid
+    from app.models import User, VerificationToken
+    from app.utils.security import get_password_hash
+    
+    email = f"reset_{uuid.uuid4().hex[:6]}@kiet.edu"
+    user = User(
+        id=uuid.uuid4(),
+        name="Reset User",
+        email=email,
+        password_hash=get_password_hash("oldpassword"),
+        role="student",
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    # 1. Forgot password request
+    res = client.post("/forgot-password", json={"email": email})
+    assert res.status_code == 200
+    assert "OTP has been sent" in res.json()["message"]
+
+    # 2. Extract OTP directly from DB
+    token_obj = db_session.query(VerificationToken).filter(
+        VerificationToken.email == email,
+        VerificationToken.token_type == "password_reset"
+    ).first()
+    assert token_obj is not None
+    otp = token_obj.token
+
+    # 3. Complete Reset Password
+    res = client.post("/reset-password", json={
+        "email": email,
+        "otp": otp,
+        "new_password": "newpassword123"
+    })
+    assert res.status_code == 200
+
+    # 4. Verify login with NEW password works
+    login_res = client.post("/login", json={"email": email, "password": "newpassword123"})
+    assert login_res.status_code == 200
+    
+    # 5. Verify login with OLD password fails
+    login_old = client.post("/login", json={"email": email, "password": "oldpassword"})
+    assert login_old.status_code == 401
