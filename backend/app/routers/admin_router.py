@@ -67,3 +67,33 @@ def get_admin_stats(admin: User = Depends(get_admin_user), db: Session = Depends
         "total_exams": total_exams,
         "total_enrollments": total_enrollments
     }
+
+from app.redis_client import redis_client
+from pydantic import BaseModel
+
+class ForceLogoutRequest(BaseModel):
+    identifier: str # Email or Registration Number
+
+@router.post("/force-logout")
+def force_logout_student(request: ForceLogoutRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Forcefully logout a student by deleting their Redis session."""
+    logger.info(f"Admin action: Force logout triggered [admin_id={admin.id} target_identifier={request.identifier}]")
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Redis is not configured. Session blocking is disabled.")
+    
+    # 1. Find user by email or registration number
+    user = db.query(User).filter(
+        (User.email == request.identifier) | (User.registration_number == request.identifier)
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Student not found.")
+        
+    # 2. Clear Session
+    session_key = f"session:{user.id}"
+    if redis_client.exists(session_key):
+        redis_client.delete(session_key)
+        logger.info(f"Force logout successful for user_id={user.id}")
+        return {"message": f"Session forcefully terminated for {user.name}."}
+    else:
+        return {"message": f"No active session found for {user.name}."}

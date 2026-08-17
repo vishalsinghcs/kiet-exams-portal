@@ -7,7 +7,7 @@ from app.repositories.user_repository import user_repo
 from app.repositories.token_repository import token_repo
 from app.services.email_service import send_otp_email
 from app.utils.security import get_password_hash, verify_password, create_access_token
-from app.models import VerificationToken, User
+from app.models import VerificationToken, User, ExamEnrollment
 from app.utils.logger import logger
 from app.redis_client import redis_client
 
@@ -110,13 +110,36 @@ class AuthService:
 
         logger.info(f"Login successful for {email} with role {user.role}")
 
+        # 4. If the user is a student, increment their login_count on any active exams
+        if user.role == "student":
+            active_enrollments = db.query(ExamEnrollment).filter(
+                ExamEnrollment.user_id == user.id,
+                ExamEnrollment.status == "in_progress"
+            ).all()
+            if active_enrollments:
+                for enrollment in active_enrollments:
+                    enrollment.login_count += 1
+                db.commit()
+                logger.info(f"Incremented login_count for {len(active_enrollments)} active exams for {email}")
+
         return {
             "access_token": jwt_token,
             "token_type": "bearer",
             "role": user.role
         }
 
-    def logout(self, user_id):
+    def logout(self, db: Session, user_id):
+        # 1. Check if the user is currently taking an exam
+        active_enrollments = db.query(ExamEnrollment).filter(
+            ExamEnrollment.user_id == user_id,
+            ExamEnrollment.status == "in_progress"
+        ).first()
+        
+        if active_enrollments:
+            logger.warning(f"Logout blocked for user_id {user_id}: Exam in progress")
+            raise HTTPException(status_code=403, detail="Cannot logout while an exam is in progress. Please submit the exam first.")
+
+        # 2. Clear Session
         if redis_client:
             session_key = f"session:{user_id}"
             redis_client.delete(session_key)
