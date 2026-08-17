@@ -81,16 +81,37 @@ class AuthService:
     # === LOGIN PHASE ===
     def login(self, db: Session, email: str, password: str):
         logger.debug(f"Attempting login for {email}")
+        # 1.5 Check Rate Limits
+        attempts_key = f"login_attempts:{email}"
+        if redis_client:
+            attempts = redis_client.get(attempts_key)
+            if attempts and int(attempts) >= 3:
+                logger.warning(f"Login blocked for {email} due to too many failed attempts.")
+                raise HTTPException(status_code=429, detail="Too many failed login attempts. Please try again in 15 minutes.")
+
         # 1. Fetch user
         user = user_repo.get_by_email(db, email)
         if not user:
             logger.warning(f"Login failed: User not found for email {email}")
+            # Even if user is not found, track the attempt against the email to prevent enumeration
+            if redis_client:
+                redis_client.incr(attempts_key)
+                if redis_client.ttl(attempts_key) == -1:
+                    redis_client.expire(attempts_key, 900)
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # 2. Verify Password
         if not verify_password(password, user.password_hash):
             logger.warning(f"Login failed: Invalid password for email {email}")
+            if redis_client:
+                redis_client.incr(attempts_key)
+                if redis_client.ttl(attempts_key) == -1:
+                    redis_client.expire(attempts_key, 900)
             raise HTTPException(status_code=401, detail="Invalid email or password")
+
+        # 2.2 Clear failed attempts on success
+        if redis_client:
+            redis_client.delete(attempts_key)
 
         # 2.5 Check Concurrent Sessions via Redis (Block if already logged in)
         if redis_client and user.role == "student":
