@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_call:
 
 jobs:
   test:
@@ -14,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
@@ -43,6 +44,7 @@ jobs:
         env:
           DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/test_db"
           SECRET_KEY: "test_secret_key"
+          ALGORITHM: "HS256"
         run: |
           cd backend
-          pytest -v || echo "Please add pytest cases"
+          pytest -v

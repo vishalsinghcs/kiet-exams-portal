@@ -32,3 +32,11 @@ python-multipart
 email-validator==2.3.0
 alembic==1.18.4
 pyjwt==2.10.1
+opentelemetry-api==1.25.0
+opentelemetry-sdk==1.25.0
+opentelemetry-exporter-otlp==1.25.0
+opentelemetry-instrumentation-fastapi==0.46b0
+opentelemetry-instrumentation-sqlalchemy==0.46b0
+opentelemetry-instrumentation-redis==0.46b0
+opentelemetry-instrumentation-logging==0.46b0
+python-json-logger==2.0.7

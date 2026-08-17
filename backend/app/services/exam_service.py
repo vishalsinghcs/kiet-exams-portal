@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from uuid import UUID
+import logging
 
 from app.repositories.exam_repository import exam_repo
 from app.models import Exam, User
+from app.utils.logger import logger
 
 class ExamService:
 
@@ -12,6 +14,7 @@ class ExamService:
     # ==========================
     def create_exam(self, db: Session, teacher_id: UUID, exam_data: dict):
         """Teacher creates a new exam."""
+        logger.debug(f"Service: Creating exam [teacher_id={teacher_id}]")
         # SECURITY: Force the 'created_by' field to be the teacher making the request
         exam_data["created_by"] = teacher_id
         return exam_repo.create(db, obj_in=exam_data)
@@ -22,6 +25,7 @@ class ExamService:
 
     def assign_exam_to_batch(self, db: Session, teacher_id: UUID, exam_id: UUID, enrollment_year: int, branch: str, section: str):
         """Teacher assigns their exam to a specific student batch (e.g. 2026 CSE A)."""
+        logger.debug(f"Service: Assigning exam [exam_id={exam_id} teacher_id={teacher_id} enrollment_year={enrollment_year} branch={branch} section={section}]")
         # SECURITY CHECK: Did this teacher actually create this exam?
         exam = exam_repo.get_by_id(db, exam_id)
         if not exam:
@@ -35,8 +39,21 @@ class ExamService:
 
         return exam_repo.assign_exam_to_batch(db, exam_id, enrollment_year, branch, section)
 
+    def revoke_exam_from_batch(self, db: Session, teacher_id: UUID, exam_id: UUID, enrollment_year: int, branch: str, section: str):
+        """Teacher revokes their exam from a specific student batch."""
+        logger.debug(f"Service: Revoking exam assignment [exam_id={exam_id} teacher_id={teacher_id} enrollment_year={enrollment_year} branch={branch} section={section}]")
+        # SECURITY CHECK: Did this teacher actually create this exam?
+        exam = exam_repo.get_by_id(db, exam_id)
+        if not exam:
+            raise HTTPException(status_code=404, detail="Exam not found")
+        if exam.created_by != teacher_id:
+            raise HTTPException(status_code=403, detail="Forbidden: You can only revoke exams that you created!")
+
+        return exam_repo.revoke_exam_from_batch(db, exam_id, enrollment_year, branch, section)
+
     def delete_exam(self, db: Session, teacher_id: UUID, exam_id: UUID):
         """Teacher deletes an exam."""
+        logger.debug(f"Service: Deleting exam [exam_id={exam_id} teacher_id={teacher_id}]")
         # SECURITY CHECK: Did this teacher actually create this exam?
         exam = exam_repo.get_by_id(db, exam_id)
         if not exam:

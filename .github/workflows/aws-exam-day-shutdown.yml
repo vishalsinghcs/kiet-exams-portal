@@ -3,13 +3,13 @@ name: AWS Exam Day Shutdown
 # IMPORTANT: Edit this cron expression to schedule the shutdown after an exam.
 # Example: '30 12 15 8 *' means 06:00 PM IST on August 15th.
 on:
-  schedule:
-    - cron: '30 12 31 12 *' # Placeholder - update after scheduling exam
+#  schedule:
+#    - cron: '30 12 31 12 *' # Placeholder - update after scheduling exam
   workflow_dispatch: # Allows manual trigger
 
 jobs:
-  shutdown:
-    name: Stop ECS and RDS
+  shutdown-ecs:
+    name: Stop ECS
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
@@ -22,13 +22,24 @@ jobs:
       - name: Stop ECS Backend Tasks
         run: |
           echo "Scaling ECS service down to 0 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 0 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 0 --region ap-south-1 > /dev/null
+
+  shutdown-rds:
+    name: Snapshot and Delete RDS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
       - name: Snapshot and Delete RDS Database
         run: |
           echo "Taking final snapshot and deleting RDS instance to save costs..."
           SNAPSHOT_NAME="kiet-exams-db-final-$(date +%s)"
-          aws rds delete-db-instance --db-instance-identifier kiet-exams-db --final-db-snapshot-identifier $SNAPSHOT_NAME
+          aws rds delete-db-instance --db-instance-identifier kiet-exams-db --final-db-snapshot-identifier $SNAPSHOT_NAME > /dev/null
           
           echo "Waiting for RDS instance to be fully deleted..."
           aws rds wait db-instance-deleted --db-instance-identifier kiet-exams-db

@@ -4,8 +4,8 @@ name: AWS Exam Day Startup
 # Example: '30 2 15 8 *' means 08:00 AM IST on August 15th.
 # The time is in UTC. (IST is UTC + 5:30)
 on:
-  schedule:
-    - cron: '30 2 31 12 *' # Placeholder - update before exam
+#  schedule:
+#    - cron: "30 2 31 12 *" # Placeholder - update before exam
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -26,42 +26,37 @@ jobs:
         run: |
           echo "Finding latest snapshot for kiet-exams-db..."
           LATEST_SNAPSHOT=$(aws rds describe-db-snapshots --db-instance-identifier kiet-exams-db --query 'reverse(sort_by(DBSnapshots, &SnapshotCreateTime))[0].DBSnapshotIdentifier' --output text)
-          
+
           if [ "$LATEST_SNAPSHOT" == "None" ] || [ -z "$LATEST_SNAPSHOT" ]; then
             echo "No snapshot found! Cannot restore."
             exit 1
           fi
-          
+
           echo "Finding RDS Security Group ID..."
           SG_ID=$(aws ec2 describe-security-groups --filters Name=group-name,Values=kiet-rds-sg --query "SecurityGroups[0].GroupId" --output text)
-          
+          echo "SG_ID=$SG_ID" >> $GITHUB_ENV
+
           echo "Restoring RDS instance from snapshot $LATEST_SNAPSHOT..."
           aws rds restore-db-instance-from-db-snapshot \
             --db-instance-identifier kiet-exams-db \
             --db-snapshot-identifier $LATEST_SNAPSHOT \
             --db-instance-class db.t4g.micro \
-            --vpc-security-group-ids $SG_ID
-          
+            --vpc-security-group-ids $SG_ID \
+            --publicly-accessible > /dev/null
+
       - name: Wait for RDS to be available
         run: |
           echo "Waiting for RDS instance to become available..."
           aws rds wait db-instance-available --db-instance-identifier kiet-exams-db
 
-      - name: Install PostgreSQL Client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: Sync Supabase Data to RDS
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          RDS_DB_URL: ${{ secrets.RDS_DB_URL }}
-        run: |
-          chmod +x .github/scripts/db_transfer.sh
-          ./.github/scripts/db_transfer.sh
-
       - name: Start ECS Backend Tasks
         run: |
           echo "Scaling ECS service to 2 tasks..."
-          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 2 --region ap-south-1 > /dev/null
+        
+      - name: Wait for ECS to become stable
+        run : |
+          echo "Waiting for ECS Tasks to become healthy and stable..."
+          aws ecs wait services-stable --cluster kiet-exams-cluster --services kiet-backend-service --region ap-south-1
+          
           echo "AWS Environment is now fully started and updated!"

@@ -7,6 +7,7 @@ from app.database import get_db
 from app import schemas, storage
 from app.dependencies import get_current_user, get_teacher_or_admin
 from app.models import User, ExamSectionAssignment, ExamEnrollment
+from app.utils.logger import logger
 
 # Import Services & Repositories
 from app.services.exam_service import exam_service
@@ -33,6 +34,7 @@ async def create_exam(
     db: Session = Depends(get_db)
 ):
     """Teacher creates an exam and uploads dataset files."""
+    logger.info(f"Incoming request to create exam from teacher [teacher_id={user.id}]")
     # Handle File Uploads in the Router
     dataset_path = await storage.upload_file(dataset, "datasets") if dataset else None
     sample_csv_path = await storage.upload_file(sample_csv, "samples") if sample_csv else None
@@ -68,6 +70,7 @@ def get_all_exams(user: User = Depends(get_teacher_or_admin), db: Session = Depe
 @router.delete("/admin/exams/{exam_id}")
 def delete_exam(exam_id: UUID, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
     """Teacher deletes an exam."""
+    logger.info(f"Incoming request to delete exam [exam_id={exam_id} teacher_id={user.id}]")
     return exam_service.delete_exam(db, teacher_id=user.id, exam_id=exam_id)
 
 @router.get("/admin/exams/{exam_id}/sections")
@@ -78,20 +81,21 @@ def get_assigned_sections(exam_id: UUID, user: User = Depends(get_teacher_or_adm
 @router.delete("/admin/exams/{exam_id}/assign-section")
 def revoke_assigned_section(exam_id: UUID, data: schemas.SectionAssignRequest, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
     """Teacher revokes an exam assignment from a batch."""
-    assignment = db.query(ExamSectionAssignment).filter(
-        ExamSectionAssignment.exam_id == exam_id,
-        ExamSectionAssignment.branch == data.branch,
-        ExamSectionAssignment.section == data.section
-    ).first()
-    if not assignment:
-        raise HTTPException(status_code=404, detail="Assignment not found")
-    db.delete(assignment)
-    db.commit()
+    logger.info(f"Incoming request to revoke exam assignment [exam_id={exam_id} teacher_id={user.id} branch={data.branch} section={data.section}]")
+    exam_service.revoke_exam_from_batch(
+        db,
+        teacher_id=user.id,
+        exam_id=exam_id,
+        enrollment_year=2024,
+        branch=data.branch,
+        section=data.section
+    )
     return {"message": "Assignment revoked"}
 
 @router.post("/admin/exams/{exam_id}/assign-section")
 def assign_section_to_exam(exam_id: UUID, data: schemas.SectionAssignRequest, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
     """Teacher assigns an exam to a specific student batch."""
+    logger.info(f"Incoming request to assign exam [exam_id={exam_id} teacher_id={user.id} branch={data.branch} section={data.section}]")
     exam_service.assign_exam_to_batch(
         db, 
         teacher_id=user.id, 
@@ -184,6 +188,7 @@ def get_exam_results(exam_id: UUID, user: User = Depends(get_teacher_or_admin), 
 @router.get("/users/me/exams", response_model=list[schemas.AssignedExamResponse])
 def get_my_exams(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Student fetches exams assigned to their batch, with real-time status."""
+    logger.info(f"Student dashboard loaded [user_id={current_user.id}]")
     student_year = current_user.enrollment_year if current_user.enrollment_year else 2024
     
     exams = exam_service.get_student_available_exams(
@@ -223,6 +228,7 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
 @router.post("/users/me/exams/{exam_id}/verify-code")
 def verify_exam_code(exam_id: UUID, request: schemas.VerifyExamCodeRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Student enters the 6-digit pin to start the exam."""
+    logger.info(f"Student verifying exam access code [user_id={current_user.id} exam_id={exam_id}]")
     return enrollment_service.start_exam(db, user_id=current_user.id, exam_id=exam_id, access_code=request.code)
 
 @router.post("/users/me/exams/{exam_id}/upload")
@@ -234,6 +240,7 @@ async def upload_exam_file(
     db: Session = Depends(get_db)
 ):
     """Student uploads a file. This does NOT submit the exam."""
+    logger.info(f"Student uploading file [user_id={current_user.id} exam_id={exam_id} file_type={file_type}]")
     enrollment = enrollment_repo.get_enrollment(db, current_user.id, exam_id)
     if not enrollment:
         raise HTTPException(status_code=403, detail="You have not started this exam.")
@@ -252,4 +259,5 @@ async def upload_exam_file(
 @router.post("/users/me/exams/{exam_id}/submit")
 def submit_exam(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Student clicks 'Finish Test'. Will fail if both files aren't uploaded."""
+    logger.info(f"Student attempting to submit final exam [user_id={current_user.id} exam_id={exam_id}]")
     return enrollment_service.submit_exam(db, user_id=current_user.id, exam_id=exam_id)
