@@ -396,7 +396,7 @@ def test_forgot_and_reset_password(client, db_session):
     # 2. Extract OTP directly from DB
     token_obj = db_session.query(VerificationToken).filter(
         VerificationToken.email == email,
-        VerificationToken.token_type == "reset_password"
+        VerificationToken.token_type == "password_reset"
     ).first()
     assert token_obj is not None
     otp = token_obj.token

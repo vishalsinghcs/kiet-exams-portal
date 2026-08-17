@@ -86,7 +86,7 @@ class AuthService:
             # We return success even if user doesn't exist to prevent email enumeration attacks
             return {"message": "If the email is registered, an OTP has been sent."}
 
-        token_repo.delete_all_for_user(db, email, token_type="reset_password")
+        token_repo.delete_all_for_user(db, email, token_type="password_reset")
         
         otp_code = self._generate_otp()
         from datetime import datetime, timedelta
@@ -95,17 +95,17 @@ class AuthService:
         token_repo.create(db, obj_in={
             "email": email,
             "token": otp_code,
-            "token_type": "reset_password",
+            "token_type": "password_reset",
             "expires_at": expires
         })
 
-        send_otp_email(to_email=email, otp=otp_code, purpose="reset_password")
+        send_otp_email(to_email=email, otp=otp_code, purpose="password_reset")
         return {"message": "If the email is registered, an OTP has been sent."}
 
     # === FORGOT PASSWORD PHASE 2: Verify & Reset ===
     def complete_reset_password(self, db: Session, email: str, otp: str, new_password: str):
         logger.info(f"Attempting to reset password for {email}")
-        token = token_repo.get_valid_token(db, email, otp, "reset_password")
+        token = token_repo.get_valid_token(db, email, otp, "password_reset")
         if not token:
             logger.warning(f"Reset password failed: Invalid OTP for {email}")
             raise HTTPException(status_code=400, detail="Invalid or expired OTP")
@@ -122,7 +122,7 @@ class AuthService:
         user.password_hash = hashed_pw
         db.commit()
 
-        token_repo.delete_all_for_user(db, email, "reset_password")
+        token_repo.delete_all_for_user(db, email, "password_reset")
 
         return {"message": "Password reset successfully"}
 
