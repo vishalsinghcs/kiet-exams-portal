@@ -89,6 +89,7 @@ def test_exam_lifecycle(client, db_session):
         email="test_student@kiet.edu",
         password_hash=get_password_hash("testpassword"),
         role="student",
+        enrollment_year=2025,
         branch="CSE AI",
         section="A",
         registration_number="123456789012345",
@@ -124,8 +125,9 @@ def test_exam_lifecycle(client, db_session):
     created_exam = create_response.json()
     exam_id = created_exam["id"]
 
-    # 4. Assign Exam to Section "CSE AI" "A"
+    # 4. Assign Exam to "2026" "CSE AI" "A"
     assign_data = {
+        "enrollment_year": 2025,
         "branch": "CSE AI",
         "section": "A"
     }

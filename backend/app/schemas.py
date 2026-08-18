@@ -142,12 +142,14 @@ class AdminStatsResponse(BaseModel):
 
 # Feature 8 — Bulk section assignment
 class SectionAssignRequest(BaseModel):
+    enrollment_year: int
     branch: str
     section: str
 
 class SectionAssignmentResponse(BaseModel):
     id: int
     exam_id: UUID
+    enrollment_year: int
     branch: str
     section: str
     assigned_at: datetime

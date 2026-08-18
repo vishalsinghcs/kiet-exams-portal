@@ -97,7 +97,7 @@ def revoke_assigned_section(exam_id: UUID, data: schemas.SectionAssignRequest, u
         db,
         teacher_id=user.id,
         exam_id=exam_id,
-        enrollment_year=2024,
+        enrollment_year=data.enrollment_year,
         branch=data.branch,
         section=data.section
     )
@@ -111,7 +111,7 @@ def assign_section_to_exam(exam_id: UUID, data: schemas.SectionAssignRequest, us
         db, 
         teacher_id=user.id, 
         exam_id=exam_id, 
-        enrollment_year=2024, 
+        enrollment_year=data.enrollment_year, 
         branch=data.branch, 
         section=data.section
     )
