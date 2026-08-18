@@ -240,7 +240,8 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
 def verify_exam_code(exam_id: UUID, request: schemas.VerifyExamCodeRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Student enters the 6-digit pin to start the exam."""
     logger.info(f"Student verifying exam access code [user_id={current_user.id} exam_id={exam_id}]")
-    return enrollment_service.start_exam(db, user_id=current_user.id, exam_id=exam_id, access_code=request.code)
+    enrollment = enrollment_service.start_exam(db, user_id=current_user.id, exam_id=exam_id, access_code=request.code)
+    return {"success": True, "status": enrollment.status}
 
 @router.post("/users/me/exams/{exam_id}/upload")
 async def upload_exam_file(
