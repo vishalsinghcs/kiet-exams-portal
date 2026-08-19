@@ -29,31 +29,95 @@ const ExamEnvironment = () => {
   const [submissionError, setSubmissionError] = useState("");
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
+  const handleSubmissionFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size === 0) {
+      alert("Error: The uploaded document is empty.");
+      e.target.value = "";
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert("Error: Only .csv files are supported in this column.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Error: File exceeds the 5MB size limit.");
+      e.target.value = "";
+      return;
+    }
+    setSubmissionFile(file);
+  };
+
+  const handleNotebookFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size === 0) {
+      alert("Error: The uploaded document is empty.");
+      e.target.value = "";
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.ipynb')) {
+      alert("Error: Only .ipynb files are supported in this column.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      alert("Error: File exceeds the 15MB size limit.");
+      e.target.value = "";
+      return;
+    }
+    setNotebookFile(file);
+  };
+
   const handleSubmission = async () => {
-    if (!submissionFile && !notebookFile) return;
+    if (!submissionFile || !notebookFile) {
+      setSubmissionError("You must select both the .csv and .ipynb files before submitting.");
+      return;
+    }
+    
     setIsSubmitting(true);
     setSubmissionError("");
     setSubmissionSuccess(false);
 
-    const formData = new FormData();
-    if (submissionFile) formData.append("submission", submissionFile);
-    if (notebookFile) formData.append("notebook", notebookFile);
-
     try {
-      const res = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
+      // Step 1: Upload CSV
+      const csvData = new FormData();
+      csvData.append("file_type", "csv");
+      csvData.append("file", submissionFile);
+      const resCsv = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/upload`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
-        body: formData
+        body: csvData
+      });
+      if (!resCsv.ok) throw new Error("Failed to upload CSV. Please try again.");
+
+      // Step 2: Upload Notebook
+      const nbData = new FormData();
+      nbData.append("file_type", "ipynb");
+      nbData.append("file", notebookFile);
+      const resNb = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/upload`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: nbData
+      });
+      if (!resNb.ok) throw new Error("Failed to upload Notebook. Please try again.");
+
+      // Step 3: Finalize Submission
+      const resSubmit = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
       });
 
-      if (res.ok) {
+      if (resSubmit.ok) {
         setSubmissionSuccess(true);
       } else {
-        const errorData = await res.json();
-        setSubmissionError(errorData.detail || "Failed to submit exam.");
+        const errorData = await resSubmit.json();
+        setSubmissionError(errorData.detail || "Failed to finalize exam submission.");
       }
     } catch (err) {
-      setSubmissionError("Network error while submitting.");
+      setSubmissionError(err.message || "Network error while submitting.");
     } finally {
       setIsSubmitting(false);
     }
@@ -274,7 +338,7 @@ const ExamEnvironment = () => {
           style={{ display: activeView === "coding" ? "flex" : "none" }}
         >
           <iframe
-            src="https://piyushmtech2252.github.io/ML_ARENA/lab/index.html"
+            src={`/ide/index.html?examId=${examId}&token=${token}&apiBaseUrl=${encodeURIComponent(API_BASE_URL)}`}
             title="JupyterLite Coding Environment"
             className="coding-iframe"
             allow="cross-origin-isolated; clipboard-read; clipboard-write"
@@ -298,7 +362,7 @@ const ExamEnvironment = () => {
                   type="file" 
                   accept=".csv" 
                   className="file-input" 
-                  onChange={(e) => setSubmissionFile(e.target.files[0])}
+                  onChange={handleSubmissionFileChange}
                 />
                 {submissionFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold', fontSize: '0.85rem' }}>{submissionFile.name}</p>}
               </div>
@@ -310,7 +374,7 @@ const ExamEnvironment = () => {
                   type="file" 
                   accept=".ipynb" 
                   className="file-input" 
-                  onChange={(e) => setNotebookFile(e.target.files[0])}
+                  onChange={handleNotebookFileChange}
                 />
                 {notebookFile && <p style={{ marginTop: '10px', color: '#10B981', fontWeight: 'bold', fontSize: '0.85rem' }}>{notebookFile.name}</p>}
               </div>

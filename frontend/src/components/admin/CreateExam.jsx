@@ -99,6 +99,48 @@ const CreateExam = () => {
     }
   };
 
+  const handleDatasetChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size === 0) {
+      alert("Error: The uploaded document is empty.");
+      e.target.value = "";
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+      alert("Error: Only .zip files are supported in this column.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert("Error: File exceeds the 50MB size limit.");
+      e.target.value = "";
+      return;
+    }
+    setDataset(file);
+  };
+
+  const handleSampleCsvChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size === 0) {
+      alert("Error: The uploaded document is empty.");
+      e.target.value = "";
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert("Error: Only .csv files are supported in this column.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Error: File exceeds the 5MB size limit.");
+      e.target.value = "";
+      return;
+    }
+    setSampleCsv(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.access_code.length !== 6 || !/^\d+$/.test(form.access_code)) {
@@ -208,7 +250,7 @@ const CreateExam = () => {
                 <label className="project-file-upload">
                   <UploadCloud size={18} />
                   <span>{dataset ? dataset.name : "Click to upload dataset"}</span>
-                  <input type="file" accept=".zip" hidden onChange={e => setDataset(e.target.files[0])} />
+                  <input type="file" accept=".zip" hidden onChange={handleDatasetChange} />
                 </label>
               </div>
               <div>
@@ -216,7 +258,7 @@ const CreateExam = () => {
                 <label className="project-file-upload">
                   <FileText size={18} />
                   <span>{sampleCsv ? sampleCsv.name : "Click to upload sample"}</span>
-                  <input type="file" accept=".csv" hidden onChange={e => setSampleCsv(e.target.files[0])} />
+                  <input type="file" accept=".csv" hidden onChange={handleSampleCsvChange} />
                 </label>
               </div>
            </div>
