@@ -146,7 +146,7 @@ const Signup = () => {
                     <input type="text" placeholder="15-digit registration number" maxLength="15" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value.replace(/\D/g, ''))} required />
                   </div>
                   <div className="input-group-split">
-                    <label>Enrollment Year</label>
+                    <label>Year of Admission</label>
                     <select 
                       value={enrollmentYear} 
                       onChange={(e) => setEnrollmentYear(e.target.value)} 
