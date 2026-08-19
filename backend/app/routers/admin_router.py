@@ -97,3 +97,47 @@ def force_logout_student(request: ForceLogoutRequest, admin: User = Depends(get_
         return {"message": f"Session forcefully terminated for {user.name}."}
     else:
         return {"message": f"No active session found for {user.name}."}
+
+from fastapi import Header
+import os
+from datetime import datetime, timedelta
+
+MAINTENANCE_API_KEY = os.getenv("MAINTENANCE_API_KEY", "default-secret-key")
+
+def verify_maintenance_key(x_api_key: str = Header(...)):
+    if x_api_key != MAINTENANCE_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+
+class MaintenanceModeRequest(BaseModel):
+    enabled: bool
+
+@router.post("/maintenance-mode")
+def toggle_maintenance_mode(request: MaintenanceModeRequest, key: str = Depends(verify_maintenance_key)):
+    """Toggle the global maintenance mode for server shifting."""
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Redis is not configured.")
+    if request.enabled:
+        redis_client.set("maintenance_mode", "true")
+        logger.info("Maintenance mode ENABLED via API")
+    else:
+        redis_client.set("maintenance_mode", "false")
+        logger.info("Maintenance mode DISABLED via API")
+    return {"message": f"Maintenance mode set to {request.enabled}"}
+
+class ScheduleMaintenanceRequest(BaseModel):
+    minutes: int
+
+@router.post("/schedule-maintenance")
+def schedule_maintenance(request: ScheduleMaintenanceRequest, key: str = Depends(verify_maintenance_key)):
+    """Set a warning timer in Redis before actual maintenance begins."""
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Redis is not configured.")
+    
+    end_time = datetime.utcnow() + timedelta(minutes=request.minutes)
+    iso_string = end_time.isoformat() + "Z"
+    
+    # Store for 2 hours (in case workflow fails, it naturally expires)
+    redis_client.setex("maintenance_timer_end", 7200, iso_string)
+    
+    logger.info(f"Maintenance scheduled in {request.minutes} minutes.")
+    return {"message": f"Maintenance scheduled at {iso_string}", "timestamp": iso_string}
