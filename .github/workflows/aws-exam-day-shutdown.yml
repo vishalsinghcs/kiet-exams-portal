@@ -44,3 +44,23 @@ jobs:
           echo "Waiting for RDS instance to be fully deleted..."
           aws rds wait db-instance-deleted --db-instance-identifier kiet-exams-db
           echo "AWS Environment is now fully shut down and safely backed up!"
+
+  shutdown-elasticache:
+    name: Snapshot and Delete ElastiCache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Snapshot and Delete ElastiCache
+        run: |
+          echo "Taking final snapshot and deleting ElastiCache instance to save costs..."
+          SNAPSHOT_NAME="kiet-redis-final-$(date +%s)"
+          aws elasticache delete-cache-cluster --cache-cluster-id kiet-redis --final-snapshot-identifier $SNAPSHOT_NAME > /dev/null
+          
+          echo "Waiting for ElastiCache instance to be fully deleted..."
+          aws elasticache wait cache-cluster-deleted --cache-cluster-id kiet-redis
