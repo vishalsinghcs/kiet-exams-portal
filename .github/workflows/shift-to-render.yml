@@ -1,0 +1,145 @@
+name: Shift to Render
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare-shift:
+    name: Enable AWS Maintenance & Update S3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable AWS Maintenance
+        run: |
+          curl -X POST ${{ secrets.AWS_CLOUDFRONT_BACKEND_URL }}/admin/maintenance-mode \
+               -H "X-API-Key: ${{ secrets.MAINTENANCE_API_KEY }}" \
+               -H "Content-Type: application/json" \
+               -d '{"enabled": true}'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Update S3 Frontend Config
+        run: |
+          echo "window.APP_CONFIG = { API_BASE_URL: '${{ secrets.RENDER_BACKEND_URL }}' };" > env.js
+          aws s3 cp env.js s3://${{ secrets.FRONTEND_S3_BUCKET }}/env.js \
+              --cache-control "no-cache, no-store, must-revalidate"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/env.js"
+
+      - name: Ensure Render Maintenance is ON
+        run: |
+          curl -X POST ${{ secrets.RENDER_BACKEND_URL }}/admin/maintenance-mode \
+               -H "X-API-Key: ${{ secrets.MAINTENANCE_API_KEY }}" \
+               -H "Content-Type: application/json" \
+               -d '{"enabled": true}'
+
+  sync-db:
+    name: Sync RDS -> Supabase
+    needs: prepare-shift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Open Firewall Pinhole
+        run: |
+          SG_ID=$(aws ec2 describe-security-groups --filters Name=group-name,Values=kiet-rds-sg --query "SecurityGroups[0].GroupId" --output text)
+          echo "SG_ID=$SG_ID" >> $GITHUB_ENV
+          RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
+          echo "RUNNER_IP=$RUNNER_IP" >> $GITHUB_ENV
+          aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 > /dev/null
+
+      - name: Run DB Sync
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          RDS_DB_URL: ${{ secrets.RDS_DB_URL }}
+        run: |
+          chmod +x .github/scripts/rds_to_supabase.sh
+          ./.github/scripts/rds_to_supabase.sh
+
+      - name: Close Firewall Pinhole
+        if: always()
+        run: |
+          if [ -n "$RUNNER_IP" ] && [ -n "$SG_ID" ]; then
+            aws ec2 revoke-security-group-ingress --group-id $SG_ID --protocol tcp --port 5432 --cidr $RUNNER_IP/32 > /dev/null || true
+          fi
+
+  finalize-shift:
+    name: Disable Render Maintenance
+    needs: sync-db
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disable Render Maintenance
+        run: |
+          curl -X POST ${{ secrets.RENDER_BACKEND_URL }}/admin/maintenance-mode \
+               -H "X-API-Key: ${{ secrets.MAINTENANCE_API_KEY }}" \
+               -H "Content-Type: application/json" \
+               -d '{"enabled": false}'
+
+  shutdown-rds:
+    name: Shutdown RDS
+    needs: finalize-shift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Snapshot and Delete RDS Database
+        run: |
+          echo "Taking final snapshot and deleting RDS instance to save costs..."
+          SNAPSHOT_NAME="kiet-exams-db-final-$(date +%s)"
+          aws rds delete-db-instance --db-instance-identifier kiet-exams-db --final-db-snapshot-identifier $SNAPSHOT_NAME > /dev/null
+          
+          echo "Waiting for RDS instance to be fully deleted..."
+          aws rds wait db-instance-deleted --db-instance-identifier kiet-exams-db
+          echo "AWS Environment is now fully shut down and safely backed up!"
+
+  shutdown-elasticache:
+    name: Shutdown ElastiCache
+    needs: finalize-shift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Snapshot and Delete ElastiCache
+        run: |
+          echo "Taking final snapshot and deleting ElastiCache instance to save costs..."
+          SNAPSHOT_NAME="kiet-redis-final-$(date +%s)"
+          aws elasticache delete-cache-cluster --cache-cluster-id kiet-redis --final-snapshot-identifier $SNAPSHOT_NAME > /dev/null
+          
+          echo "Waiting for ElastiCache instance to be fully deleted..."
+          aws elasticache wait cache-cluster-deleted --cache-cluster-id kiet-redis
+
+  shutdown-ecs:
+    name: Shutdown ECS
+    needs: finalize-shift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Stop ECS Backend Tasks
+        run: |
+          echo "Scaling ECS service down to 0 tasks..."
+          aws ecs update-service --cluster kiet-exams-cluster --service kiet-backend-service --desired-count 0 --region ap-south-1 > /dev/null

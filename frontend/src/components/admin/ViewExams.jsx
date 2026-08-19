@@ -80,13 +80,9 @@ const ViewExams = () => {
   const openEdit = (exam) => {
     setEditError("");
     setEditForm({
-      code: exam.subject_code || exam.code,
-      subject: exam.subject,
-      exam_name: exam.exam_name,
-      duration: exam.duration,
-      access_code: exam.access_code,
-      start_time: toDatetimeLocal(exam.start_time),
-      overview: exam.overview || "",
+      dataset: null,
+      sample_csv: null,
+      start_window_minutes: exam.start_window_minutes || 30
     });
     setEditModal({ open: true, exam });
   };
@@ -94,24 +90,25 @@ const ViewExams = () => {
   // --- Save Edit ---
   const handleSaveEdit = async (e) => {
     e.preventDefault();
-    if (!/^\d{6}$/.test(editForm.access_code)) {
-      setEditError("Access code must be exactly 6 numeric digits.");
-      return;
-    }
     setSaving(true);
     setEditError("");
     try {
+      const formData = new FormData();
+      formData.append("start_window_minutes", editForm.start_window_minutes);
+      
+      if (editForm.dataset) {
+        formData.append("dataset", editForm.dataset);
+      }
+      if (editForm.sample_csv) {
+        formData.append("sample_csv", editForm.sample_csv);
+      }
+
       const res = await fetch(`${API_BASE_URL}/admin/exams/${editModal.exam.id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          ...editForm,
-          start_time: new Date(editForm.start_time).toISOString(),
-          duration: Number(editForm.duration),
-        })
+        body: formData
       });
       if (res.ok) {
         setEditModal({ open: false, exam: null });
@@ -172,36 +169,24 @@ const ViewExams = () => {
             </div>
 
             <form onSubmit={handleSaveEdit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                 <div className="admin-input-group">
-                  <label className="admin-label">Subject Code</label>
-                  <input className="admin-input" value={editForm.code}
-                    onChange={e => setEditForm({ ...editForm, code: e.target.value })} required />
+                  <label className="admin-label">Start Window (minutes)</label>
+                  <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 8px 0' }}>How long after the start time students are allowed to begin.</p>
+                  <input type="number" className="admin-input" value={editForm.start_window_minutes} min="1" max="1440"
+                    onChange={e => setEditForm({ ...editForm, start_window_minutes: e.target.value })} required />
                 </div>
                 <div className="admin-input-group">
-                  <label className="admin-label">Subject Name</label>
-                  <input className="admin-input" value={editForm.subject}
-                    onChange={e => setEditForm({ ...editForm, subject: e.target.value })} required />
+                  <label className="admin-label">Replace Dataset (.zip)</label>
+                  <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 8px 0' }}>Leave empty to keep current dataset.</p>
+                  <input type="file" accept=".zip" className="admin-input" style={{ padding: '10px' }}
+                    onChange={e => setEditForm({ ...editForm, dataset: e.target.files[0] })} />
                 </div>
                 <div className="admin-input-group">
-                  <label className="admin-label">Exam Name</label>
-                  <input className="admin-input" value={editForm.exam_name}
-                    onChange={e => setEditForm({ ...editForm, exam_name: e.target.value })} required />
-                </div>
-                <div className="admin-input-group">
-                  <label className="admin-label">Access Code (6-digit)</label>
-                  <input className="admin-input" value={editForm.access_code} maxLength={6}
-                    onChange={e => setEditForm({ ...editForm, access_code: e.target.value.replace(/\D/g, '') })} required />
-                </div>
-                <div className="admin-input-group">
-                  <label className="admin-label">Duration (minutes)</label>
-                  <input type="number" className="admin-input" value={editForm.duration} min="1" max="300"
-                    onChange={e => setEditForm({ ...editForm, duration: e.target.value })} required />
-                </div>
-                <div className="admin-input-group">
-                  <label className="admin-label">Start Time</label>
-                  <input type="datetime-local" className="admin-input" value={editForm.start_time}
-                    onChange={e => setEditForm({ ...editForm, start_time: e.target.value })} required />
+                  <label className="admin-label">Replace Sample Submission (.csv)</label>
+                  <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 8px 0' }}>Leave empty to keep current sample.</p>
+                  <input type="file" accept=".csv" className="admin-input" style={{ padding: '10px' }}
+                    onChange={e => setEditForm({ ...editForm, sample_csv: e.target.files[0] })} />
                 </div>
               </div>
 

@@ -85,6 +85,40 @@ def delete_exam(exam_id: UUID, user: User = Depends(get_teacher_or_admin), db: S
     logger.info(f"Incoming request to delete exam [exam_id={exam_id} teacher_id={user.id}]")
     return exam_service.delete_exam(db, teacher_id=user.id, exam_id=exam_id)
 
+@router.put("/admin/exams/{exam_id}")
+async def edit_exam(
+    exam_id: UUID,
+    start_window_minutes: int = Form(...),
+    dataset: UploadFile = File(None),
+    sample_csv: UploadFile = File(None),
+    user: User = Depends(get_teacher_or_admin),
+    db: Session = Depends(get_db)
+):
+    """Teacher edits an exam's resources (dataset, sample submission) and start window."""
+    logger.info(f"Incoming request to edit exam [exam_id={exam_id} teacher_id={user.id}]")
+    
+    exam = exam_repo.get_by_id(db, exam_id)
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    update_data = {
+        "start_window_minutes": start_window_minutes
+    }
+
+    # Handle File Uploads via Service if provided
+    if dataset:
+        logger.info(f"Teacher [user_id={user.id}] replacing dataset.zip for exam_id={exam_id}")
+        dataset_path = await storage_service.upload_exam_dataset(dataset, exam, user)
+        update_data["dataset_path"] = dataset_path
+        
+    if sample_csv:
+        logger.info(f"Teacher [user_id={user.id}] replacing sample.csv for exam_id={exam_id}")
+        sample_csv_path = await storage_service.upload_exam_sample_csv(sample_csv, exam, user)
+        update_data["sample_csv_path"] = sample_csv_path
+
+    # Hand off to the Service layer!
+    return exam_service.edit_exam(db, teacher_id=user.id, exam_id=exam_id, update_data=update_data)
+
 @router.get("/admin/exams/{exam_id}/sections")
 def get_assigned_sections(exam_id: UUID, user: User = Depends(get_teacher_or_admin), db: Session = Depends(get_db)):
     """Fetch all sections assigned to an exam."""

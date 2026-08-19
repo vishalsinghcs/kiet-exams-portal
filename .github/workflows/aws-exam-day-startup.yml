@@ -9,12 +9,10 @@ on:
   workflow_dispatch: # Allows manual trigger
 
 jobs:
-  startup:
-    name: Start RDS, Sync Data, Start ECS
+  start-rds:
+    name: Start RDS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,6 +46,56 @@ jobs:
         run: |
           echo "Waiting for RDS instance to become available..."
           aws rds wait db-instance-available --db-instance-identifier kiet-exams-db
+
+  start-elasticache:
+    name: Start ElastiCache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Restore ElastiCache
+        run: |
+          echo "Finding latest snapshot for kiet-redis..."
+          LATEST_SNAPSHOT=$(aws elasticache describe-snapshots --cache-cluster-id kiet-redis --query 'reverse(sort_by(Snapshots, &SnapshotCreateTime))[0].SnapshotName' --output text)
+          
+          if [ "$LATEST_SNAPSHOT" == "None" ] || [ -z "$LATEST_SNAPSHOT" ]; then
+            echo "No snapshot found! Cannot restore."
+            exit 1
+          fi
+
+          echo "Finding ElastiCache Security Group ID..."
+          SG_ID=$(aws ec2 describe-security-groups --filters Name=group-name,Values=kiet-redis-sg --query "SecurityGroups[0].GroupId" --output text)
+          
+          echo "Restoring ElastiCache instance from snapshot $LATEST_SNAPSHOT..."
+          aws elasticache create-cache-cluster \
+            --cache-cluster-id kiet-redis \
+            --snapshot-name $LATEST_SNAPSHOT \
+            --cache-node-type cache.t3.micro \
+            --num-cache-nodes 1 \
+            --engine valkey \
+            --security-group-ids $SG_ID > /dev/null
+
+      - name: Wait for ElastiCache
+        run: |
+          echo "Waiting for ElastiCache instance to become available..."
+          aws elasticache wait cache-cluster-available --cache-cluster-id kiet-redis
+
+  start-ecs:
+    name: Start ECS
+    needs: [start-rds, start-elasticache]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
       - name: Start ECS Backend Tasks
         run: |

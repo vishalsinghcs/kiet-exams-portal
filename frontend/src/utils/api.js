@@ -1,6 +1,6 @@
 // src/utils/api.js
 // Central API client — all backend calls go through here
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+export const API_BASE_URL = (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 /**
  * Login
