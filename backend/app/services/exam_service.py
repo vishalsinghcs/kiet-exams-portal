@@ -63,6 +63,23 @@ class ExamService:
 
         return exam_repo.delete(db, exam_id)
 
+    def edit_exam(self, db: Session, teacher_id: UUID, exam_id: UUID, update_data: dict):
+        """Teacher edits an exam's resources (dataset, sample csv, start window)."""
+        logger.debug(f"Service: Editing exam [exam_id={exam_id} teacher_id={teacher_id}]")
+        # SECURITY CHECK: Did this teacher actually create this exam? (or is it an admin?)
+        exam = exam_repo.get_by_id(db, exam_id)
+        if not exam:
+            raise HTTPException(status_code=404, detail="Exam not found")
+        
+        # Check if the user is the creator or an admin
+        teacher = db.query(User).filter(User.id == teacher_id).first()
+        is_admin = teacher and teacher.role == "admin"
+        
+        if exam.created_by != teacher_id and not is_admin:
+            raise HTTPException(status_code=403, detail="Forbidden: You can only edit exams that you created!")
+
+        return exam_repo.update(db, db_obj=exam, obj_in=update_data)
+
 
     # ==========================
     # === STUDENT DASHBOARD ====

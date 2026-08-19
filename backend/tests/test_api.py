@@ -416,3 +416,70 @@ def test_forgot_and_reset_password(client, db_session):
     # 5. Verify login with OLD password fails
     login_old = client.post("/login", json={"email": email, "password": "oldpassword"})
     assert login_old.status_code == 401
+
+def test_edit_exam(client, db_session):
+    import uuid
+    from app.models import User
+    from app.utils.security import get_password_hash
+    from datetime import datetime, timedelta
+    from unittest.mock import patch
+
+    # 1. Setup Teacher
+    teacher_email = f"edit_teacher_{uuid.uuid4().hex[:6]}@kiet.edu"
+    teacher = User(
+        id=uuid.uuid4(),
+        name="Edit Teacher",
+        email=teacher_email,
+        password_hash=get_password_hash("teacherpassword"),
+        role="teacher",
+        is_active=True
+    )
+    db_session.add(teacher)
+    db_session.commit()
+
+    # 2. Login
+    login_response = client.post("/login", json={"email": teacher_email, "password": "teacherpassword"})
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 3. Create Exam
+    import json
+    exam_data = {
+        "code": "EDIT101",
+        "access_code": "123456",
+        "subject": "Edit Subject",
+        "exam_name": "Edit Test",
+        "duration": "60",
+        "start_time": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "start_window_minutes": "30",
+        "extra_sections": json.dumps([])
+    }
+    create_response = client.post("/admin/exams", data=exam_data, headers=headers)
+    assert create_response.status_code == 200
+    exam_id = create_response.json()["id"]
+
+    # 4. Edit Exam with mocked S3
+    with patch("app.repositories.storage_repository.storage_repository.upload_file") as mock_upload:
+        mock_upload.return_value = "mock_s3_path/dataset.zip"
+        
+        edit_data = {
+            "start_window_minutes": "45"
+        }
+        
+        # We need to send multipart/form-data with actual file contents to test the UploadFile dependencies
+        files = {
+            "dataset": ("dataset.zip", b"dummy zip content", "application/zip"),
+            "sample_csv": ("sample.csv", b"dummy,csv,content", "text/csv")
+        }
+        
+        edit_response = client.put(f"/admin/exams/{exam_id}", data=edit_data, files=files, headers=headers)
+        
+        assert edit_response.status_code == 200
+        
+        # Verify db was updated
+        from app.models import Exam
+        updated_exam = db_session.query(Exam).filter(Exam.id == exam_id).first()
+        assert updated_exam.start_window_minutes == 45
+        assert updated_exam.dataset_path == "mock_s3_path/dataset.zip"
+        assert updated_exam.sample_csv_path == "mock_s3_path/dataset.zip" # Because mock_upload returns the same path for both calls
+
