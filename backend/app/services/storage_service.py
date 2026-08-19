@@ -79,23 +79,23 @@ class StorageService:
 
     async def upload_exam_dataset(self, file: UploadFile, exam: Any, user: Any) -> str:
         """Validates and uploads a teacher's dataset (.zip) to S3."""
-        if getattr(user, 'role', '') != 'teacher':
-            raise HTTPException(status_code=403, detail="Only teachers can upload dataset files.")
+        if getattr(user, 'role', '') == 'student':
+            raise HTTPException(status_code=403, detail="Only teachers and admins can upload dataset files.")
             
         await self._validate_file(file, allowed_extension=".zip")
         prefix = self.get_exam_s3_prefix(exam)
         s3_key = f"{prefix}/resources/dataset.zip"
-        return await storage_repository.upload_file(file, s3_key)
+        return storage_repository.upload_file(file, s3_key)
 
     async def upload_exam_sample_csv(self, file: UploadFile, exam: Any, user: Any) -> str:
         """Validates and uploads a teacher's sample csv to S3."""
-        if getattr(user, 'role', '') != 'teacher':
-            raise HTTPException(status_code=403, detail="Only teachers can upload sample CSV files.")
+        if getattr(user, 'role', '') == 'student':
+            raise HTTPException(status_code=403, detail="Only teachers and admins can upload sample CSV files.")
             
         await self._validate_file(file, allowed_extension=".csv")
         prefix = self.get_exam_s3_prefix(exam)
         s3_key = f"{prefix}/resources/sample.csv"
-        return await storage_repository.upload_file(file, s3_key)
+        return storage_repository.upload_file(file, s3_key)
 
     async def upload_student_submission(self, file: UploadFile, exam: Any, user: Any, file_type: str) -> str:
         """Validates and uploads a student's submission (.ipynb or .csv) to S3."""

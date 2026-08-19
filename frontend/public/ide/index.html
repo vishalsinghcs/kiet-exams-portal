@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Note: 'unsafe-inline' in style-src is required by TailwindCSS CDN.
+       For a production build, replace the CDN with a compiled bundle and remove 'unsafe-inline'. -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://cdn.jsdelivr.net https://pypi.org https://files.pythonhosted.org; frame-src 'self';">
+  <title>Elixir IDE</title>
+
+  <!-- Fonts (Stitch design tokens) -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+
+
+
+  <!-- DaisyUI + Tailwind + Lucide -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- SheetJS (xlsx) + PapaParse + AG Grid Community + Marked.js -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+
+  <!-- Tailwind Config — Stitch Design Tokens -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#0EA5E9',
+            tertiary: '#10B981',
+            error: '#EF4444',
+            warning: '#F59E0B',
+            surface: '#F8FAFC',
+          },
+          fontFamily: {
+            headline: ['Inter', 'system-ui', 'sans-serif'],
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            label: ['Public Sans', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+          },
+          borderRadius: {
+            DEFAULT: '0.5rem',
+            lg: '1rem',
+            xl: '1.5rem',
+          },
+        }
+      }
+    }
+  </script>
+  <!-- Instant Flash Prevention Guard (Fix 3) -->
+  <!-- Uses localStorage (survives tab close) instead of sessionStorage (cleared on tab close) -->
+  <script>
+    (function() {
+      try {
+        var nav = performance.getEntriesByType('navigation');
+        var isReload = (nav && nav.length > 0) ? (nav[0].type === 'reload') : (performance.navigation && performance.navigation.type === 1);
+        var hasEverLaunched = localStorage.getItem('elixir_ide_ever_launched') === 'true';
+        if (isReload || hasEverLaunched) {
+          document.documentElement.classList.add('hide-landing-early');
+        }
+      } catch(e) {}
+    })();
+  </script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body
+  class="bg-white text-gray-800 font-body h-screen flex flex-col overflow-hidden text-[13px] antialiased select-none">
+
+
+
+  <!-- Toast notification -->
+  <div class="toast-notification" id="toast"></div>
+
+  <!-- ═══════════════ LOADING OVERLAY ═══════════════ -->
+  <div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="flex flex-col items-center justify-center gap-6 animate-fade-in">
+      <div class="flex items-center gap-2.5">
+        <i data-lucide="zap" class="w-7 h-7 text-primary fill-primary"></i>
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-primary font-headline">Elixir IDE</h1>
+        </div>
+      </div>
+      <div class="flex gap-2 flex-wrap justify-center max-w-[400px]">
+        <span
+          class="loader-pkg text-[11px] font-mono bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-500 flex items-center gap-1.5"><i
+            data-lucide="package" class="w-3 h-3"></i>numpy</span>
+        <span
+          class="loader-pkg text-[11px] font-mono bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-500 flex items-center gap-1.5"><i
+            data-lucide="package" class="w-3 h-3"></i>pandas</span>
+        <span
+          class="loader-pkg text-[11px] font-mono bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-500 flex items-center gap-1.5"><i
+            data-lucide="package" class="w-3 h-3"></i>matplotlib</span>
+        <span
+          class="loader-pkg text-[11px] font-mono bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-500 flex items-center gap-1.5"><i
+            data-lucide="package" class="w-3 h-3"></i>seaborn</span>
+        <span
+          class="loader-pkg text-[11px] font-mono bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-500 flex items-center gap-1.5"><i
+            data-lucide="package" class="w-3 h-3"></i>sklearn</span>
+        <span
+          class="loader-pkg text-[11px] font-mono bg-white border border-gray-200 px-3 py-1.5 rounded-md text-gray-500 flex items-center gap-1.5"><i
+            data-lucide="package" class="w-3 h-3"></i>imbalanced-learn</span>
+      </div>
+      <div class="w-64"><progress class="progress progress-primary w-full h-1.5" id="loaderProgress" value="0"
+          max="100"></progress></div>
+      <p class="text-xs font-mono text-gray-400 tracking-wide" id="loaderText">Initializing Pyodide runtime...</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TOP NAVBAR ═══════════════ -->
+  <nav
+    class="bg-white border-b border-gray-100 shadow-sm flex justify-between items-center w-full px-4 h-12 flex-shrink-0 z-50">
+    <div class="flex items-center gap-4 h-full">
+      <div class="flex items-center gap-2">
+        <i data-lucide="zap" class="w-5 h-5 text-primary fill-primary"></i>
+        <span class="text-lg font-extrabold tracking-tight text-primary font-headline">Elixir IDE</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span
+        class="text-xs font-label font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" id="statusDot"></span>
+        <span id="statusText">Loading...</span>
+      </span>
+      <span
+        class="text-xs font-label font-medium text-tertiary bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 flex items-center gap-1.5">
+        <i data-lucide="shield-check" class="w-3 h-3"></i> Sandboxed
+      </span>
+    </div>
+  </nav>
+
+  <!-- Reload Progress Bar (Fix 5) — shimmer bar shown during Pyodide init on reload/reopen -->
+  <div id="reloadProgressBar" class="hidden reload-progress-bar" aria-hidden="true"></div>
+
+  <!-- ═══════════════ MAIN LAYOUT ═══════════════ -->
+  <div class="flex flex-1 overflow-hidden h-[calc(100vh-3rem)]">
+
+    <!-- ─── ACTIVITY BAR (thin icon sidebar) ─── -->
+    <div
+      class="ide-blur-target w-12 bg-gray-50 border-r border-gray-100 flex flex-col items-center py-3 justify-between h-full flex-shrink-0 z-40"
+      id="activityBar">
+      <div class="flex flex-col gap-1 items-center w-full">
+        <button
+          class="p-2.5 text-primary border-l-2 border-primary bg-white w-full flex justify-center hover:bg-gray-100 transition-colors"
+          title="Explorer" id="sidebarToggle" aria-label="Toggle Explorer Sidebar"
+          onclick="document.getElementById('filePanel').classList.toggle('collapsed')">
+          <i data-lucide="folder" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── EXPLORER PANE (Sidebar) ─── -->
+    <aside
+      class="ide-blur-target file-panel w-60 bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden transition-all duration-300"
+      id="filePanel">
+      <!-- Explorer header -->
+      <div class="fp-header flex items-center justify-between px-4 py-3 pb-2">
+        <h2 class="fp-title text-xs font-label uppercase tracking-wider text-gray-500 font-semibold">Explorer</h2>
+        <div class="flex gap-0.5">
+          <button class="p-1 text-gray-500 hover:text-primary hover:bg-gray-200 rounded transition-colors"
+            title="New File" aria-label="New File" onclick="promptCreateFile()">
+            <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+          </button>
+          <button class="p-1 text-gray-500 hover:text-primary hover:bg-gray-200 rounded transition-colors"
+            title="New Folder" aria-label="New Folder" onclick="promptCreateFolder()">
+            <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i>
+          </button>
+          <button class="p-1 text-gray-500 hover:text-primary hover:bg-gray-200 rounded transition-colors"
+            title="Refresh" aria-label="Refresh File Tree" onclick="refreshFileLists()">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- File tree -->
+      <div id="fileExplorerTree" class="flex-1 overflow-y-auto px-2 pb-3 fp-file-list custom-scrollbar"></div>
+
+
+      <!-- Upload zone -->
+      <div class="p-3 border-t border-gray-200 shrink-0 fp-drop-zone-wrap">
+        <input type="file" id="fileUploadInput" class="hidden" multiple
+          accept=".py,.ipynb,.csv,.json,.txt,.tsv,.xlsx,.parquet,.npy,.npz,.zip" onchange="handleFileUpload(event)">
+        <button
+          class="fp-drop-zone w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 py-2 px-3 rounded-lg text-sm font-medium transition-all shadow-sm flex items-center justify-center gap-2"
+          id="dropZone" onclick="document.getElementById('fileUploadInput').click()">
+          <i data-lucide="upload" class="w-4 h-4"></i> Upload Files
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─── EDITOR AREA ─── -->
+    <main class="ide-blur-target flex-1 flex flex-col bg-white overflow-hidden min-w-0" id="editorMain">
+
+      <!-- Tab bar (Stitch: top-border active style) -->
+      <div
+        class="flex items-center bg-surface border-b border-gray-200 h-10 flex-shrink-0 px-2 overflow-x-auto custom-scrollbar"
+        id="tabBar">
+        <!-- Dynamic tabs by app.js -->
+        <button
+          class="tab-add-btn p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 rounded transition-colors ml-1"
+          onclick="promptCreateFile()" title="New File" aria-label="New File Tab">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Toolbar (Stitch-style) -->
+      <div class="flex items-center justify-between px-4 py-1.5 border-b border-gray-100 bg-white flex-shrink-0">
+        <div class="flex items-center gap-1.5">
+          <button
+            class="bg-primary hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm active:scale-95"
+            id="runBtn" onclick="runCode()" disabled>
+            <i data-lucide="play" class="w-4 h-4"></i> Run
+          </button>
+          <div class="w-px h-5 bg-gray-200 mx-1"></div>
+          <button
+            class="text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium"
+            onclick="promptCreateFile()">
+            <i data-lucide="file-plus-2" class="w-4 h-4"></i><span class="hidden lg:inline">New</span>
+          </button>
+          <button
+            class="text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium"
+            id="saveBtn" onclick="manualSave()" title="Save (Ctrl+S)">
+            <i data-lucide="save" class="w-4 h-4"></i><span class="hidden lg:inline">Save</span>
+          </button>
+          <button
+            class="text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium"
+            id="downloadBtn" onclick="downloadActiveFile()" title="Download">
+            <i data-lucide="download" class="w-4 h-4"></i><span class="hidden lg:inline">Download</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-gray-400 font-mono flex items-center gap-1"><kbd class="kbd kbd-xs">⌘</kbd><kbd
+              class="kbd kbd-xs">↵</kbd> run</span>
+          <div class="w-px h-5 bg-gray-200 mx-1"></div>
+          <button
+            class="text-gray-500 hover:text-primary hover:bg-indigo-50 p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium"
+            onclick="showShortcutsModal()" title="Keyboard Shortcuts (?)">
+            <i data-lucide="keyboard" class="w-4 h-4"></i><span class="hidden lg:inline">Shortcuts</span>
+          </button>
+          <div class="w-px h-5 bg-gray-200 mx-1"></div>
+          <!-- Console toggle button — always visible, reflects open/closed state -->
+          <button
+            class="text-gray-500 hover:text-primary hover:bg-indigo-50 p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium"
+            id="consoleToggleBtn" onclick="toggleConsole()" title="Toggle Console (Ctrl+`)">
+            <i data-lucide="terminal" class="w-4 h-4"></i><span class="hidden lg:inline">Console</span>
+          </button>
+          <div class="w-px h-5 bg-gray-200 mx-1"></div>
+          <button
+            class="text-gray-500 hover:text-error hover:bg-red-50 p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium"
+            onclick="showClearStorageModal()" title="Clear Storage" aria-label="Clear Storage">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Network banner -->
+      <div
+        class="hidden mx-4 mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs font-mono text-amber-800 flex items-center gap-3"
+        id="networkBanner">
+        <i data-lucide="shield-alert" class="w-4 h-4 shrink-0"></i>
+        Network access attempt blocked. External HTTP/HTTPS requests are disabled in this sandbox.
+      </div>
+
+      <!-- Editor + Console vertical split -->
+      <div class="flex flex-col flex-1 overflow-hidden" id="editorOutput">
+
+        <!-- Code editor pane -->
+        <div class="flex-1 flex flex-col relative bg-white min-h-0" id="editorPane">
+          <div
+            class="flex items-center justify-between px-4 py-1.5 bg-surface border-b border-gray-100 text-[11.5px] text-gray-500 font-mono shrink-0"
+            id="paneHeader">
+            <div class="flex items-center gap-2 font-semibold text-gray-700">
+              <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+              <span id="activeFilename"></span>
+            </div>
+          </div>
+          <div id="codeEditor" style="flex: 1; height: 100%; min-height: 0;"></div>
+          <!-- Notebook Container (.ipynb files) -->
+          <div id="notebookContainer" class="hidden flex-1 overflow-y-auto p-4 custom-scrollbar bg-surface space-y-4">
+          </div>
+
+        </div>
+
+        <!-- Horizontal resizer -->
+        <div
+          class="h-[4px] bg-gray-100 cursor-row-resize shrink-0 transition-colors hover:bg-primary/40 active:bg-primary z-[5] group"
+          id="hResizer">
+          <div class="w-8 h-1 bg-gray-300 rounded-full mx-auto mt-[1px] group-hover:bg-primary/50 transition-colors">
+          </div>
+        </div>
+
+        <!-- Console panel -->
+        <div
+          class="flex flex-col overflow-hidden bg-surface shrink-0 transition-[height] duration-200 h-[200px] min-h-[100px] max-h-[70vh]"
+          id="outputPane">
+          <div class="flex items-center justify-between px-4 py-1.5 border-b border-gray-200 bg-white shrink-0">
+            <div class="flex items-center gap-4">
+              <span
+                class="text-xs font-label font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="terminal" class="w-3 h-3"></i> Console
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="execTimeLabel"
+                class="text-[10px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200"></span>
+              <button class="text-gray-400 hover:text-primary hover:bg-indigo-50 p-1 rounded transition-colors"
+                onclick="copyOutput()" title="Copy Output">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="text-gray-400 hover:text-error hover:bg-red-50 p-1 rounded transition-colors"
+                onclick="clearOutput()" title="Clear Output">
+                <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+              </button>
+              <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
+              <button class="text-gray-400 hover:text-error hover:bg-red-50 p-1 rounded transition-colors"
+                id="consoleCloseBtn" onclick="closeConsole()" title="Close Console">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+          <div
+            class="flex-1 overflow-y-auto p-3 font-mono text-[12.5px] leading-7 bg-white m-2 border border-gray-200 rounded-lg shadow-inner custom-scrollbar"
+            id="outputContent">
+            <div class="flex flex-col items-center justify-center h-full gap-2 text-gray-300" id="outputEmpty">
+              <i data-lucide="terminal" class="w-8 h-8"></i>
+              <p class="text-xs font-body font-medium text-gray-400">Run your code to see output here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Empty Workspace Overlay -->
+  <div
+    class="fixed inset-0 top-12 z-40 flex items-center justify-center bg-black/20 hidden transition-all duration-300 pointer-events-auto"
+    id="emptyWorkspace">
+    <div
+      class="bg-white border border-gray-200/80 shadow-2xl rounded-2xl p-10 max-w-md w-full text-center flex flex-col items-center gap-5 animate-slide-up relative z-50 pointer-events-auto">
+      <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+        <i data-lucide="terminal" class="w-8 h-8 text-primary"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-extrabold text-gray-800 font-headline tracking-tight">Welcome to Elixir IDE</h2>
+        <p class="text-gray-500 text-sm mt-1 font-body">Browser based Python Development Environment</p>
+      </div>
+      <div class="flex gap-3 w-full mt-2">
+        <button
+          class="flex-1 bg-primary hover:bg-indigo-700 text-white px-5 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer pointer-events-auto"
+          onclick="promptCreateFile()">
+          <i data-lucide="file-plus" class="w-4.5 h-4.5"></i> Create New File
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- File Preview Modal -->
+  <div id="filePreviewModal"
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) closeFilePreviewModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col border border-gray-200 overflow-hidden animate-slide-up">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-surface shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <i data-lucide="eye" class="w-4 h-4 text-primary"></i>
+          </div>
+          <h3 class="font-headline font-bold text-sm text-gray-800 truncate" id="filePreviewTitle">File Preview</h3>
+          <span id="fileTypeBadge"
+            class="text-[11px] font-mono px-2 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-600 font-medium"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Excel Sheet Selector -->
+          <div id="sheetSelectorContainer" class="hidden items-center gap-1.5 text-xs">
+            <label for="excelSheetSelect" class="text-gray-500 font-medium">Sheet:</label>
+            <select id="excelSheetSelect"
+              class="select select-xs select-bordered font-mono text-xs max-w-[150px] bg-white"
+              onchange="renderExcelSheet(this.value)"></select>
+          </div>
+
+          <button class="text-gray-400 hover:text-primary hover:bg-gray-100 p-1.5 rounded-lg transition-colors"
+            onclick="copyPreviewContent()" title="Copy Content">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+          </button>
+          <button class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1.5 rounded-lg transition-colors"
+            onclick="closeFilePreviewModal()" title="Close">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Body Container -->
+      <div class="flex-1 overflow-hidden relative bg-gray-50 flex flex-col">
+        <!-- AG Grid Container (for CSV & Excel) -->
+        <div id="filePreviewGridContainer" class="hidden w-full h-full ag-theme-alpine"></div>
+
+        <!-- Monaco Container (for JSON & code formatting) -->
+        <div id="filePreviewMonacoContainer" class="hidden w-full h-full"></div>
+
+        <!-- Raw Text Preview Container -->
+        <div id="filePreviewTextContainer" class="hidden w-full h-full overflow-auto p-4 custom-scrollbar">
+          <pre id="filePreviewContent"
+            class="whitespace-pre-wrap break-all text-gray-800 font-mono text-xs leading-relaxed select-text"></pre>
+        </div>
+      </div>
+
+      <div
+        class="px-5 py-2.5 border-t border-gray-200 bg-white flex justify-between items-center text-xs text-gray-500 font-mono shrink-0">
+        <span id="filePreviewSize"></span>
+        <button
+          class="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onclick="closeFilePreviewModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear Storage Modal -->
+  <div id="clearStorageModal"
+    class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) hideClearStorageModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full animate-slide-up flex flex-col gap-4 border border-gray-200">
+      <div class="flex items-center gap-3 text-error">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        <h3 class="font-headline font-bold text-lg">Clear Storage?</h3>
+      </div>
+      <p class="text-sm text-gray-600 font-body">This will permanently delete all saved files, code, and datasets from
+        the browser. This action cannot be undone.</p>
+      <!-- Fix 9: Download before clear option -->
+      <div class="flex flex-col gap-2">
+        <button
+          class="w-full px-4 py-2 text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors flex items-center justify-center gap-2"
+          onclick="downloadAllWorkspaceFiles()">
+          <i data-lucide="download" class="w-4 h-4"></i> Download Files First
+        </button>
+        <div class="flex justify-end gap-3">
+          <button
+            class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            onclick="hideClearStorageModal()">Cancel</button>
+          <button
+            class="px-4 py-2 text-sm font-semibold text-white bg-error hover:bg-red-600 rounded-lg transition-colors shadow-sm"
+            onclick="confirmClearStorage()">Delete Everything</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- File Path Modal -->
+  <div id="filePathModal"
+    class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) closeFilePathModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full animate-slide-up flex flex-col gap-4 border border-gray-200">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <i data-lucide="link-2" class="w-4 h-4 text-primary"></i>
+          </div>
+          <h3 class="font-headline font-bold text-base text-gray-800">File Path</h3>
+        </div>
+        <button class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
+          onclick="closeFilePathModal()">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-500 font-body">File path for use in your Python scripts:</p>
+
+      <!-- Path input box (highlighted and auto-selected) -->
+      <div
+        class="flex items-center border border-primary/40 bg-primary/5 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30 transition-all p-1">
+        <input type="text" id="filePathInput" readonly
+          class="flex-1 px-3 py-2 text-sm font-mono bg-transparent outline-none text-primary font-semibold select-all"
+          onclick="this.select()">
+        <button
+          class="bg-primary hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 shadow-sm active:scale-95 cursor-pointer"
+          onclick="copyFilePathInput()">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Path
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-2.5 mt-1">
+        <button
+          class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onclick="closeFilePathModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New File Modal -->
+  <div id="newFileModal"
+    class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) closeNewFileModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full animate-slide-up flex flex-col gap-5 border border-gray-200">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <i data-lucide="file-plus" class="w-4 h-4 text-primary"></i>
+          </div>
+          <h3 class="font-headline font-bold text-base text-gray-800">New File</h3>
+        </div>
+        <button class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
+          onclick="closeNewFileModal()">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- File type picker -->
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-label font-semibold text-gray-500 uppercase tracking-wider">File Type</label>
+        <div class="grid grid-cols-3 gap-2" id="fileTypeButtons">
+          <!-- Python -->
+          <button id="typeBtn_py"
+            class="file-type-btn selected flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-primary bg-primary/5 text-primary transition-all"
+            onclick="selectFileType('py')">
+            <i data-lucide="code-2" class="w-5 h-5"></i>
+            <span class="text-[11px] font-semibold">.py</span>
+            <span class="text-[10px] text-gray-500 font-normal leading-tight">Python Script</span>
+          </button>
+          <!-- Notebook -->
+          <button id="typeBtn_ipynb"
+            class="file-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary hover:bg-secondary/5 transition-all"
+            onclick="selectFileType('ipynb')">
+            <i data-lucide="book-open" class="w-5 h-5"></i>
+            <span class="text-[11px] font-semibold">.ipynb</span>
+            <span class="text-[10px] text-gray-500 font-normal leading-tight">Notebook</span>
+          </button>
+          <!-- Text -->
+          <button id="typeBtn_txt"
+            class="file-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-gray-200 text-gray-500 hover:border-tertiary hover:text-tertiary hover:bg-tertiary/5 transition-all"
+            onclick="selectFileType('txt')">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+            <span class="text-[11px] font-semibold">.txt</span>
+            <span class="text-[10px] text-gray-500 font-normal leading-tight">Text File</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filename input -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center">
+          <label for="newFileNameInput"
+            class="text-xs font-label font-semibold text-gray-500 uppercase tracking-wider">File Name</label>
+          <span id="newFileLocationBadge"
+            class="text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded font-medium truncate max-w-[180px]">in
+            Workspace</span>
+        </div>
+        <div
+          class="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+          <input type="text" id="newFileNameInput" placeholder="name or folder/name"
+            class="flex-1 px-3 py-2 text-sm font-mono bg-white outline-none text-gray-800 placeholder-gray-400"
+            autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') confirmNewFile()">
+          <span id="newFileExtLabel"
+            class="px-3 py-2 text-sm font-mono text-gray-400 bg-gray-50 border-l border-gray-200 select-none">.py</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-2.5 mt-1">
+        <button
+          class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onclick="closeNewFileModal()">Cancel</button>
+        <button
+          class="px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-indigo-700 rounded-lg transition-colors shadow-sm active:scale-95"
+          onclick="confirmNewFile()">Create File</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Folder Modal -->
+  <div id="newFolderModal"
+    class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) closeNewFolderModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full animate-slide-up flex flex-col gap-5 border border-gray-200">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <i data-lucide="folder-plus" class="w-4 h-4 text-primary"></i>
+          </div>
+          <h3 class="font-headline font-bold text-base text-gray-800">New Folder</h3>
+        </div>
+        <button class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
+          onclick="closeNewFolderModal()">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Folder name input -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center">
+          <label for="newFolderNameInput"
+            class="text-xs font-label font-semibold text-gray-500 uppercase tracking-wider">Folder Name</label>
+          <span id="newFolderLocationBadge"
+            class="text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded font-medium truncate max-w-[180px]">in
+            Workspace</span>
+        </div>
+        <div
+          class="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+          <input type="text" id="newFolderNameInput" placeholder="e.g. data or subfolder/data"
+            class="flex-1 px-3 py-2 text-sm font-mono bg-white outline-none text-gray-800 placeholder-gray-400"
+            autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') confirmNewFolder()">
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-2.5 mt-1">
+        <button
+          class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onclick="closeNewFolderModal()">Cancel</button>
+        <button
+          class="px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-indigo-700 rounded-lg transition-colors shadow-sm active:scale-95"
+          onclick="confirmNewFolder()">Create Folder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteConfirmModal"
+    class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) hideDeleteConfirmModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full animate-slide-up flex flex-col gap-4 border border-gray-200">
+      <div class="flex items-center gap-3 text-error">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        <h3 class="font-headline font-bold text-lg">Delete?</h3>
+      </div>
+      <p class="text-sm text-gray-600 font-body" id="deleteConfirmMsg">Are you sure you want to delete this item? This
+        action cannot be undone.</p>
+      <div class="flex justify-end gap-3 mt-2">
+        <button
+          class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onclick="hideDeleteConfirmModal()">Cancel</button>
+        <button
+          class="px-4 py-2 text-sm font-semibold text-white bg-error hover:bg-red-600 rounded-lg transition-colors shadow-sm"
+          id="deleteConfirmBtn" onclick="executeDeleteConfirm()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcutsModal"
+    class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onclick="if(event.target===this) hideShortcutsModal()">
+    <div
+      class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full animate-slide-up flex flex-col gap-4 border border-gray-200">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <i data-lucide="keyboard" class="w-4 h-4 text-primary"></i>
+          </div>
+          <h3 class="font-headline font-bold text-base text-gray-800">Keyboard Shortcuts</h3>
+        </div>
+        <button class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
+          onclick="hideShortcutsModal()" aria-label="Close modal">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-2 text-xs font-mono text-gray-700">
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Run Code / Notebook Cell</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">Ctrl</kbd><kbd class="kbd kbd-xs bg-white">↵</kbd> / <kbd class="kbd kbd-xs bg-white">Shift</kbd><kbd class="kbd kbd-xs bg-white">↵</kbd></span>
+        </div>
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Save Workspace State</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">Ctrl</kbd><kbd class="kbd kbd-xs bg-white">S</kbd></span>
+        </div>
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Create New File</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">Ctrl</kbd><kbd class="kbd kbd-xs bg-white">N</kbd></span>
+        </div>
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Toggle Console Terminal</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">Ctrl</kbd><kbd class="kbd kbd-xs bg-white">`</kbd></span>
+        </div>
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Format Python Code</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">Shift</kbd><kbd class="kbd kbd-xs bg-white">Alt</kbd><kbd class="kbd kbd-xs bg-white">F</kbd></span>
+        </div>
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Toggle Shortcuts Help</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">?</kbd></span>
+        </div>
+        <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <span class="font-body text-gray-600 font-medium">Close Active Modal</span>
+          <span class="flex gap-1"><kbd class="kbd kbd-xs bg-white">Esc</kbd></span>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button class="px-4 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          onclick="hideShortcutsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pyodide + App -->
+  <script>const PYODIDE_VERSION = 'v0.24.1';</script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+  <script>lucide.createIcons();</script>
+  <script src="js/store.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <!-- Monaco Editor Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+  <script src="js/editor.js" defer></script>
+  <script src="js/notebook.js" defer></script>
+  <script src="js/explorer.js" defer></script>
+  <script src="js/runtime.js" defer></script>
+  <script src="js/index.js" defer></script>
+</body>
+
+</html>

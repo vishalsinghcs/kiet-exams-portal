@@ -16,6 +16,7 @@ from app.services.exam_service import exam_service
 from app.services.enrollment_service import enrollment_service
 from app.repositories.enrollment_repository import enrollment_repo
 from app.repositories.exam_repository import exam_repo
+from app.repositories.storage_repository import storage_repository
 
 router = APIRouter(tags=["Exams"])
 
@@ -277,3 +278,35 @@ def submit_exam(exam_id: UUID, current_user: User = Depends(get_current_user), d
     """Student clicks 'Finish Test'. Will fail if both files aren't uploaded."""
     logger.info(f"Student attempting to submit final exam [user_id={current_user.id} exam_id={exam_id}]")
     return enrollment_service.submit_exam(db, user_id=current_user.id, exam_id=exam_id)
+
+@router.get("/users/me/exams/{exam_id}/dataset")
+def download_exam_dataset(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Student fetches the dataset attached to the exam (for IDE injection)."""
+    enrollment = enrollment_repo.get_enrollment(db, current_user.id, exam_id)
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You have not started this exam.")
+        
+    exam = exam_repo.get_by_id(db, exam_id)
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found.")
+        
+    if not exam.dataset_path:
+        raise HTTPException(status_code=404, detail="No dataset uploaded for this exam.")
+        
+    return storage_repository.get_file_response(exam.dataset_path, "dataset.zip")
+
+@router.get("/users/me/exams/{exam_id}/sample-csv")
+def download_exam_sample_csv(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Student fetches the sample CSV attached to the exam (for IDE injection)."""
+    enrollment = enrollment_repo.get_enrollment(db, current_user.id, exam_id)
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You have not started this exam.")
+        
+    exam = exam_repo.get_by_id(db, exam_id)
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found.")
+        
+    if not exam.sample_csv_path:
+        raise HTTPException(status_code=404, detail="No sample CSV uploaded for this exam.")
+        
+    return storage_repository.get_file_response(exam.sample_csv_path, "sample.csv")

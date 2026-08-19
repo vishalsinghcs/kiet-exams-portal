@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Clock, Calendar, Eye, EyeOff, Pencil, Trash2, X, Plus } from "lucide-react";
+import { Search, Filter, Clock, Calendar, Eye, EyeOff, Pencil, Trash2, X, Plus, Database, Table } from "lucide-react";
 import AdminLayout from "./AdminLayout";
 import { API_BASE_URL } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
@@ -340,6 +340,22 @@ const ViewExams = () => {
                     <Calendar size={16} color="#94A3B8" /> {formatStartTime(exam)}
                   </div>
                 </div>
+
+                {/* Attachments */}
+                {(exam.dataset_path || exam.sample_csv_path) && (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    {exam.dataset_path && (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857', backgroundColor: '#D1FAE5', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Database size={14} /> Dataset Attached
+                      </span>
+                    )}
+                    {exam.sample_csv_path && (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1D4ED8', backgroundColor: '#DBEAFE', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Table size={14} /> Sample CSV Attached
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Access Code:</span>
