@@ -30,6 +30,8 @@ const Signup = () => {
   
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
 
   const branches = ["CSE AI", "CSE AIML", "Minor Degree"];
 
@@ -43,8 +45,20 @@ const Signup = () => {
     return branchSections[branch] || [];
   };
 
+  useEffect(() => {
+    let interval;
+    if (step === 2 && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (step === 2 && resendTimer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
   const handleSignupDetails = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!name || !email || !password || !branch || !section || !enrollmentYear || !registrationNumber) {
       setError("All fields are required");
       return;
@@ -62,6 +76,8 @@ const Signup = () => {
     try {
       await signupUser(name, email, password, branch, section, parseInt(enrollmentYear), registrationNumber);
       setStep(2); // Move to OTP step
+      setResendTimer(60);
+      setCanResend(false);
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.");
     } finally {
@@ -258,6 +274,25 @@ const Signup = () => {
                   <button type="submit" disabled={loading} className="submit-btn-split" style={{ marginTop: '1rem' }}>
                     {loading ? "Verifying..." : "Complete Registration"}
                   </button>
+                  
+                  <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>
+                    <span style={{ color: '#64748B' }}>Didn't receive the code? </span>
+                    <button 
+                      type="button" 
+                      disabled={!canResend || loading}
+                      onClick={handleSignupDetails}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: canResend ? '#6c5ce7' : '#94A3B8', 
+                        cursor: canResend ? 'pointer' : 'not-allowed', 
+                        fontWeight: 600,
+                        padding: 0
+                      }}
+                    >
+                      {canResend ? "Resend OTP" : `Resend in ${resendTimer}s`}
+                    </button>
+                  </div>
                   
                   <p className="switch-auth-split">
                     <button type="button" onClick={() => setStep(1)} style={{ background:'none', border:'none', color:'#6c5ce7', cursor:'pointer', fontWeight: 600 }}>

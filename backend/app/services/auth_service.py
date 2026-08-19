@@ -25,6 +25,19 @@ class AuthService:
             logger.warning(f"Signup failed: Email {email} already registered.")
             raise HTTPException(status_code=400, detail="Email already registered")
 
+        if redis_client:
+            cooldown_key = f"signup_cooldown:{email}"
+            attempts_key = f"signup_attempts:{email}"
+            
+            # Enforce 60-second cooldown
+            if redis_client.exists(cooldown_key):
+                raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another OTP.")
+                
+            # Enforce Max 10 attempts per 24 hours
+            attempts = redis_client.get(attempts_key)
+            if attempts and int(attempts) >= 10:
+                raise HTTPException(status_code=429, detail="Maximum OTP requests exceeded. Please try again tomorrow.")
+
         # 2. Clean up any old OTPs for this email to prevent spam
         token_repo.delete_all_for_user(db, email, token_type="signup")
 
@@ -43,6 +56,17 @@ class AuthService:
 
         # 4. Send the Email via Brevo!
         send_otp_email(to_email=email, otp=otp_code, purpose="signup")
+        
+        if redis_client:
+            # Set 60-second cooldown lock
+            redis_client.setex(cooldown_key, 60, "1")
+            
+            # Increment attempts and set 24h expiration on first attempt
+            if not redis_client.exists(attempts_key):
+                redis_client.setex(attempts_key, 86400, 1)
+            else:
+                redis_client.incr(attempts_key)
+
         return {"message": "OTP sent successfully to email."}
 
     # === SIGNUP PHASE 2: Verify & Create User ===
@@ -75,6 +99,11 @@ class AuthService:
 
         # 4. Cleanup the OTP so it can't be reused
         token_repo.delete_all_for_user(db, email, "signup")
+        
+        # 5. Clear Redis cooldowns/attempts since they successfully registered
+        if redis_client:
+            redis_client.delete(f"signup_cooldown:{email}")
+            redis_client.delete(f"signup_attempts:{email}")
 
         return {"message": "User created successfully", "user_id": new_user.id}
 

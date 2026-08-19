@@ -47,11 +47,11 @@ def revoke_teacher(user_id: str, admin: User = Depends(get_admin_user), db: Sess
     logger.info(f"Successfully demoted teacher [admin_id={admin.id} target_user_id={user_id}]")
     return {"message": "Teacher access revoked."}
 
-@router.get("/sections/{branch}/{section}/count")
-def get_section_count(branch: str, section: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
-    """Count students in a specific branch and section."""
-    logger.info(f"Admin action: Fetching section count [admin_id={admin.id} branch={branch} section={section}]")
-    count = db.query(User).filter(User.role == "student", User.branch == branch, User.section == section).count()
+@router.get("/sections/{enrollment_year}/{branch}/{section}/count")
+def get_section_count(enrollment_year: int, branch: str, section: str, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Count students in a specific batch."""
+    logger.info(f"Admin action: Fetching section count [admin_id={admin.id} enrollment_year={enrollment_year} branch={branch} section={section}]")
+    count = db.query(User).filter(User.role == "student", User.enrollment_year == enrollment_year, User.branch == branch, User.section == section).count()
     return {"count": count}
 
 @router.get("/stats")

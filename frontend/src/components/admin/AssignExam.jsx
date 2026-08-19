@@ -7,12 +7,12 @@ import { useAuth } from "../../context/AuthContext";
 const BRANCHES = ["CSE AI", "CSE AIML"];
 const BRANCH_SECTIONS = {
   "CSE AI": ["A", "B", "C", "D"],
-  "CSE AIML": ["A", "B", "C"]
+  "CSE AIML": ["A", "B", "C", "D", "E"]
 };
 
 const AssignExam = () => {
   const { token } = useAuth();
-  const [form, setForm] = useState({ examId: "", branch: "", section: "" });
+  const [form, setForm] = useState({ examId: "", enrollmentYear: 2025, branch: "", section: "" });
 
   const getAvailableSections = () => {
     return BRANCH_SECTIONS[form.branch] || [];
@@ -62,7 +62,7 @@ const AssignExam = () => {
       setCountLoading(true);
       try {
         const res = await fetch(
-          `${API_BASE_URL}/admin/sections/${encodeURIComponent(form.branch)}/${form.section}/count`,
+          `${API_BASE_URL}/admin/sections/${form.enrollmentYear}/${encodeURIComponent(form.branch)}/${form.section}/count`,
           { headers: { "Authorization": `Bearer ${token}` } }
         );
         if (res.ok) {
@@ -76,7 +76,7 @@ const AssignExam = () => {
       }
     };
     fetchCount();
-  }, [form.branch, form.section, token]);
+  }, [form.enrollmentYear, form.branch, form.section, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,7 +93,7 @@ const AssignExam = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ branch: form.branch, section: form.section })
+        body: JSON.stringify({ enrollment_year: parseInt(form.enrollmentYear), branch: form.branch, section: form.section })
       });
       const data = await res.json();
       if (res.ok) {
@@ -121,10 +121,10 @@ const AssignExam = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ branch: assignment.branch, section: assignment.section })
+        body: JSON.stringify({ enrollment_year: assignment.enrollment_year, branch: assignment.branch, section: assignment.section })
       });
       if (res.ok) {
-        setAssignments(prev => prev.filter(a => !(a.branch === assignment.branch && a.section === assignment.section)));
+        setAssignments(prev => prev.filter(a => !(a.enrollment_year === assignment.enrollment_year && a.branch === assignment.branch && a.section === assignment.section)));
         setStatus({ type: "success", message: `Removed ${assignment.branch} - Section ${assignment.section}` });
       }
     } catch {
@@ -149,7 +149,7 @@ const AssignExam = () => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
 
               <div className="admin-input-group">
                 <label className="admin-label">Select Exam</label>
@@ -163,6 +163,19 @@ const AssignExam = () => {
                   {exams.map(ex => (
                     <option key={ex.id} value={ex.id}>[{ex.subject_code || ex.code}] {ex.exam_name}</option>
                   ))}
+                </select>
+              </div>
+
+              <div className="admin-input-group">
+                <label className="admin-label">Enrollment Year</label>
+                <select
+                  className="admin-input"
+                  value={form.enrollmentYear}
+                  onChange={e => setForm({ ...form, enrollmentYear: parseInt(e.target.value) })}
+                  required
+                >
+                  <option value={2025}>2025</option>
+                  <option value={2026}>2026</option>
                 </select>
               </div>
 
@@ -205,7 +218,7 @@ const AssignExam = () => {
                 <p style={{ margin: 0, color: '#1E3A8A', fontSize: '0.95rem' }}>
                   {countLoading
                     ? "Fetching student count..."
-                    : <>This action will assign the exam to <strong>{studentCount ?? 0} student{studentCount !== 1 ? 's' : ''}</strong> in <strong>{form.branch} - Section {form.section}</strong>.</>
+                    : <>This action will assign the exam to <strong>{studentCount ?? 0} student{studentCount !== 1 ? 's' : ''}</strong> in <strong>{form.enrollmentYear} - {form.branch} - Section {form.section}</strong>.</>
                   }
                 </p>
               </div>
@@ -250,7 +263,7 @@ const AssignExam = () => {
                   <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                     <td style={{ padding: '16px 0' }}>
                       <span style={{ backgroundColor: '#F1F5F9', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>
-                        {a.branch} — Sec {a.section}
+                        {a.enrollment_year} — {a.branch} — Sec {a.section}
                       </span>
                     </td>
                     <td style={{ padding: '16px 0', color: '#64748B', fontSize: '0.9rem' }}>

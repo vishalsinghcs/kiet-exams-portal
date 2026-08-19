@@ -33,11 +33,20 @@ class ExamService:
         if exam.created_by != teacher_id:
             raise HTTPException(status_code=403, detail="Forbidden: You can only assign exams that you created!")
 
-        student_count = db.query(User).filter(User.role == "student", User.branch == branch, User.section == section).count()
+        student_count = db.query(User).filter(User.role == "student", User.enrollment_year == enrollment_year, User.branch == branch, User.section == section).count()
         if student_count == 0:
             raise HTTPException(status_code=400, detail="Cannot assign an exam to an empty section.")
 
-        return exam_repo.assign_exam_to_batch(db, exam_id, enrollment_year, branch, section)
+        assignment = exam_repo.assign_exam_to_batch(db, exam_id, enrollment_year, branch, section)
+        
+        # Mirror assignment to Minor Degree if section is A
+        if section == "A":
+            try:
+                exam_repo.assign_exam_to_batch(db, exam_id, enrollment_year, "Minor Degree", section)
+            except Exception:
+                pass # Ignore if already assigned or other error
+                
+        return assignment
 
     def revoke_exam_from_batch(self, db: Session, teacher_id: UUID, exam_id: UUID, enrollment_year: int, branch: str, section: str):
         """Teacher revokes their exam from a specific student batch."""
@@ -49,7 +58,14 @@ class ExamService:
         if exam.created_by != teacher_id:
             raise HTTPException(status_code=403, detail="Forbidden: You can only revoke exams that you created!")
 
-        return exam_repo.revoke_exam_from_batch(db, exam_id, enrollment_year, branch, section)
+        exam_repo.revoke_exam_from_batch(db, exam_id, enrollment_year, branch, section)
+        
+        # Mirror revocation to Minor Degree if section is A
+        if section == "A":
+            try:
+                exam_repo.revoke_exam_from_batch(db, exam_id, enrollment_year, "Minor Degree", section)
+            except Exception:
+                pass
 
     def delete_exam(self, db: Session, teacher_id: UUID, exam_id: UUID):
         """Teacher deletes an exam."""
