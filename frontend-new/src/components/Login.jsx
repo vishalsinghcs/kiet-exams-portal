@@ -5,14 +5,12 @@ import { loginUser, API_BASE_URL } from '../utils/api';
 import InteractiveCharacters from './ui/InteractiveCharacters';
 import LoginForm from './ui/LoginForm';
 
-let hasSeenLoaderThisSession = false;
-
+ 
 const Login = () => {
   const { login, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Loading states
-  const [initialLoading, setInitialLoading] = useState(() => !hasSeenLoaderThisSession);
   const [formLoading, setFormLoading] = useState(false);
 
   // Form states
@@ -54,18 +52,7 @@ const Login = () => {
           console.error("Profile check failed:", e);
         }
       }
-      
-      // Check if we've already shown the loader this session
-      if (!hasSeenLoaderThisSession) {
-        setTimeout(() => {
-          setInitialLoading(false);
-          hasSeenLoaderThisSession = true;
-        }, 1500); 
-      } else {
-        setInitialLoading(false);
-      }
     };
-
     checkRoleAndRedirect();
   }, [isAuthenticated, navigate]);
 
@@ -111,29 +98,17 @@ const Login = () => {
 
   return (
     <>
-      {/* Initial Page Loader */}
-      <div id="loader" style={{ opacity: initialLoading ? 1 : 0, visibility: initialLoading ? 'visible' : 'hidden' }}>
-        <div className="loader-content">
-          <div className="loader-ring-wrapper">
-            <div className="loader-ring"></div>
-            <div className="loader-ring-spin"></div>
-          </div>
-          <div className="loader-text">Loading</div>
-        </div>
-      </div>
 
       <div className="split-login-container" onMouseMove={handleMouseMove}>
         
-        {/* Left Side: Animated Characters */}
+        {/* Left Side: Interactive Characters */}
         <div className="split-left">
-           {!initialLoading && (
-             <InteractiveCharacters 
-               mousePos={mousePos}
-               isPasswordVisible={showPassword}
-               focusedField={focusedField}
-               loginFailed={loginFailed}
-             />
-           )}
+          <InteractiveCharacters 
+            mousePos={mousePos}
+            isPasswordVisible={showPassword}
+            focusedField={focusedField}
+            loginFailed={loginFailed}
+          />
         </div>
 
         {/* Right Side: Form */}

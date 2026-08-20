@@ -91,15 +91,30 @@
 }
 
 .floating-input:focus ~ .floating-label,
-.floating-input:not(:placeholder-shown) ~ .floating-label {
+.floating-input:not(:placeholder-shown) ~ .floating-label,
+.floating-select:focus ~ .floating-label,
+.floating-select.has-value ~ .floating-label,
+.floating-select-custom.is-focused ~ .floating-label,
+.floating-select-custom.has-value ~ .floating-label {
   top: -16px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
-.floating-input:focus ~ .floating-label {
+.floating-input:focus ~ .floating-label,
+.floating-select:focus ~ .floating-label,
+.floating-select-custom.is-focused ~ .floating-label {
   color: var(--warning);
+}
+
+.floating-select-custom {
+  user-select: none;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.floating-select-custom.is-focused {
+  border-bottom-color: var(--warning);
 }
 
 .floating-input.has-error ~ .floating-label {
@@ -196,4 +211,97 @@
 
 [data-theme="dark"] .auth-checkbox {
   accent-color: var(--warning);
+}
+
+/* Grid Layout for Signup Form */
+.form-row-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Custom Apple-inspired Dropdown */
+.custom-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  margin-top: 4px;
+  background-color: #ffffff; /* Solid white in light mode */
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .custom-dropdown-menu {
+  background-color: var(--bg-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.custom-dropdown-item {
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease;
+}
+
+.custom-dropdown-item:hover {
+  background-color: var(--accent-light);
+}
+
+.custom-dropdown-item.selected {
+  background-color: var(--text-primary);
+  color: var(--bg-base);
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-5px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* OTP Input Styles */
+.otp-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.otp-box {
+  width: 100%;
+  aspect-ratio: 1; /* Makes them perfectly square */
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all 0.2s var(--ease-out);
+}
+
+.otp-box::placeholder {
+  color: var(--text-tertiary);
+  font-size: 1.2rem;
+  opacity: 0.5;
+}
+
+.otp-box:focus {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 3px var(--warning-light);
+  transform: translateY(-2px);
+  background-color: var(--bg-surface);
+}
+
+.otp-box.has-value {
+  border-color: var(--border-medium);
+}
+
+.otp-box.has-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-light);
 }
