@@ -1,3 +1,3 @@
 window.APP_CONFIG = {
-  API_BASE_URL: "https://m7k04gdxe94w.cloudfront.net"
+  API_BASE_URL: "d1m7k04gdxe94w.cloudfront.net/docs"
 };
