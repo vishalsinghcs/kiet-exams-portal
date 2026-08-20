@@ -62,7 +62,7 @@ const LoginForm = ({
         />
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', fontSize: '0.85rem' }}>
-          <a href="/forgot-password" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
+          <a href="/forgot-password" className="auth-secondary-link">
             Forgot password?
           </a>
         </div>

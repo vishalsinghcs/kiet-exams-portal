@@ -8,7 +8,7 @@ import LoginForm from './ui/LoginForm';
 let hasSeenLoaderThisSession = false;
 
 const Login = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Loading states
@@ -43,13 +43,12 @@ const Login = () => {
           if (profileRes.ok) {
             const profileData = await profileRes.json();
             if (profileData.role === "admin" || profileData.role === "teacher") {
-              navigate("/admin", { replace: true });
+              logout();
               return;
             }
             navigate("/dashboard", { replace: true });
           } else {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
+            logout();
           }
         } catch (e) {
           console.error("Profile check failed:", e);
@@ -93,7 +92,10 @@ const Login = () => {
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         if (profileData.role === "admin" || profileData.role === "teacher") {
-          navigate("/admin");
+          logout();
+          setError("Invalid email or password");
+          setLoginFailed(true);
+          setTimeout(() => setLoginFailed(false), 2000);
           return;
         }
       }
