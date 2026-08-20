@@ -33,9 +33,9 @@ class AuthService:
             if redis_client.exists(cooldown_key):
                 raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another OTP.")
                 
-            # Enforce Max 10 attempts per 24 hours
+            # Enforce Max 5 attempts per 24 hours
             attempts = redis_client.get(attempts_key)
-            if attempts and int(attempts) >= 10:
+            if attempts and int(attempts) >= 5:
                 raise HTTPException(status_code=429, detail="Maximum OTP requests exceeded. Please try again tomorrow.")
 
         # 2. Clean up any old OTPs for this email to prevent spam
