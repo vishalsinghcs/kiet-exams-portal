@@ -518,7 +518,7 @@ const InteractiveCharacters = ({
           </g>
 
           {/* Invisible Masking Strip (The "Floor") - Hides the tilting bottoms! */}
-          <rect x="-200" y="500" width="1000" height="400" fill="#e6e6e6" />
+          <rect x="-200" y="500" width="1000" height="400" fill="var(--bg-base)" />
         </g>
       </svg>
     </div>

@@ -135,9 +135,9 @@ const Login = () => {
         </div>
 
         {/* Right Side: Form */}
-        <div className="split-right">
-          <div style={{ position: 'absolute', top: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-             <img src="/codeml_logo_trans.png" alt="Logo" style={{ width: '32px', height: '32px', filter: 'grayscale(100%) brightness(0)' }} />
+        <div className="split-right" style={{ flexDirection: 'column' }}>
+          <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <img src="/codeml_logo_trans.png" alt="Logo" className="auth-logo" style={{ width: '32px', height: '32px' }} />
           </div>
 
           <LoginForm 
