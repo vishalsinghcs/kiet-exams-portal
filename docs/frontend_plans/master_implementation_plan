@@ -1,0 +1,72 @@
+# Frontend Redesign Implementation Plan
+
+This plan details the procedure for building a brand new, Apple-inspired frontend in the `frontend-new` directory while preserving 100% of the features and API integrations from the current `frontend` folder.
+
+## User Review Required
+> [!IMPORTANT]
+> The new frontend will be built in `frontend-new`. Once the redesign is fully complete and verified, we will replace the old `frontend` folder with `frontend-new`. No changes to GitHub Actions deployment workflows (`deploy.yml`) are needed for now.
+
+## Proposed Changes
+
+### 1. Project Initialization & Dependencies
+- Initialize a fresh Vite React project inside the `frontend-new` folder (avoiding overwriting the `design system` directory).
+- Install necessary dependencies mirroring your current stack (excluding framer-motion): `react-router-dom`, `lucide-react`, `chart.js` (used in the template), and `@uiw/react-md-editor`.
+- Install testing libraries: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, and `jsdom`.
+
+### 2. Global Design System Configuration
+#### [NEW] `frontend-new/src/styles/theme.css`
+- Extract the entire `<style>` block from `apple_inspired_dashboard.html`.
+- This file will act as the single source of truth for:
+  - Light/Dark mode CSS variables (`--bg-base`, `--accent`, etc.)
+  - Glassmorphism effects (`backdrop-filter`) and shadows.
+  - Global keyframes (`orbFloat`, `spin`, `pulse`). Custom animations will be handled via standard CSS.
+
+#### [NEW] `frontend-new/src/context/ThemeContext.jsx`
+- A new context provider to manage light/dark mode toggling by applying `data-theme="dark"` to the `document.documentElement`, precisely as your template requires.
+
+### 3. Core Reusable UI Components
+Before building pages, we will build the atomic building blocks from your template:
+#### [NEW] `frontend-new/src/components/ui/`
+- **`Layout.jsx`**: The main wrapper containing the `Sidebar` and `Topbar` with dynamic routing.
+- **`Card.jsx` / `StatCard.jsx`**: The glassmorphic floating cards.
+- **`Button.jsx` / `Input.jsx`**: The standardized form elements.
+- **`Loader.jsx`**: The elegant ring spinner.
+- **`BackgroundOrb.jsx`**: The animated background gradient orb.
+
+### 4. Logic & Utility Migration
+#### [MODIFY] `frontend-new/src/utils/` & `context/`
+- Directly port `AuthContext.jsx`, `api.js`, and `fetchInterceptor.js` from the old frontend to ensure identical API communication and maintenance mode interception.
+
+### 5. Page Implementations (Feature Parity)
+We will rebuild every existing route using the new UI components:
+
+#### [NEW] Authentication & Public Pages
+- Rebuild `Login.jsx`, `Signup.jsx`, `ForgotPassword.jsx`, and `LandingPage.jsx`. They will be placed over the animated `BackgroundOrb` with centered glassmorphic cards.
+
+#### [NEW] Dashboards
+- **Student Dashboard (`/dashboard`)**: Port the "Ongoing", "Upcoming", and "Completed" exam logic into the new tabbed/grid layout from the template.
+- **Admin Dashboard (`/admin/dashboard`)**: Fully implement the admin-specific sidebar navigation (Overview, Users, Results) exactly as visually defined in your `apple_inspired_dashboard.html`.
+- **Teacher Dashboard (`/teacher/dashboard`)**: Create a completely separate dashboard view and navigation tailored for teachers (Exams, Assignments, Grading).
+
+#### [NEW] Exam Environment (`/exam/:examId`)
+- Rebuild the exam wrapper (which holds the IDE iframe). 
+- Copy the `frontend/public/ide` folder entirely into `frontend-new/public/ide` so the Elixir IDE remains fully functional and intact.
+
+### 6. App Wrapper & Maintenance Logic
+#### [NEW] `frontend-new/src/App.jsx`
+- Setup `react-router-dom` with the new separated route structure.
+- Implement the exact same event listeners (`maintenance-lock`, `maintenance-warning`) to handle the freezing UI and countdown timer during server shifts.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Write test suites for core components using `vitest` and `react-testing-library`.
+- Configure the Vite test runner.
+
+### Manual Verification
+1. **Local Development**: Run `npm run dev` in `frontend-new` on port `5173`.
+2. **Visual QA**: Compare the rendering of the Dashboards in the React app against the raw `apple_inspired_dashboard.html` file.
+3. **Functional QA**: Log in as a student, enter an exam, and verify the IDE iframe loads and communicates with the backend correctly.
+4. **Maintenance QA**: Trigger the maintenance API and verify the UI freezes with the new Apple-inspired aesthetics.
