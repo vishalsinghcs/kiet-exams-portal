@@ -297,9 +297,9 @@ const ExamEnvironment = () => {
           <div className="question-body" style={{ display: 'flex', flexDirection: 'column', gap: '32px', background: 'transparent', boxShadow: 'none', border: 'none', padding: '0' }}>
             {(() => {
               try {
-                const extras = typeof exam.extra_sections === 'string' 
-                  ? JSON.parse(exam.extra_sections) 
-                  : (exam.extra_sections || []);
+                const extras = typeof exam.exam_sections === 'string' 
+                  ? JSON.parse(exam.exam_sections) 
+                  : (exam.exam_sections || []);
                   
                 if (extras.length === 0) {
                     return (
