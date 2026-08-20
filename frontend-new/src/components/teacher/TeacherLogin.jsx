@@ -1,30 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { loginUser, API_BASE_URL } from '../utils/api';
-import InteractiveCharacters from './ui/InteractiveCharacters';
-import LoginForm from './ui/LoginForm';
+import { useAuth } from '../../context/AuthContext';
+import { loginUser, API_BASE_URL } from '../../utils/api';
+import InteractiveCharacters from '../ui/InteractiveCharacters';
+import LoginForm from '../ui/LoginForm';
 
- 
-const Login = () => {
+const TeacherLogin = () => {
   const { login, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Loading states
   const [formLoading, setFormLoading] = useState(false);
-
-  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  // Animation Interaction states
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [focusedField, setFocusedField] = useState(null);
   const [loginFailed, setLoginFailed] = useState(false);
 
-  // Mouse Tracking
   const handleMouseMove = useCallback((e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   }, []);
@@ -68,6 +62,7 @@ const Login = () => {
     try {
       const data = await loginUser(email, password);
       
+      // Decode JWT to check role before officially logging in
       let role = "";
       try {
         const payload = JSON.parse(atob(data.access_token.split('.')[1]));
@@ -76,7 +71,8 @@ const Login = () => {
         console.error("Failed to parse token");
       }
 
-      if (role !== "student") {
+      if (role !== "teacher") {
+        // Destroy the session on the backend
         await fetch(`${API_BASE_URL}/logout`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${data.access_token}` }
@@ -88,7 +84,7 @@ const Login = () => {
       }
       
       login(data.access_token);
-      navigate("/dashboard");
+      navigate("/teacher/dashboard");
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
       setLoginFailed(true);
@@ -100,10 +96,7 @@ const Login = () => {
 
   return (
     <>
-
       <div className="split-login-container" onMouseMove={handleMouseMove}>
-        
-        {/* Left Side: Interactive Characters */}
         <div className="split-left">
           <InteractiveCharacters 
             mousePos={mousePos}
@@ -113,10 +106,24 @@ const Login = () => {
           />
         </div>
 
-        {/* Right Side: Form */}
         <div className="split-right" style={{ flexDirection: 'column' }}>
           <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
              <img src="/codeml_logo_trans.png" alt="Logo" className="auth-logo" style={{ width: '32px', height: '32px' }} />
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <span style={{ 
+              background: 'var(--accent-light)', 
+              color: 'var(--accent)', 
+              padding: '4px 12px', 
+              borderRadius: '20px', 
+              fontSize: '0.85rem', 
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Faculty Portal
+            </span>
           </div>
 
           <LoginForm 
@@ -130,6 +137,7 @@ const Login = () => {
             loading={formLoading}
             error={error}
             setFocusedField={setFocusedField}
+            hideSignup={true}
           />
         </div>
       </div>
@@ -137,4 +145,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default TeacherLogin;

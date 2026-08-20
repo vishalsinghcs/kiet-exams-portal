@@ -12,7 +12,8 @@ const LoginForm = ({
   handleLogin, 
   loading, 
   error,
-  setFocusedField 
+  setFocusedField,
+  hideSignup = false
 }) => {
   return (
     <div className="auth-form-container">
@@ -74,11 +75,13 @@ const LoginForm = ({
         >
           {loading ? 'Logging In...' : 'Log In'}
         </button>
+        
+        {!hideSignup && (
+          <p className="switch-auth-split" style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Don't have an account? <a href="/signup" className="auth-primary-link">Sign up here</a>
+          </p>
+        )}
       </form>
-      
-      <div style={{ textAlign: 'center', marginTop: '32px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-        Don't have an account? <a href="/signup" className="auth-primary-link">Sign Up</a>
-      </div>
     </div>
   );
 };
