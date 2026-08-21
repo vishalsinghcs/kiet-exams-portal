@@ -114,29 +114,29 @@ function renderNotebookUI(filename, content) {
   // S8: Build toolbar with JS event listeners — NOT raw filename in onclick attributes.
   // A filename containing a single-quote would break innerHTML-embedded onclick strings.
   const nbToolbar = document.createElement('div');
-  nbToolbar.className = 'flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 shadow-sm mb-4 shrink-0';
+  nbToolbar.className = 'flex items-center justify-between bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm mb-4 shrink-0';
   nbToolbar.innerHTML = `
     <div class="flex items-center gap-1.5">
       <button class="btn btn-sm btn-primary gap-1.5 text-xs text-white" id="nb-run-all-btn">
         <i data-lucide="fast-forward" class="w-3.5 h-3.5"></i> Run All
       </button>
-      <div class="h-4 w-px bg-gray-200 mx-0.5"></div>
-      <button class="btn btn-sm btn-ghost border-gray-200 text-xs gap-1" id="nb-add-code-btn">
+      <div class="h-4 w-px bg-base-300 mx-0.5"></div>
+      <button class="btn btn-sm btn-ghost border-base-200 text-xs gap-1" id="nb-add-code-btn">
         <i data-lucide="code-2" class="w-3.5 h-3.5 text-primary"></i> + Code
       </button>
-      <button class="btn btn-sm btn-ghost border-gray-200 text-xs gap-1" id="nb-add-md-btn">
+      <button class="btn btn-sm btn-ghost border-base-200 text-xs gap-1" id="nb-add-md-btn">
         <i data-lucide="file-text" class="w-3.5 h-3.5 text-secondary"></i> + Markdown
       </button>
-      <div class="h-4 w-px bg-gray-200 mx-0.5"></div>
-      <button class="btn btn-sm btn-ghost border-gray-200 text-xs gap-1 text-error hover:bg-error/10 hover:border-error/30" id="nb-restart-btn" title="Restart kernel, clear all outputs, and reset cell counters to [1]">
+      <div class="h-4 w-px bg-base-300 mx-0.5"></div>
+      <button class="btn btn-sm btn-ghost border-base-200 text-xs gap-1 text-error hover:bg-error/10 hover:border-error/30" id="nb-restart-btn" title="Restart kernel, clear all outputs, and reset cell counters to [1]">
         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Restart Kernel &amp; Clear Cells
       </button>
     </div>
     <div class="flex items-center gap-2">
-      <button class="btn btn-sm btn-ghost border-gray-200 text-xs gap-1" id="nb-download-btn" title="Download .ipynb">
-        <i data-lucide="download" class="w-3.5 h-3.5 text-gray-400"></i>
+      <button class="btn btn-sm btn-ghost border-base-200 text-xs gap-1" id="nb-download-btn" title="Download .ipynb">
+        <i data-lucide="download" class="w-3.5 h-3.5 text-base-content/40"></i>
       </button>
-      <span class="text-xs font-mono text-gray-400 font-medium">${model.cells.length} cells</span>
+      <span class="text-xs font-mono text-base-content/40 font-medium">${model.cells.length} cells</span>
     </div>
   `;
   // Attach listeners using closure — filename is captured safely, no string injection
@@ -192,7 +192,7 @@ function selectNotebookCell(filename, cellId, shouldFocus = true) {
 
 function createCellElement(filename, cell, index) {
   const cellWrap = document.createElement('div');
-  cellWrap.className = `notebook-cell p-3 flex flex-col gap-2 relative ${cell.type === 'code' ? 'border-l-4 border-l-primary/60' : 'border-l-4 border-l-secondary/60'}`;
+  cellWrap.className = `notebook-cell p-3 flex flex-col gap-2 relative bg-base-100 border border-base-200 text-base-content ${cell.type === 'code' ? 'border-l-4 border-l-primary/60' : 'border-l-4 border-l-secondary/60'}`;
   cellWrap.id = `wrap_${cell.id}`;
 
   cellWrap.addEventListener('click', (e) => {
@@ -202,7 +202,7 @@ function createCellElement(filename, cell, index) {
 
   // Header / Actions
   const header = document.createElement('div');
-  header.className = 'flex items-center justify-between text-xs text-gray-500 font-mono pb-1 border-b border-gray-100';
+  header.className = 'flex items-center justify-between text-xs text-base-content/60 font-mono pb-1 border-b border-base-200';
   
   const labelBadge = document.createElement('span');
   if (cell.type === 'code') {
@@ -234,12 +234,12 @@ function createCellElement(filename, cell, index) {
 
     // UX-2: Shift+Enter hint
     const hint = document.createElement('span');
-    hint.className = 'text-[10px] text-gray-400 font-mono hidden lg:inline mr-1';
+    hint.className = 'text-[10px] text-base-content/40 font-mono hidden lg:inline mr-1';
     hint.textContent = 'Shift+↵';
     actionsWrap.appendChild(hint);
   } else {
     const editBtn = document.createElement('button');
-    editBtn.className = 'p-1 hover:bg-gray-100 text-gray-600 rounded transition-colors';
+    editBtn.className = 'p-1 hover:bg-base-200 text-base-content/80 rounded transition-colors';
     editBtn.title = 'Toggle Markdown Edit';
     editBtn.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i>';
     editBtn.addEventListener('click', () => toggleMarkdownEdit(filename, cell.id));
@@ -248,7 +248,7 @@ function createCellElement(filename, cell, index) {
 
   // Move Up Button
   const moveUpBtn = document.createElement('button');
-  moveUpBtn.className = 'p-1 hover:bg-gray-100 text-gray-600 rounded transition-colors';
+  moveUpBtn.className = 'p-1 hover:bg-base-200 text-base-content/80 rounded transition-colors';
   moveUpBtn.title = 'Move Cell Up';
   moveUpBtn.innerHTML = '<i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>';
   moveUpBtn.addEventListener('click', () => moveNotebookCell(filename, cell.id, 'up'));
@@ -256,7 +256,7 @@ function createCellElement(filename, cell, index) {
 
   // Move Down Button
   const moveDownBtn = document.createElement('button');
-  moveDownBtn.className = 'p-1 hover:bg-gray-100 text-gray-600 rounded transition-colors';
+  moveDownBtn.className = 'p-1 hover:bg-base-200 text-base-content/80 rounded transition-colors';
   moveDownBtn.title = 'Move Cell Down';
   moveDownBtn.innerHTML = '<i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>';
   moveDownBtn.addEventListener('click', () => moveNotebookCell(filename, cell.id, 'down'));
@@ -278,13 +278,13 @@ function createCellElement(filename, cell, index) {
     const editorDiv = document.createElement('div');
     editorDiv.id = `editor_${cell.id}`;
     editorDiv.style.height = `${Math.max(80, Math.min(400, (cell.source.split('\n').length + 1) * 22))}px`;
-    editorDiv.className = 'rounded border border-gray-200 overflow-hidden';
+    editorDiv.className = 'rounded border border-base-200 overflow-hidden';
     cellWrap.appendChild(editorDiv);
 
     // Output area
     const outputDiv = document.createElement('div');
     outputDiv.id = `output_${cell.id}`;
-    outputDiv.className = 'notebook-output-container group relative bg-white rounded-b-xl p-3 text-xs border border-gray-200 border-t-0 mt-2 max-h-[450px] overflow-x-auto overflow-y-auto custom-scrollbar';
+    outputDiv.className = 'notebook-output-container group relative bg-base-100 rounded-b-xl p-3 text-xs border border-base-200 border-t-0 mt-2 max-h-[450px] overflow-x-auto overflow-y-auto custom-scrollbar';
     if (!cell.outputs || cell.outputs.length === 0) {
       outputDiv.classList.add('hidden');
     } else {
@@ -369,7 +369,7 @@ function createCellElement(filename, cell, index) {
     
     if (cell.isEditingMd || !cell.source.trim()) {
       const textarea = document.createElement('textarea');
-      textarea.className = 'w-full p-2.5 text-xs font-mono border border-gray-200 rounded-lg focus:outline-none focus:border-secondary min-h-[80px] bg-white';
+      textarea.className = 'w-full p-2.5 text-xs font-mono border border-base-200 rounded-lg focus:outline-none focus:border-secondary min-h-[80px] bg-base-100';
       textarea.value = cell.source;
       textarea.placeholder = 'Type Markdown here... (Click Edit icon to render)';
       textarea.oninput = (e) => {
@@ -379,7 +379,7 @@ function createCellElement(filename, cell, index) {
       mdDiv.appendChild(textarea);
     } else {
       const preview = document.createElement('div');
-      preview.className = 'markdown-cell-preview border border-gray-100 rounded-lg bg-gray-50/50 cursor-pointer';
+      preview.className = 'markdown-cell-preview border border-base-200 rounded-lg bg-base-200/50 cursor-pointer';
       const rawMd = window.marked ? window.marked.parse(cell.source) : cell.source;
       preview.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawMd) : rawMd;
       preview.onclick = () => toggleMarkdownEdit(filename, cell.id);
@@ -397,7 +397,7 @@ function addOutputCopyButton(outputContainer) {
   if (outputContainer.querySelector('.notebook-copy-output-btn')) return;
 
   const copyBtn = document.createElement('button');
-  copyBtn.className = 'notebook-copy-output-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-150 p-1.5 bg-white/90 hover:bg-indigo-50 border border-gray-200 hover:border-primary/40 rounded-md text-gray-400 hover:text-primary shadow-xs z-10 flex items-center justify-center cursor-pointer';
+  copyBtn.className = 'notebook-copy-output-btn absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-150 p-1.5 bg-base-100/90 hover:bg-indigo-50 border border-base-200 hover:border-primary/40 rounded-md text-base-content/40 hover:text-primary shadow-xs z-10 flex items-center justify-center cursor-pointer';
   copyBtn.title = 'Copy Output';
   copyBtn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5"></i>';
 
@@ -436,7 +436,7 @@ function initCellMonacoEditor(cellId, initialValue, filename) {
   const editorInstance = monaco.editor.create(container, {
     value: initialValue,
     language: 'python',
-    theme: 'vs',
+    theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs',
     minimap: { enabled: false },
     automaticLayout: true,
     fontSize: 13,
@@ -627,19 +627,19 @@ function createInterCellDivider(filename, afterCellId) {
   divider.className = 'inter-cell-divider group flex items-center gap-2 py-0.5 px-2';
 
   const line = document.createElement('div');
-  line.className = 'flex-1 h-px bg-transparent group-hover:bg-gray-200 transition-colors duration-150';
+  line.className = 'flex-1 h-px bg-transparent group-hover:bg-base-300 transition-colors duration-150';
 
   const btnWrap = document.createElement('div');
   btnWrap.className = 'flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150';
 
   const codeBtn = document.createElement('button');
-  codeBtn.className = 'inter-cell-btn flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border border-primary/40 text-primary bg-white hover:bg-primary hover:text-white transition-all shadow-sm';
+  codeBtn.className = 'inter-cell-btn flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border border-primary/40 text-primary bg-base-100 hover:bg-primary hover:text-white transition-all shadow-sm';
   codeBtn.innerHTML = '<i data-lucide="code-2" class="w-3 h-3"></i> Code';
   codeBtn.title = 'Insert Code cell here';
   codeBtn.onclick = () => insertNotebookCellAfter(filename, afterCellId, 'code');
 
   const mdBtn = document.createElement('button');
-  mdBtn.className = 'inter-cell-btn flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border border-secondary/40 text-secondary bg-white hover:bg-secondary hover:text-white transition-all shadow-sm';
+  mdBtn.className = 'inter-cell-btn flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border border-secondary/40 text-secondary bg-base-100 hover:bg-secondary hover:text-white transition-all shadow-sm';
   mdBtn.innerHTML = '<i data-lucide="file-text" class="w-3 h-3"></i> Markdown';
   mdBtn.title = 'Insert Markdown cell here';
   mdBtn.onclick = () => insertNotebookCellAfter(filename, afterCellId, 'markdown');

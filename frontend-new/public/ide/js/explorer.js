@@ -421,7 +421,7 @@ function renderTabs() {
     const tab = document.createElement('div');
     let tabClass = 'editor-tab group flex items-center gap-1.5 px-3.5 py-2 text-xs font-mono cursor-pointer rounded-t-lg transition-all whitespace-nowrap border border-b-0 ';
     if (pathKey === activeFile) tabClass += 'text-primary bg-base-100 font-bold border-base-300 shadow-sm -mb-px z-10';
-    else tabClass += 'text-gray-500 hover:bg-gray-50/80 hover:text-gray-700 border-transparent';
+    else tabClass += 'text-base-content/60 hover:bg-base-200/80 hover:text-base-content border-transparent';
     tab.className = tabClass;
     
     // File icon
@@ -437,7 +437,7 @@ function renderTabs() {
     tab.appendChild(nameSpan);
 
     const closeBtn = document.createElement('div');
-    closeBtn.className = 'w-4 h-4 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-gray-200 transition-all text-gray-400 hover:text-error';
+    closeBtn.className = 'w-4 h-4 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-base-300 transition-all text-base-content/40 hover:text-error';
     closeBtn.innerHTML = '<i data-lucide="x" class="w-3 h-3"></i>';
     closeBtn.title = 'Close tab (file stays in Explorer)';
     closeBtn.onclick = (e) => {
@@ -617,9 +617,9 @@ function selectFileType(ext, openModal = true) {
     txt:   'border-tertiary bg-tertiary/5 text-tertiary',
   };
   const hoverMap = {
-    py:    'border-gray-200 text-gray-500 hover:border-primary hover:text-primary hover:bg-primary/5',
-    ipynb: 'border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary hover:bg-secondary/5',
-    txt:   'border-gray-200 text-gray-500 hover:border-tertiary hover:text-tertiary hover:bg-tertiary/5',
+    py:    'border-base-200 text-base-content/60 hover:border-primary hover:text-primary hover:bg-primary/5',
+    ipynb: 'border-base-200 text-base-content/60 hover:border-secondary hover:text-secondary hover:bg-secondary/5',
+    txt:   'border-base-200 text-base-content/60 hover:border-tertiary hover:text-tertiary hover:bg-tertiary/5',
   };
   ['py', 'ipynb', 'txt'].forEach(t => {
     const btn = document.getElementById(`typeBtn_${t}`);
@@ -879,7 +879,7 @@ function openFilePreviewModal(path, fileName) {
           if (results.data && results.data.length > 1) {
             _renderGridFrom2DArray(gridContainer, results.data);
           } else {
-            gridContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400 text-sm">No data rows found in this file.</div>';
+            gridContainer.innerHTML = '<div class="flex items-center justify-center h-full text-base-content/40 text-sm">No data rows found in this file.</div>';
           }
         },
         error: function(err) {
@@ -922,8 +922,8 @@ function openFilePreviewModal(path, fileName) {
           monacoPreviewEditor = monaco.editor.create(monacoContainer, {
             value: formattedJson,
             language: 'json',
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs',
             readOnly: true,
-            theme: 'vs',
             minimap: { enabled: false },
             automaticLayout: true,
             fontSize: 12,

@@ -8,7 +8,7 @@ require(['vs/editor/editor.main'], function() {
   editor = monaco.editor.create(container, {
     value: '',
     language: 'python',
-    theme: 'vs',
+    theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs',
     automaticLayout: true,
     minimap: { enabled: true },
     fontSize: 14,

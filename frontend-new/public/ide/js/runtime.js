@@ -312,7 +312,7 @@ print("✓ Security layer & Rich HTML hook initialized")
       title.textContent = '❌ Failed to load Python runtime';
 
       const msg = document.createElement('span');
-      msg.className = 'text-xs text-gray-500 max-w-sm text-center';
+      msg.className = 'text-xs text-base-content/60 max-w-sm text-center';
       msg.textContent = err.message || String(err);
 
       const btn = document.createElement('button');

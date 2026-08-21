@@ -358,7 +358,7 @@ const Dashboard = () => {
           backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', padding: '20px'
         }} onClick={() => setPasskeyModal({ open: false, examId: null, examCode: '' })}>
           <div style={{
-            background: 'white', padding: '40px', borderRadius: 'var(--radius-lg)', maxWidth: '400px', width: '100%',
+            background: 'var(--bg-surface)', padding: '40px', borderRadius: 'var(--radius-lg)', maxWidth: '400px', width: '100%',
             boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', alignItems: 'center'
           }} onClick={e => e.stopPropagation()}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent-light)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
