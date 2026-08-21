@@ -174,6 +174,7 @@ const AssignExam = () => {
                   onChange={e => setForm({ ...form, enrollmentYear: parseInt(e.target.value) })}
                   required
                 >
+                  <option value={2024}>2024</option>
                   <option value={2025}>2025</option>
                   <option value={2026}>2026</option>
                 </select>
