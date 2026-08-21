@@ -256,8 +256,20 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
     enrollment_map = {e.exam_id: e for e in enrollments}
     
     response = []
+    now = datetime.utcnow()
+    
     for ex in exams:
         enrollment = enrollment_map.get(ex.id)
+        status = enrollment.status if enrollment else "pending"
+        
+        include_sections = False
+        if status == "in_progress" and ex.start_time:
+            # Check if time to start is less than 1 minute (60 seconds)
+            # Make sure both are naive or aware. ex.start_time is assumed naive UTC.
+            time_diff = ex.start_time - now
+            if time_diff.total_seconds() <= 60:
+                include_sections = True
+                
         response.append({
             "id": ex.id,
             "subject_code": ex.subject_code,
@@ -265,8 +277,8 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
             "exam_name": ex.exam_name,
             "duration": ex.duration,
             "start_time": ex.start_time,
-            "exam_sections": ex.exam_sections,
-            "status": enrollment.status if enrollment else "pending"
+            "exam_sections": ex.exam_sections if include_sections else [],
+            "status": status
         })
         
     return response
