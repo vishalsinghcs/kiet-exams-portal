@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Menu, FileText, Code, UploadCloud, Clock, AlertTriangle, X, Folder, File as FileIcon, Sun, Moon } from 'lucide-react';
+import { Menu, FileText, Code, UploadCloud, Clock, AlertTriangle, X, Check, Folder, File as FileIcon, Sun, Moon } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -25,6 +25,13 @@ const ExamEnvironment = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
+
+  const [examEnded, setExamEnded] = useState(false);
+  const [endReason, setEndReason] = useState(""); // 'time_up' or 'manual'
+  const [autoSubmitStatus, setAutoSubmitStatus] = useState("");
+  const [autoSubmitLogs, setAutoSubmitLogs] = useState([]);
+  const [nbSubmitStatus, setNbSubmitStatus] = useState("pending");
+  const [csvSubmitStatus, setCsvSubmitStatus] = useState("pending");
 
   const [showFilePicker, setShowFilePicker] = useState(false);
   const [pickerTarget, setPickerTarget] = useState(null); // 'csv' or 'ipynb'
@@ -74,7 +81,7 @@ const ExamEnvironment = () => {
     };
     
     scanDir('/workspace');
-    scanDir('/data');
+    scanDir('/output');
     setWorkspaceFiles(foundFiles);
     setShowFilePicker(true);
   };
@@ -212,6 +219,13 @@ const ExamEnvironment = () => {
           const exams = await res.json();
           const found = exams.find(e => String(e.id) === String(examId));
           setExam(found || null);
+          
+          if (found && (found.status === 'submitted' || found.status === 'completed')) {
+            setExamEnded(true);
+            setEndReason('manual'); // Assuming it was submitted successfully previously
+            setAutoSubmitStatus('success');
+            setSubmissionSuccess(true);
+          }
         }
       } catch (e) {
         console.error("Failed to fetch exam", e);
@@ -221,6 +235,144 @@ const ExamEnvironment = () => {
     };
     if (token) fetchExam();
   }, [token, examId]);
+
+  // --- Auto Submit Logic ---
+  const submissionFileRef = useRef(null);
+  const notebookFileRef = useRef(null);
+  const isAutoSubmitting = useRef(false);
+
+  useEffect(() => {
+    submissionFileRef.current = submissionFile;
+  }, [submissionFile]);
+
+  useEffect(() => {
+    notebookFileRef.current = notebookFile;
+  }, [notebookFile]);
+
+  const getFileFromWorkspace = (filename, targetPath, mimeType) => {
+    try {
+      const iframe = document.querySelector('iframe');
+      if (!iframe || !iframe.contentWindow) return null;
+      const pyodide = iframe.contentWindow.eval('typeof pyodide !== "undefined" ? pyodide : null');
+      if (!pyodide) return null;
+      
+      const fileContent = pyodide.FS.readFile(targetPath);
+      let blobPart = fileContent;
+      if (typeof fileContent === 'string') {
+          blobPart = new TextEncoder().encode(fileContent);
+      }
+      return new File([blobPart], filename, { type: mimeType });
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const addLog = (msg) => {
+    setAutoSubmitLogs(prev => [...prev, msg]);
+  };
+
+  const handleAutoSubmit = async () => {
+    if (isAutoSubmitting.current || submissionSuccess) return;
+    isAutoSubmitting.current = true;
+    
+    setExamEnded(true);
+    setEndReason("time_up");
+    setAutoSubmitStatus("submitting");
+    
+    let csvFile = null;
+    let nbFile = null;
+
+    addLog("Searching for main.ipynb...");
+    nbFile = getFileFromWorkspace('main.ipynb', '/workspace/main.ipynb', 'application/x-ipynb+json');
+    if (!nbFile) nbFile = getFileFromWorkspace('main.ipynb', '/output/main.ipynb', 'application/x-ipynb+json');
+    if (!nbFile) {
+      nbFile = notebookFileRef.current;
+      if (nbFile) addLog("main.ipynb: using manually selected file.");
+      else {
+        addLog("main.ipynb: Not Found.");
+        setNbSubmitStatus("not_found");
+      }
+    } else {
+      addLog("main.ipynb: Found.");
+    }
+
+    addLog("Searching for submission.csv...");
+    csvFile = getFileFromWorkspace('submission.csv', '/workspace/submission.csv', 'text/csv');
+    if (!csvFile) csvFile = getFileFromWorkspace('submission.csv', '/output/submission.csv', 'text/csv');
+    if (!csvFile) {
+      csvFile = submissionFileRef.current;
+      if (csvFile) addLog("submission.csv: using manually selected file.");
+      else {
+        addLog("submission.csv: Not Found.");
+        setCsvSubmitStatus("not_found");
+      }
+    } else {
+      addLog("submission.csv: Found.");
+    }
+
+    if (!csvFile && !nbFile) {
+      addLog("No files found to submit.");
+      setAutoSubmitStatus("failed");
+      return;
+    }
+
+    try {
+      if (csvFile) {
+        addLog("Uploading submission.csv...");
+        const csvData = new FormData();
+        csvData.append("file_type", "csv");
+        csvData.append("file", csvFile);
+        const resCsv = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/upload`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` },
+          body: csvData
+        });
+        if (resCsv.ok) {
+          addLog("submission.csv: Upload Success.");
+          setCsvSubmitStatus("success");
+        } else {
+          addLog("submission.csv: Upload Failed.");
+          setCsvSubmitStatus("failed");
+        }
+      }
+
+      if (nbFile) {
+        addLog("Uploading main.ipynb...");
+        const nbData = new FormData();
+        nbData.append("file_type", "ipynb");
+        nbData.append("file", nbFile);
+        const resNb = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/upload`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` },
+          body: nbData
+        });
+        if (resNb.ok) {
+          addLog("main.ipynb: Upload Success.");
+          setNbSubmitStatus("success");
+        } else {
+          addLog("main.ipynb: Upload Failed.");
+          setNbSubmitStatus("failed");
+        }
+      }
+
+      addLog("Finalizing exam submission...");
+      const resSubmit = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (resSubmit.ok) {
+        addLog("Exam submitted successfully.");
+        setAutoSubmitStatus("success");
+      } else {
+        addLog("Failed to finalize exam submission.");
+        setAutoSubmitStatus("failed");
+      }
+    } catch (err) {
+      addLog("Network error during submission.");
+      setAutoSubmitStatus("failed");
+    }
+  };
 
   // --- Countdown Timer ---
   useEffect(() => {
@@ -232,17 +384,20 @@ const ExamEnvironment = () => {
       startStr.endsWith("Z") ? startStr : `${startStr}Z`
     ).getTime() + exam.duration * 60 * 1000;
 
+    let interval;
     const tick = () => {
       const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining === 0) {
-        clearInterval(interval);
-        // Force submit if time is up
+        if (interval) clearInterval(interval);
+        handleAutoSubmit();
       }
     };
     tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    interval = setInterval(tick, 1000);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [exam]);
 
   const formatTime = (seconds) => {
@@ -334,6 +489,8 @@ const ExamEnvironment = () => {
 
       if (resSubmit.ok) {
         setSubmissionSuccess(true);
+        setExamEnded(true);
+        setEndReason("manual");
       } else {
         const errorData = await resSubmit.json();
         setSubmissionError(errorData.detail || "Failed to finalize exam submission.");
@@ -364,7 +521,7 @@ const ExamEnvironment = () => {
     <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-base)', overflow: 'hidden' }}>
       
       {/* Anti-Cheat Warning Modal */}
-      {cheatWarning && (
+      {cheatWarning && !examEnded && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(255, 59, 48, 0.95)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', padding: '40px', textAlign: 'center' }}>
           <AlertTriangle size={64} style={{ marginBottom: '24px' }} />
           <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px' }}>WARNING: Tab Switch Detected</h2>
@@ -372,6 +529,77 @@ const ExamEnvironment = () => {
           <button onClick={() => setCheatWarning(false)} style={{ background: 'white', color: 'var(--danger)', padding: '14px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
             Acknowledge and Return to Exam
           </button>
+        </div>
+      )}
+
+      {/* End of Exam Overlay */}
+      {examEnded && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(34, 197, 94, 0.95)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', padding: '40px', textAlign: 'center' }}>
+          <div style={{ background: 'white', color: 'var(--success)', padding: '24px', borderRadius: '50%', marginBottom: '24px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}>
+            {endReason === 'time_up' && autoSubmitStatus !== 'success' && autoSubmitStatus !== 'failed' ? (
+              <AlertTriangle size={64} />
+            ) : (
+              <UploadCloud size={64} />
+            )}
+          </div>
+          
+          {endReason === 'time_up' && autoSubmitStatus !== 'success' && autoSubmitStatus !== 'failed' && (
+            <>
+              <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px' }}>Time is over, auto-submitting files...</h2>
+              <div style={{ maxWidth: '600px', width: '100%', background: 'rgba(255,255,255,0.9)', borderRadius: '12px', padding: '24px', textAlign: 'left', border: '1px solid rgba(255,255,255,0.5)', color: '#333' }}>
+                {autoSubmitLogs.map((log, idx) => {
+                  let logColor = '#666';
+                  if (log.includes('Success') || log.includes('Found')) logColor = '#15803d'; // dark green
+                  else if (log.includes('Failed') || log.includes('Not Found') || log.includes('error')) logColor = '#b91c1c'; // dark red
+                  
+                  return (
+                    <div key={idx} style={{ fontSize: '14px', fontFamily: 'monospace', color: logColor, marginBottom: '8px', fontWeight: 600 }}>
+                      {log}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {endReason === 'time_up' && (autoSubmitStatus === 'success' || autoSubmitStatus === 'failed') && (
+            <>
+              <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px' }}>Time is over, exam finalized</h2>
+              <p style={{ fontSize: '18px', color: 'white', marginBottom: '32px', opacity: 0.9 }}>Here is the summary of your auto-submitted files.</p>
+              
+              <div style={{ maxWidth: '500px', width: '100%', background: 'rgba(255,255,255,0.9)', borderRadius: '12px', padding: '16px 24px', textAlign: 'left', color: '#333' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Code size={24} style={{ color: '#555' }} />
+                    <span style={{ fontWeight: 600, fontSize: '16px' }}>main.ipynb</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: nbSubmitStatus === 'success' ? '#15803d' : '#b91c1c', fontWeight: 700 }}>
+                    {nbSubmitStatus === 'success' ? <Check size={20} /> : <X size={20} />}
+                    {nbSubmitStatus === 'success' ? 'Submitted' : nbSubmitStatus === 'not_found' ? 'Not Found' : 'Failed'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <FileText size={24} style={{ color: '#555' }} />
+                    <span style={{ fontWeight: 600, fontSize: '16px' }}>submission.csv</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: csvSubmitStatus === 'success' ? '#15803d' : '#b91c1c', fontWeight: 700 }}>
+                    {csvSubmitStatus === 'success' ? <Check size={20} /> : <X size={20} />}
+                    {csvSubmitStatus === 'success' ? 'Submitted' : csvSubmitStatus === 'not_found' ? 'Not Found' : 'Failed'}
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize: '16px', color: 'white', marginTop: '32px', opacity: 0.9 }}>You may safely close this tab.</p>
+            </>
+          )}
+
+          {endReason === 'manual' && (
+            <>
+              <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px' }}>You have successfully submitted, your exam is over</h2>
+              <p style={{ fontSize: '18px', color: 'white', marginBottom: '32px', opacity: 0.9 }}>Your submission has been finalized. You may safely close this tab.</p>
+            </>
+          )}
         </div>
       )}
 
@@ -481,6 +709,15 @@ const ExamEnvironment = () => {
                   }
                 })()}
               </div>
+              <div style={{ marginTop: '24px', padding: '16px', background: 'var(--info-light, rgba(59,130,246,0.1))', border: '1px solid var(--info, #3b82f6)', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <AlertTriangle size={24} style={{ color: 'var(--info, #3b82f6)', flexShrink: 0 }} />
+                <div>
+                  <h4 style={{ fontWeight: 700, color: 'var(--info, #3b82f6)', marginBottom: '4px', fontSize: '15px' }}>Important: Auto-Submission Naming Convention</h4>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    When the exam time runs out, the system will automatically submit your work. For auto-submission to work, you <strong>must</strong> name your files exactly <code>main.ipynb</code> and <code>submission.csv</code>. Any other file names will be ignored!
+                  </p>
+                </div>
+              </div>
             </div>
 
           {/* Coding View */}
@@ -496,7 +733,17 @@ const ExamEnvironment = () => {
           {/* Result View */}
           <div style={{ display: activeView === 'result' ? 'block' : 'none', maxWidth: '700px', margin: 'auto', width: '100%', background: 'var(--bg-surface)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)' }}>
               <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Submit Your Work</h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Upload your generated <code>submission.csv</code> and Jupyter <code>.ipynb</code> notebook.</p>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Upload your generated <code>submission.csv</code> and Jupyter <code>.ipynb</code> notebook.</p>
+              
+              <div style={{ padding: '16px', background: 'var(--warning-light, rgba(245,158,11,0.1))', border: '1px solid var(--warning, #f59e0b)', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '32px' }}>
+                <AlertTriangle size={24} style={{ color: 'var(--warning, #f59e0b)', flexShrink: 0 }} />
+                <div>
+                  <h4 style={{ fontWeight: 700, color: 'var(--warning, #f59e0b)', marginBottom: '4px', fontSize: '15px' }}>Auto-Submission Notice</h4>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    If time runs out, the system will auto-submit files named exactly <code>main.ipynb</code> and <code>submission.csv</code> from your workspace or output folder. If your files are named differently, they will <strong>not</strong> be submitted!
+                  </p>
+                </div>
+              </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '40px' }}>
                 <div style={{ background: 'var(--bg-base)', border: '2px dashed var(--border-medium)', borderRadius: '16px', padding: '32px 20px', textAlign: 'center', transition: 'border-color 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
