@@ -119,7 +119,7 @@ const Dashboard = () => {
           navigate(`/exam/${passkeyModal.examId}`);
         };
       } else {
-        setPasskeyError(data.detail || 'Invalid passkey. Please try again.');
+        setPasskeyError(data.message || data.detail || 'Invalid passkey. Please try again.');
         setOtp('');
       }
     } catch (err) {

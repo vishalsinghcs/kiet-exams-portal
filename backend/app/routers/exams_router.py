@@ -31,6 +31,7 @@ async def create_exam(
     exam_name: str = Form(...),
     duration: int = Form(...),
     start_time: str = Form(...),
+    start_window: int = Form(...),
     extra_sections: str = Form(None),
     dataset: UploadFile = File(None),
     sample_csv: UploadFile = File(None),
@@ -54,6 +55,7 @@ async def create_exam(
         "exam_name": exam_name,
         "duration": duration,
         "start_time": datetime.fromisoformat(start_time.replace("Z", "+00:00")),
+        "start_window_minutes": start_window,
         "exam_sections": exam_sections_json,
     }
 
@@ -265,7 +267,6 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
         include_sections = False
         if status == "in_progress" and ex.start_time:
             # Check if time to start is less than 1 minute (60 seconds)
-            # Make sure both are naive or aware. ex.start_time is assumed naive UTC.
             time_diff = ex.start_time - now
             if time_diff.total_seconds() <= 60:
                 # Check if it hasn't passed (end_time + 5 mins)
@@ -290,8 +291,13 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
 def verify_exam_code(exam_id: UUID, request: schemas.VerifyExamCodeRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Student enters the 6-digit pin to start the exam."""
     logger.info(f"Student verifying exam access code [user_id={current_user.id} exam_id={exam_id}]")
-    enrollment = enrollment_service.start_exam(db, user_id=current_user.id, exam_id=exam_id, access_code=request.code)
-    return {"success": True, "status": enrollment.status}
+    try:
+        enrollment = enrollment_service.start_exam(db, user_id=current_user.id, exam_id=exam_id, access_code=request.code)
+        return {"success": True, "status": enrollment.status}
+    except HTTPException as e:
+        if "start window" in str(e.detail).lower():
+            return {"success": False, "message": "You are late 😉. The start window for this exam has closed."}
+        raise e
 
 @router.get("/users/me/exams/{exam_id}/verify-enrollment")
 def verify_exam_enrollment(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
