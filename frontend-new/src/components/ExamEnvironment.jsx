@@ -63,7 +63,7 @@ const ExamEnvironment = () => {
           if (pyodide.FS.isDir(stat.mode)) {
             scanDir(path);
           } else {
-            if (path.endsWith(`.${target}`)) {
+            if (path.endsWith(`.${target}`) && item !== 'sample.csv') {
               foundFiles.push(path);
             }
           }

@@ -280,15 +280,17 @@ function createTreeNode(path, name, isRoot) {
   } else {
     // Action buttons for files (output, data, workspace)
     if (!isRoot) {
-      const viewBtn = document.createElement('div');
-      viewBtn.className = 'btn btn-ghost btn-xs btn-square min-h-0 h-5 w-5 text-base-content/40 hover:text-primary hover:bg-primary/15';
-      viewBtn.innerHTML = '<i data-lucide="eye" class="w-3 h-3"></i>';
-      viewBtn.title = 'View file content';
-      viewBtn.onclick = (e) => {
-        e.stopPropagation();
-        openFilePreviewModal(path, name);
-      };
-      actions.appendChild(viewBtn);
+      if (!name.endsWith('.ipynb')) {
+        const viewBtn = document.createElement('div');
+        viewBtn.className = 'btn btn-ghost btn-xs btn-square min-h-0 h-5 w-5 text-base-content/40 hover:text-primary hover:bg-primary/15';
+        viewBtn.innerHTML = '<i data-lucide="eye" class="w-3 h-3"></i>';
+        viewBtn.title = 'View file content';
+        viewBtn.onclick = (e) => {
+          e.stopPropagation();
+          openFilePreviewModal(path, name);
+        };
+        actions.appendChild(viewBtn);
+      }
 
       const dlBtn = document.createElement('div');
       dlBtn.className = 'btn btn-ghost btn-xs btn-square min-h-0 h-5 w-5 text-base-content/40 hover:text-primary hover:bg-primary/15';

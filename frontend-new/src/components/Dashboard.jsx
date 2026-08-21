@@ -104,8 +104,18 @@ const Dashboard = () => {
         const examTokenToStore = data.exam_token || "TEMPORARY_FALLBACK_TOKEN_UNTIL_BACKEND_IMPLEMENTS";
         sessionStorage.setItem(`exam_token_${passkeyModal.examId}`, examTokenToStore);
         
-        setPasskeyModal({ open: false, examId: null, examCode: '' });
-        navigate(`/exam/${passkeyModal.examId}`);
+        // Ensure a fresh IDE environment by clearing the browser's IndexedDB
+        const req = indexedDB.deleteDatabase('PyExDB');
+        
+        req.onsuccess = () => {
+          setPasskeyModal({ open: false, examId: null, examCode: '' });
+          navigate(`/exam/${passkeyModal.examId}`);
+        };
+        req.onerror = () => {
+          // Fallback if deletion fails for some reason
+          setPasskeyModal({ open: false, examId: null, examCode: '' });
+          navigate(`/exam/${passkeyModal.examId}`);
+        };
       } else {
         setPasskeyError(data.detail || 'Invalid passkey. Please try again.');
         setOtp('');
