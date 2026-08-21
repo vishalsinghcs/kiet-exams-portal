@@ -741,7 +741,10 @@ const ExamEnvironment = () => {
       }}>
         <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', justifyContent: isSidebarPinned ? 'space-between' : 'center' }}>
           {isSidebarPinned && <span style={{ fontWeight: 700, letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>CodeML</span>}
-          <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+          <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} 
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.transform = 'scale(1)'; }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.2s' }}>
             <Menu size={24} />
           </button>
         </div>
@@ -752,7 +755,24 @@ const ExamEnvironment = () => {
             { id: 'coding', icon: Code, label: 'Coding' },
             { id: 'result', icon: UploadCloud, label: 'Submission' }
           ].map(item => (
-            <button key={item.id} onClick={() => setActiveView(item.id)} style={{
+            <button key={item.id} onClick={() => setActiveView(item.id)} 
+              onMouseEnter={(e) => {
+                if (activeView !== item.id) {
+                  e.currentTarget.style.background = 'var(--bg-base)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeView !== item.id) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                } else {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+              style={{
               display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '10px',
               background: activeView === item.id ? 'var(--bg-surface)' : 'transparent',
               color: activeView === item.id ? 'var(--text-primary)' : 'var(--text-secondary)',
