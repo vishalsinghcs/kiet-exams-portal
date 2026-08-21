@@ -1,0 +1,407 @@
+/* ══════════════════════════════════════════════════════════════
+   Elixir IDE — Stitch Design System CSS
+   Colors: Primary #4F46E5, Secondary #0EA5E9, Tertiary #10B981
+   Fonts: Inter (headline/body), Public Sans (labels), JetBrains Mono (code)
+   Surfaces: White (#FFF) content, var(--fallback-b2,oklch(var(--b2)/1)) backgrounds
+══════════════════════════════════════════════════════════════ */
+
+/* ── Reset ── */
+* { box-sizing: border-box; }
+button, input, select, textarea { font-family: inherit; }
+
+/* ── Scrollbar ── */
+.custom-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  0% { opacity: 0; } 100% { opacity: 1; }
+}
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes chipFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+@keyframes shimmerBar {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.animate-fade-in { animation: fadeIn 0.5s ease-out; }
+.animate-slide-up { animation: slideUp 0.4s ease-out; }
+
+/* ── Reload Progress Bar (Fix 5) ──
+   Thin shimmer bar below the IDE nav, shown while Pyodide re-initialises
+   on page refresh or tab reopen. Hidden once kernel is ready. */
+.reload-progress-bar {
+  position: fixed;
+  top: 48px; /* height of the IDE top nav */
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9000;
+  background: linear-gradient(90deg, #4F46E5 0%, #0EA5E9 50%, #4F46E5 100%);
+  background-size: 200% 100%;
+  animation: shimmerBar 1.6s ease-in-out infinite;
+}
+
+/* ── Cleared Workspace Notice Strip (Fix 10) ──
+   Shown on the landing page after the user cleared their workspace. */
+#clearedNotice {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 12px;
+  max-width: 560px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  color: #92400E;
+  font-size: 13px;
+  font-family: inherit;
+  animation: fadeIn 0.4s ease-out;
+}
+#clearedNotice.visible { display: flex; }
+
+.loader-pkg {
+  animation: chipFloat 2.8s ease-in-out infinite;
+}
+.loader-pkg:nth-child(1) { animation-delay: 0s; }
+.loader-pkg:nth-child(2) { animation-delay: 0.25s; }
+.loader-pkg:nth-child(3) { animation-delay: 0.5s; }
+.loader-pkg:nth-child(4) { animation-delay: 0.75s; }
+.loader-pkg:nth-child(5) { animation-delay: 1.0s; }
+.loader-pkg:nth-child(6) { animation-delay: 1.25s; }
+
+/* ══════════════════════════════════════════════════
+   LANDING PAGE — Stitch Design Tokens
+══════════════════════════════════════════════════ */
+#landingPage {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background-color: #faf8ff;
+  overflow-y: auto;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+#landingPage.landing-hidden,
+html.hide-landing-early #landingPage {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: none !important;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.glow-bg {
+  background: radial-gradient(circle at 50% 30%, rgba(14, 165, 233, 0.12) 0%, rgba(79, 70, 229, 0.05) 45%, rgba(250, 248, 255, 0) 75%);
+}
+
+.code-glow {
+  box-shadow: 0 0 35px 5px rgba(79, 70, 229, 0.12), 0 20px 40px -10px rgba(14, 165, 233, 0.1);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #4F46E5 0%, #0EA5E9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: #4F46E5;
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ══════════════════════════════════════════════════
+   LOADING OVERLAY
+══════════════════════════════════════════════════ */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: var(--fallback-b2,oklch(var(--b2)/1));
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.loading-overlay.hidden {
+  opacity: 0; visibility: hidden; pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════
+   FILE PANEL — Stitch Explorer
+══════════════════════════════════════════════════ */
+.file-panel.collapsed { width: 0 !important; border: none !important; overflow: hidden; }
+.file-panel.collapsed > * { display: none !important; }
+
+/* Tree structure */
+.tree-children {
+  display: none;
+  padding-left: 10px;
+  margin-left: 8px;
+  border-left: 1px solid #e5e7eb;
+}
+.tree-children.expanded { display: block; }
+
+.tree-folder, .tree-file {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tree-folder { font-weight: 600; }
+
+/* ══════════════════════════════════════════════════
+   CONSOLE COLLAPSE
+══════════════════════════════════════════════════ */
+#outputPane.console-hidden {
+  height: 0 !important; min-height: 0 !important;
+  border: none !important; overflow: hidden !important;
+}
+#hResizer.console-hidden {
+  pointer-events: none; opacity: 0; height: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   CONSOLE OUTPUT LINES
+══════════════════════════════════════════════════ */
+.output-line {
+  margin-bottom: 1px; white-space: pre-wrap; word-break: break-all;
+  padding: 1px 3px; border-radius: 2px;
+}
+.output-line.stdout  { color: inherit; }
+.output-line.stderr  { color: #dc2626; }
+.output-line.info    { color: #0ea5e9; }
+.output-line.success { color: #10b981; }
+.output-line.warn    { color: #8b5cf6; }
+.output-line.blocked {
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 8px 14px; border-radius: 8px;
+  border-left: 3px solid #ef4444;
+  margin: 8px 0; font-size: 12px;
+}
+
+.plot-output-img {
+  max-width: 100%; border-radius: 8px; margin: 12px 0;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.exec-time {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 12px; font-size: 11px;
+  color: #10b981;
+  background: #ecfdf5;
+  padding: 4px 12px; border-radius: 99px;
+  border: 1px solid #d1fae5;
+}
+
+/* ══════════════════════════════════════════════════
+   TOAST NOTIFICATION (Stitch Design Theme)
+══════════════════════════════════════════════════ */
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-family: 'Public Sans', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--fallback-bc,oklch(var(--bc)/1));
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast-notification.toast-show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.toast-notification.toast-success {
+  border-left: 4px solid #10b981;
+  color: #065f46;
+  background: rgba(240, 253, 244, 0.95);
+}
+.toast-notification.toast-warn {
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+  background: rgba(254, 252, 232, 0.95);
+}
+.toast-notification.toast-error {
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  background: rgba(254, 242, 242, 0.95);
+}
+.toast-notification.toast-info {
+  border-left: 4px solid #4F46E5;
+  color: #3730a3;
+  background: rgba(238, 242, 255, 0.95);
+}
+
+/* ══════════════════════════════════════════════════
+   IDE BLUR EFFECT (Welcome State)
+   Applied individually to sidebar/editor sections.
+   Fixed overlays (emptyWorkspace) are NOT inside
+   these elements, so they stay crisp and unblurred.
+══════════════════════════════════════════════════ */
+.ide-blur-target {
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+.ide-blur-target.blurred {
+  filter: blur(8px);
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Welcome Overlay Card animation */
+#emptyWorkspace .welcome-card {
+  animation: slideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ══════════════════════════════════════════════════
+   PANDAS DATAFRAME & RICH HTML TABLES
+══════════════════════════════════════════════════ */
+.output-html-container {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+table.dataframe {
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  width: auto;
+  min-width: 50%;
+  max-width: 100%;
+  background-color: var(--fallback-b1,oklch(var(--b1)/1));
+  border: 1px solid var(--fallback-bc,oklch(var(--bc)/0.3));
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  margin: 6px 0;
+}
+table.dataframe th, table.dataframe td {
+  padding: 6px 14px;
+  border: 1px solid var(--fallback-bc,oklch(var(--bc)/0.2));
+  white-space: nowrap;
+  line-height: 1.4;
+}
+table.dataframe th {
+  background-color: var(--fallback-b2,oklch(var(--b2)/1));
+  color: var(--fallback-bc,oklch(var(--bc)/1));
+  font-weight: 600;
+  text-align: right;
+  border-bottom: 2px solid var(--fallback-bc,oklch(var(--bc)/0.3));
+}
+table.dataframe tbody th {
+  text-align: right;
+  font-weight: 600;
+  color: var(--fallback-bc,oklch(var(--bc)/0.8));
+  background-color: var(--fallback-b2,oklch(var(--b2)/1));
+}
+table.dataframe td {
+  text-align: right;
+  color: var(--fallback-bc,oklch(var(--bc)/1));
+}
+table.dataframe tr:nth-child(even) {
+  background-color: var(--fallback-b2,oklch(var(--b2)/1));
+}
+table.dataframe tr:hover {
+  background-color: var(--fallback-b3,oklch(var(--b3)/1));
+}
+
+/* ══════════════════════════════════════════════════
+   SCIKIT-LEARN HTML ESTIMATOR DIAGRAMS
+══════════════════════════════════════════════════ */
+.sk-top-container {
+  color: var(--fallback-bc,oklch(var(--bc)/1));
+  background-color: var(--fallback-b1,oklch(var(--b1)/1));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 8px;
+}
+
+/* ══════════════════════════════════════════════════
+   JUPYTER NOTEBOOK CELL STYLING (.ipynb)
+   ══════════════════════════════════════════════════ */
+.notebook-output-container {
+  background-color: var(--fallback-b1,oklch(var(--b1)/1));
+  border-top: 1px solid var(--fallback-b3,oklch(var(--b3)/1));
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.notebook-out-prompt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #d97706; /* Jupyter orange Out prompt */
+  margin-bottom: 4px;
+  user-select: none;
+}
+.notebook-cell {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.notebook-cell:focus-within, .notebook-cell.active {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+.markdown-cell-preview {
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.markdown-cell-preview h1 { font-size: 1.5em; font-weight: 700; margin-bottom: 0.5em; }
+.markdown-cell-preview h2 { font-size: 1.25em; font-weight: 600; margin-bottom: 0.4em; }
+.markdown-cell-preview h3 { font-size: 1.1em; font-weight: 600; margin-bottom: 0.3em; }
+.markdown-cell-preview p { margin-bottom: 0.5em; }
+.markdown-cell-preview code { background-color: var(--fallback-b3,oklch(var(--b3)/1)); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+
+/* ── Inter-cell insert divider ── */
+.inter-cell-divider {
+  min-height: 22px;
+  cursor: default;
+  position: relative;
+  user-select: none;
+}
+.inter-cell-btn {
+  white-space: nowrap;
+  cursor: pointer;
+  line-height: 1;
+}

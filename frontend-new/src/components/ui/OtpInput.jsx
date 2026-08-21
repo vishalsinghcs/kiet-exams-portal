@@ -1,7 +1,14 @@
 import React, { useRef, useEffect } from 'react';
 
-const OtpInput = ({ length = 6, value = "", onChange, onFocus, onBlur, hasError }) => {
+const OtpInput = ({ length = 6, value = "", onChange, onFocus, onBlur, hasError, isPassword = false }) => {
   const inputRefs = useRef([]);
+
+  useEffect(() => {
+    // Autofocus the first input when component mounts
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, []);
 
   const handleChange = (e, index) => {
     const val = e.target.value;
@@ -70,7 +77,7 @@ const OtpInput = ({ length = 6, value = "", onChange, onFocus, onBlur, hasError 
         <input
           key={index}
           ref={(el) => (inputRefs.current[index] = el)}
-          type="text"
+          type={isPassword ? "password" : "text"}
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength="2" // Allow 2 to catch rapid typing / pasting
