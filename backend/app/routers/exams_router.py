@@ -9,7 +9,7 @@ from app.services.storage_service import storage_service
 from app.dependencies import get_current_user, get_teacher_or_admin
 from app.models import User, ExamSectionAssignment, ExamEnrollment
 from app.utils.logger import logger
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Import Services & Repositories
 from app.services.exam_service import exam_service
@@ -268,7 +268,10 @@ def get_my_exams(current_user: User = Depends(get_current_user), db: Session = D
             # Make sure both are naive or aware. ex.start_time is assumed naive UTC.
             time_diff = ex.start_time - now
             if time_diff.total_seconds() <= 60:
-                include_sections = True
+                # Check if it hasn't passed (end_time + 5 mins)
+                max_end_time = ex.start_time + timedelta(minutes=ex.duration + 5)
+                if now <= max_end_time:
+                    include_sections = True
                 
         response.append({
             "id": ex.id,
