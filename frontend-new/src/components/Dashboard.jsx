@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, PlayCircle, Lock, LayoutDashboard, LogOut } from 'lucide-react';
+import { Clock, PlayCircle, Lock, LayoutDashboard, LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { API_BASE_URL } from '../utils/api';
 import OtpInput from './ui/OtpInput';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { logout, token } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   const [user, setUser] = useState(null);
   const [exams, setExams] = useState([]);
@@ -187,6 +189,22 @@ const Dashboard = () => {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Theme Toggle Button */}
+          <button 
+            onClick={toggleTheme}
+            style={{
+              background: 'var(--bg-base)', border: '1px solid var(--border-light)',
+              borderRadius: '50%', width: '36px', height: '36px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>

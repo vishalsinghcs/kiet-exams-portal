@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Menu, FileText, Code, UploadCloud, Clock, AlertTriangle, X, Folder, File as FileIcon } from 'lucide-react';
+import { Menu, FileText, Code, UploadCloud, Clock, AlertTriangle, X, Folder, File as FileIcon, Sun, Moon } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { API_BASE_URL } from '../utils/api';
 
 const ExamEnvironment = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
   const { token, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const examToken = sessionStorage.getItem(`exam_token_${examId}`);
 
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
@@ -420,14 +422,31 @@ const ExamEnvironment = () => {
             <span style={{ color: 'var(--text-tertiary)', fontSize: '13px', marginLeft: '12px' }}>{exam.subject_code || exam.code}</span>
           </div>
           
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-base)', padding: '8px 16px', borderRadius: '24px',
-            border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)',
-            color: timeLeft !== null && timeLeft < 600 ? 'var(--danger)' : 'var(--text-primary)',
-            transition: 'color 0.3s'
-          }}>
-            <Clock size={18} className={timeLeft !== null && timeLeft < 600 ? 'pulse' : ''} />
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '18px', letterSpacing: '1px' }}>{formatTime(timeLeft)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button 
+              onClick={toggleTheme}
+              style={{
+                background: 'var(--bg-base)', border: '1px solid var(--border-light)',
+                borderRadius: '50%', width: '36px', height: '36px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-base)', padding: '8px 16px', borderRadius: '24px',
+              border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)',
+              color: timeLeft !== null && timeLeft < 600 ? 'var(--danger)' : 'var(--text-primary)',
+              transition: 'color 0.3s'
+            }}>
+              <Clock size={18} className={timeLeft !== null && timeLeft < 600 ? 'pulse' : ''} />
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '18px', letterSpacing: '1px' }}>{formatTime(timeLeft)}</span>
+            </div>
           </div>
         </header>
 
