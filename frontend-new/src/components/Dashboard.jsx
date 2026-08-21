@@ -105,9 +105,7 @@ const Dashboard = () => {
       
       const data = await res.json();
       if (res.ok && data.success) {
-        const examTokenToStore = data.exam_token || "TEMPORARY_FALLBACK_TOKEN_UNTIL_BACKEND_IMPLEMENTS";
-        sessionStorage.setItem(`exam_token_${passkeyModal.examId}`, examTokenToStore);
-        
+        // We now rely purely on the backend database (ExamEnrollment) to verify access, so no token is needed in sessionStorage.
         // Ensure a fresh IDE environment by clearing the browser's IndexedDB
         const req = indexedDB.deleteDatabase('PyExDB');
         

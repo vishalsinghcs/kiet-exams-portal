@@ -278,6 +278,14 @@ def verify_exam_code(exam_id: UUID, request: schemas.VerifyExamCodeRequest, curr
     enrollment = enrollment_service.start_exam(db, user_id=current_user.id, exam_id=exam_id, access_code=request.code)
     return {"success": True, "status": enrollment.status}
 
+@router.get("/users/me/exams/{exam_id}/verify-enrollment")
+def verify_exam_enrollment(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Used by ExamGuard to verify if the student is legitimately taking this exam."""
+    enrollment = enrollment_repo.get_enrollment(db, current_user.id, exam_id)
+    if not enrollment or enrollment.status != "in_progress":
+        raise HTTPException(status_code=403, detail="You are not currently taking this exam.")
+    return {"success": True, "status": enrollment.status}
+
 @router.post("/users/me/exams/{exam_id}/upload")
 async def upload_exam_file(
     exam_id: UUID, 
