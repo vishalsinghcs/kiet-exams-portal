@@ -3,6 +3,13 @@ import React, { useRef, useEffect } from 'react';
 const OtpInput = ({ length = 6, value = "", onChange, onFocus, onBlur, hasError, isPassword = false }) => {
   const inputRefs = useRef([]);
 
+  useEffect(() => {
+    // Autofocus the first input when component mounts
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, []);
+
   const handleChange = (e, index) => {
     const val = e.target.value;
     

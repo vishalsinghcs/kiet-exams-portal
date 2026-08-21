@@ -19,6 +19,7 @@ const ExamEnvironment = () => {
   const [exam, setExam] = useState(null);
   const [examLoading, setExamLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [waitingTimeLeft, setWaitingTimeLeft] = useState("");
 
   const [submissionFile, setSubmissionFile] = useState(null);
   const [notebookFile, setNotebookFile] = useState(null);
@@ -429,30 +430,43 @@ const ExamEnvironment = () => {
     }
   };
 
-  // --- Countdown Timer ---
+  // --- Countdown Timer & Waiting Room ---
   useEffect(() => {
     if (!exam) return;
     const startStr = exam.start_time || exam.startTime;
     if (!startStr) return;
 
-    const endTime = new Date(
+    const startTime = new Date(
       startStr.endsWith("Z") ? startStr : `${startStr}Z`
-    ).getTime() + exam.duration * 60 * 1000;
+    ).getTime();
+    
+    const endTime = startTime + exam.duration * 60 * 1000;
 
     let interval;
     const tick = () => {
-      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      const now = Date.now();
+      
+      // Check if we are in the waiting period (before start time)
+      if (now < startTime) {
+        const diffMs = startTime - now;
+        const m = Math.floor((diffMs / 60000) % 60);
+        const s = Math.floor((diffMs / 1000) % 60);
+        setWaitingTimeLeft(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+        return; // Don't run the exam timer yet
+      }
+
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
+      
       if (remaining === 0) {
         if (interval) clearInterval(interval);
         handleAutoSubmit();
       }
     };
+    
     tick();
     interval = setInterval(tick, 1000);
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [exam]);
 
   const formatTime = (seconds) => {
@@ -572,11 +586,19 @@ const ExamEnvironment = () => {
     );
   }
 
+  const isActuallyWaiting = (() => {
+    if (!exam) return false;
+    const startStr = exam.start_time || exam.startTime;
+    if (!startStr) return false;
+    const startTime = new Date(startStr.endsWith("Z") ? startStr : `${startStr}Z`).getTime();
+    return Date.now() < startTime;
+  })();
+
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-base)', overflow: 'hidden' }}>
       
       {/* Anti-Cheat Warning Modal */}
-      {cheatWarning && !examEnded && (
+      {cheatWarning && !examEnded && !isActuallyWaiting && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(255, 59, 48, 0.95)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', padding: '40px', textAlign: 'center' }}>
           <AlertTriangle size={64} style={{ marginBottom: '24px' }} />
           <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px' }}>WARNING: Tab Switch Detected</h2>
@@ -584,6 +606,59 @@ const ExamEnvironment = () => {
           <button onClick={() => setCheatWarning(false)} style={{ background: 'white', color: 'var(--danger)', padding: '14px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
             Acknowledge and Return to Exam
           </button>
+        </div>
+      )}
+
+      {/* Waiting Room Overlay */}
+      {isActuallyWaiting && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', textAlign: 'center' }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '40px', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-light)', maxWidth: '600px', width: '100%', display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Top Header: Subject Code & Exam Title */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px', marginBottom: '24px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-base)', padding: '6px 12px', borderRadius: '6px' }}>{exam.subject_code || exam.subjectCode || 'N/A'}</span>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{exam.exam_name || exam.examName}</span>
+            </div>
+            
+            {/* Subject Name */}
+            <h2 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '32px', textAlign: 'center' }}>
+              {exam.subject}
+            </h2>
+
+            {/* Timer */}
+            <div style={{ background: 'var(--bg-base)', padding: '32px', borderRadius: 'var(--radius-lg)', width: '100%', marginBottom: '32px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '16px' }}>Exam Begins In</p>
+              <div style={{ fontSize: '56px', fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                {waitingTimeLeft || "--:--"}
+              </div>
+            </div>
+
+            {/* Duration and Date/Time */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginBottom: '32px', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={18} />
+                <span style={{ fontSize: '15px', fontWeight: 600 }}>{exam.duration} Minutes</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={18} />
+                <span style={{ fontSize: '15px', fontWeight: 600 }}>
+                  {(() => {
+                    const st = exam.start_time || exam.startTime;
+                    if (!st) return 'TBA';
+                    return new Date(st.endsWith('Z') ? st : `${st}Z`).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+                  })()}
+                </span>
+              </div>
+            </div>
+            
+            {/* Alert */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', background: 'var(--info-light, rgba(59,130,246,0.1))', border: '1px solid var(--info, #3b82f6)', padding: '16px', borderRadius: '12px', textAlign: 'left' }}>
+              <AlertTriangle size={20} style={{ color: 'var(--info, #3b82f6)', flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Please remain on this screen. The assessment will initiate automatically when the countdown expires.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -777,12 +852,14 @@ const ExamEnvironment = () => {
 
           {/* Coding View */}
           <div style={{ display: activeView === 'coding' ? 'block' : 'none', height: '100%', width: '100%' }}>
-            <iframe
-              src={`/ide/index.html?examId=${examId}&token=${token}&apiBaseUrl=${encodeURIComponent(API_BASE_URL)}`}
-              title="JupyterLite Coding Environment"
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              allow="cross-origin-isolated; clipboard-read; clipboard-write"
-            />
+            {!isActuallyWaiting && (
+              <iframe
+                src={`/ide/index.html?examId=${examId}&token=${token}&apiBaseUrl=${encodeURIComponent(API_BASE_URL)}`}
+                title="JupyterLite Coding Environment"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                allow="cross-origin-isolated; clipboard-read; clipboard-write"
+              />
+            )}
           </div>
 
           {/* Result View */}

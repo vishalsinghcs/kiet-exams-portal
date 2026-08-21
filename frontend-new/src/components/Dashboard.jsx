@@ -315,11 +315,14 @@ const Dashboard = () => {
                     const m = Math.floor((diffMs / 60000) % 60);
                     const s = Math.floor((diffMs / 1000) % 60);
                     return (
-                      <button disabled style={{
-                        marginTop: 'auto', background: 'var(--bg-base)', color: 'var(--accent)', border: '1px solid var(--accent)', padding: '12px', borderRadius: '10px',
-                        fontWeight: 600, fontSize: '14px', cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                      }}>
-                        <Clock size={16} /> Starts in {String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
+                      <button onClick={() => handleStartExam(exam)} style={{
+                        marginTop: 'auto', background: 'var(--text-primary)', color: 'var(--bg-base)', border: 'none', padding: '12px', borderRadius: '10px',
+                        fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'opacity 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      >
+                        <Lock size={16} /> Enter Passkey (Starts in {String(m).padStart(2, '0')}:{String(s).padStart(2, '0')})
                       </button>
                     );
                   }

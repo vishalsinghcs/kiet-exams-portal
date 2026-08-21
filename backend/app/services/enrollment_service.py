@@ -25,9 +25,10 @@ class EnrollmentService:
         from datetime import timedelta
         now = datetime.utcnow()
         
-        # Check if they are trying to start too early
-        if now < exam.start_time:
-            raise HTTPException(status_code=400, detail="The exam has not started yet.")
+        # Check if they are trying to start too early (allow up to 30 mins before)
+        early_limit = exam.start_time - timedelta(minutes=30)
+        if now < early_limit:
+            raise HTTPException(status_code=400, detail="The exam is not ready yet. Please wait until 30 minutes before the start time.")
 
         # 2. Check if the student already started it
         enrollment = enrollment_repo.get_enrollment(db, user_id, exam_id)
