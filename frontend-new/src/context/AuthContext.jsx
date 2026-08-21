@@ -36,8 +36,8 @@ export const AuthProvider = ({ children }) => {
     if (userData) setUser(userData);
   };
 
-  const logout = async () => {
-    if (token) {
+  const logout = async (skipApi = false) => {
+    if (token && !skipApi) {
       try {
         await fetch(`${API_BASE_URL}/logout`, {
           method: "POST",
