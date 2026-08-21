@@ -27,16 +27,30 @@ const ExamEnvironment = () => {
   const [showFilePicker, setShowFilePicker] = useState(false);
   const [pickerTarget, setPickerTarget] = useState(null); // 'csv' or 'ipynb'
   const [workspaceFiles, setWorkspaceFiles] = useState([]);
+  const [pickerError, setPickerError] = useState("");
 
   const openWorkspacePicker = (target) => {
+    setPickerError("");
     setPickerTarget(target);
     const iframe = document.querySelector('iframe');
-    if (!iframe || !iframe.contentWindow || !iframe.contentWindow.pyodide) {
-      alert("IDE is still initializing. Please wait a moment.");
+    
+    if (!iframe || !iframe.contentWindow) {
+      setPickerError("IDE is still initializing. Please wait a moment.");
+      setShowFilePicker(true);
+      return;
+    }
+
+    let pyodide = null;
+    try {
+      pyodide = iframe.contentWindow.eval('typeof pyodide !== "undefined" ? pyodide : null');
+    } catch(e) {}
+
+    if (!pyodide) {
+      setPickerError("IDE is still initializing. Please wait a moment.");
+      setShowFilePicker(true);
       return;
     }
     
-    const pyodide = iframe.contentWindow.pyodide;
     const foundFiles = [];
     
     const scanDir = (dir) => {
@@ -66,7 +80,7 @@ const ExamEnvironment = () => {
   const handleSelectWorkspaceFile = (path) => {
     try {
       const iframe = document.querySelector('iframe');
-      const pyodide = iframe.contentWindow.pyodide;
+      const pyodide = iframe.contentWindow.eval('pyodide');
       
       const fileContent = pyodide.FS.readFile(path);
       const filename = path.split('/').pop();
@@ -82,19 +96,22 @@ const ExamEnvironment = () => {
 
       if (pickerTarget === 'csv') {
         if (fileObj.size > 5 * 1024 * 1024) {
-          alert('CSV file exceeds 5MB limit.');
+          setPickerError('CSV file exceeds 5MB limit.');
+          return;
         } else {
           setSubmissionFile(fileObj);
         }
       } else if (pickerTarget === 'ipynb') {
         if (fileObj.size > 15 * 1024 * 1024) {
-          alert('Notebook exceeds 15MB limit.');
+          setPickerError('Notebook exceeds 15MB limit.');
+          return;
         } else {
           setNotebookFile(fileObj);
         }
       }
     } catch (err) {
-      alert("Failed to read file from workspace.");
+      setPickerError("Failed to read file from workspace.");
+      return;
     }
     setShowFilePicker(false);
   };
@@ -467,7 +484,7 @@ const ExamEnvironment = () => {
                   <UploadCloud size={40} style={{ color: 'var(--text-tertiary)', marginBottom: '16px' }} />
                   <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '8px' }}>Select CSV File</p>
                   <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '16px' }}>Max size 5MB</p>
-                  <button onClick={() => openWorkspacePicker('csv')} style={{ background: 'var(--accent)', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '13px', cursor: 'pointer', marginBottom: submissionFile ? '12px' : '0' }}>Choose from Workspace</button>
+                  <button onClick={() => openWorkspacePicker('csv')} style={{ background: '#4F46E5', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '13px', cursor: 'pointer', marginBottom: submissionFile ? '12px' : '0' }}>Choose from Workspace</button>
                   {submissionFile && <div style={{ background: 'var(--success-light)', color: 'var(--success)', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>{submissionFile.name}</div>}
                 </div>
 
@@ -475,7 +492,7 @@ const ExamEnvironment = () => {
                   <FileText size={40} style={{ color: 'var(--text-tertiary)', marginBottom: '16px' }} />
                   <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '8px' }}>Select Notebook</p>
                   <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '16px' }}>.ipynb (Max 15MB)</p>
-                  <button onClick={() => openWorkspacePicker('ipynb')} style={{ background: 'var(--accent)', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '13px', cursor: 'pointer', marginBottom: notebookFile ? '12px' : '0' }}>Choose from Workspace</button>
+                  <button onClick={() => openWorkspacePicker('ipynb')} style={{ background: '#4F46E5', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '13px', cursor: 'pointer', marginBottom: notebookFile ? '12px' : '0' }}>Choose from Workspace</button>
                   {notebookFile && <div style={{ background: 'var(--success-light)', color: 'var(--success)', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>{notebookFile.name}</div>}
                 </div>
               </div>
@@ -487,7 +504,7 @@ const ExamEnvironment = () => {
                 onClick={handleSubmission}
                 disabled={isSubmitting || (!submissionFile && !notebookFile) || submissionSuccess}
                 style={{
-                  width: '100%', background: 'var(--accent)', color: 'white', padding: '16px', borderRadius: '12px', border: 'none',
+                  width: '100%', background: '#4F46E5', color: 'white', padding: '16px', borderRadius: '12px', border: 'none',
                   fontWeight: 700, fontSize: '16px', cursor: (isSubmitting || (!submissionFile && !notebookFile) || submissionSuccess) ? 'not-allowed' : 'pointer',
                   opacity: (isSubmitting || (!submissionFile && !notebookFile) || submissionSuccess) ? 0.6 : 1, transition: 'all 0.2s'
                 }}
@@ -514,9 +531,16 @@ const ExamEnvironment = () => {
               <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Select {pickerTarget === 'csv' ? 'CSV File' : 'Notebook'}</h3>
               <button onClick={() => setShowFilePicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
+
+            {pickerError && (
+              <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={16} />
+                <span>{pickerError}</span>
+              </div>
+            )}
             
             <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {workspaceFiles.length === 0 ? (
+              {!pickerError && workspaceFiles.length === 0 ? (
                 <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-tertiary)', background: 'var(--bg-base)', borderRadius: '8px' }}>
                   <Folder size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
                   <p style={{ fontSize: '14px' }}>No .{pickerTarget} files found in your workspace.</p>
