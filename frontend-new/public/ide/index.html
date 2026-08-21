@@ -116,6 +116,56 @@
       
       // Expose to ExamEnvironment if needed
       window.setTheme = applyTheme;
+
+      document.addEventListener('copy', (e) => {
+        let text = window.getSelection().toString();
+        if (!text && document.activeElement) {
+          if (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT') {
+            text = document.activeElement.value.substring(document.activeElement.selectionStart, document.activeElement.selectionEnd);
+          }
+        }
+        if (text) {
+          localStorage.setItem('examClipboard', text);
+        }
+        e.preventDefault();
+        e.stopPropagation();
+      }, { capture: true });
+
+      document.addEventListener('paste', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const text = localStorage.getItem('examClipboard');
+        if (text) {
+          const activeEl = document.activeElement;
+          
+          if (activeEl && activeEl.classList.contains('inputarea')) {
+             // This is a Monaco Editor textarea! 
+             // Monaco natively supports paste command execution if we trigger it
+             // But we can't easily access the correct editor instance here (single file vs notebook cell).
+             // However, modifying the textarea value and dispatching 'input' triggers Monaco's typed input logic.
+             const val = activeEl.value;
+             const start = activeEl.selectionStart || 0;
+             const end = activeEl.selectionEnd || 0;
+             activeEl.value = val.substring(0, start) + text + val.substring(end);
+             activeEl.selectionStart = activeEl.selectionEnd = start + text.length;
+             activeEl.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+             
+          } else if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+            const start = activeEl.selectionStart;
+            const end = activeEl.selectionEnd;
+            const val = activeEl.value;
+            activeEl.value = val.substring(0, start) + text + val.substring(end);
+            activeEl.selectionStart = activeEl.selectionEnd = start + text.length;
+            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+          } else if (activeEl && activeEl.isContentEditable) {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            selection.deleteFromDocument();
+            selection.getRangeAt(0).insertNode(document.createTextNode(text));
+          }
+        }
+      }, { capture: true });
     })();
   </script>
   <!-- Custom Styles -->

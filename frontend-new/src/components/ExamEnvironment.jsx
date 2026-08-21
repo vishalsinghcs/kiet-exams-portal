@@ -177,28 +177,38 @@ const ExamEnvironment = () => {
   // --- ANTI-CHEAT: Internal Clipboard ---
   useEffect(() => {
     const handleCopy = (e) => {
+      let text = window.getSelection().toString();
+      if (!text && document.activeElement) {
+        if (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT') {
+          text = document.activeElement.value.substring(document.activeElement.selectionStart, document.activeElement.selectionEnd);
+        }
+      }
+      if (text) {
+        localStorage.setItem('examClipboard', text);
+      }
       e.preventDefault();
-      const selectedText = window.getSelection().toString();
-      internalClipboard.current = selectedText;
     };
 
     const handlePaste = (e) => {
-      const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
-        e.preventDefault();
-        try {
-          document.execCommand('insertText', false, internalClipboard.current);
-        } catch (err) {
-          activeEl.value = activeEl.value + internalClipboard.current;
+      e.preventDefault();
+      const text = localStorage.getItem('examClipboard');
+      if (text) {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+          const start = activeEl.selectionStart;
+          const end = activeEl.selectionEnd;
+          const val = activeEl.value;
+          activeEl.value = val.substring(0, start) + text + val.substring(end);
+          activeEl.selectionStart = activeEl.selectionEnd = start + text.length;
+          activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+        } else if (activeEl && activeEl.isContentEditable) {
+          document.execCommand('insertText', false, text);
         }
-      } else {
-        e.preventDefault();
       }
     };
 
     document.addEventListener("copy", handleCopy);
     document.addEventListener("paste", handlePaste);
-
     return () => {
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("paste", handlePaste);
@@ -249,22 +259,71 @@ const ExamEnvironment = () => {
     notebookFileRef.current = notebookFile;
   }, [notebookFile]);
 
-  const getFileFromWorkspace = (filename, targetPath, mimeType) => {
-    try {
-      const iframe = document.querySelector('iframe');
-      if (!iframe || !iframe.contentWindow) return null;
-      const pyodide = iframe.contentWindow.eval('typeof pyodide !== "undefined" ? pyodide : null');
-      if (!pyodide) return null;
-      
-      const fileContent = pyodide.FS.readFile(targetPath);
-      let blobPart = fileContent;
-      if (typeof fileContent === 'string') {
-          blobPart = new TextEncoder().encode(fileContent);
-      }
-      return new File([blobPart], filename, { type: mimeType });
-    } catch (e) {
+  const getFileFromWorkspace = async (filename, mimeType) => {
+    const getFromPyodide = () => {
+      try {
+        const iframe = document.querySelector('iframe');
+        if (!iframe || !iframe.contentWindow) return null;
+        const pyodide = iframe.contentWindow.eval('typeof pyodide !== "undefined" ? pyodide : null');
+        if (!pyodide) return null;
+        
+        const pathsToTry = [filename, '/' + filename, '/workspace/' + filename, '/data/' + filename, '/home/pyodide/' + filename];
+        for (let p of pathsToTry) {
+            try {
+                const fileContent = pyodide.FS.readFile(p);
+                let blobPart = fileContent;
+                if (typeof fileContent === 'string') {
+                    blobPart = new TextEncoder().encode(fileContent);
+                }
+                return new File([blobPart], filename, { type: mimeType });
+            } catch(e) {}
+        }
+      } catch (e) {}
       return null;
-    }
+    };
+
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open('PyExDB', 1);
+        request.onsuccess = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('state')) {
+            resolve(getFromPyodide());
+            return;
+          }
+          const transaction = db.transaction('state', 'readonly');
+          const store = transaction.objectStore('state');
+          const getReq = store.get('workspaceState');
+          
+          getReq.onsuccess = () => {
+            const state = getReq.result;
+            if (!state) { resolve(getFromPyodide()); return; }
+            
+            const pyFiles = state.pyFiles || [];
+            const foundPy = pyFiles.find(f => f[0] === filename || f[0].endsWith('/' + filename));
+            if (foundPy) {
+              const content = foundPy[1];
+              const blobPart = new TextEncoder().encode(content);
+              resolve(new File([blobPart], filename, { type: mimeType }));
+              return;
+            }
+            
+            const uploadedFiles = state.uploadedFiles || [];
+            const foundUpload = uploadedFiles.find(f => f[0] === filename || f[0].endsWith('/' + filename));
+            if (foundUpload) {
+               resolve(new File([foundUpload[1].data], filename, { type: mimeType }));
+               return;
+            }
+            
+            resolve(getFromPyodide());
+          };
+          getReq.onerror = () => resolve(getFromPyodide());
+        };
+        request.onerror = () => resolve(getFromPyodide());
+      } catch (e) {
+        resolve(getFromPyodide());
+      }
+    });
   };
 
   const addLog = (msg) => {
@@ -283,8 +342,7 @@ const ExamEnvironment = () => {
     let nbFile = null;
 
     addLog("Searching for main.ipynb...");
-    nbFile = getFileFromWorkspace('main.ipynb', '/workspace/main.ipynb', 'application/x-ipynb+json');
-    if (!nbFile) nbFile = getFileFromWorkspace('main.ipynb', '/output/main.ipynb', 'application/x-ipynb+json');
+    nbFile = await getFileFromWorkspace('main.ipynb', 'application/x-ipynb+json');
     if (!nbFile) {
       nbFile = notebookFileRef.current;
       if (nbFile) addLog("main.ipynb: using manually selected file.");
@@ -297,8 +355,7 @@ const ExamEnvironment = () => {
     }
 
     addLog("Searching for submission.csv...");
-    csvFile = getFileFromWorkspace('submission.csv', '/workspace/submission.csv', 'text/csv');
-    if (!csvFile) csvFile = getFileFromWorkspace('submission.csv', '/output/submission.csv', 'text/csv');
+    csvFile = await getFileFromWorkspace('submission.csv', 'text/csv');
     if (!csvFile) {
       csvFile = submissionFileRef.current;
       if (csvFile) addLog("submission.csv: using manually selected file.");
@@ -311,9 +368,7 @@ const ExamEnvironment = () => {
     }
 
     if (!csvFile && !nbFile) {
-      addLog("No files found to submit.");
-      setAutoSubmitStatus("failed");
-      return;
+      addLog("No files found to submit, but finalizing exam anyway...");
     }
 
     try {
@@ -356,7 +411,7 @@ const ExamEnvironment = () => {
       }
 
       addLog("Finalizing exam submission...");
-      const resSubmit = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit`, {
+      const resSubmit = await fetch(`${API_BASE_URL}/users/me/exams/${examId}/submit?force=true`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });

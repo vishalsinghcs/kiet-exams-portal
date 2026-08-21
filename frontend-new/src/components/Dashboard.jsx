@@ -8,10 +8,10 @@ import OtpInput from './ui/OtpInput';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { logout, token } = useAuth();
+  const { logout, token, user: authUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(authUser);
   const [exams, setExams] = useState([]);
   const [activeTab, setActiveTab] = useState('ongoing');
   const [profileDropdown, setProfileDropdown] = useState(false);
@@ -22,6 +22,8 @@ const Dashboard = () => {
   const [otp, setOtp] = useState('');
   const [passkeyError, setPasskeyError] = useState('');
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  
+  const [logoutError, setLogoutError] = useState('');
   
   useEffect(() => {
     const fetchProfile = async () => {
@@ -232,7 +234,14 @@ const Dashboard = () => {
                     <button onClick={() => { setProfileDropdown(false); navigate('/forgot-password'); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', borderRadius: '6px', color: 'var(--text-primary)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-base)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       Reset Password
                     </button>
-                    <button onClick={() => { logout(); navigate('/'); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', borderRadius: '6px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--danger-light)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                    <button onClick={async () => {
+                      try {
+                        await logout();
+                        navigate('/');
+                      } catch (err) {
+                        setLogoutError(err.message);
+                      }
+                    }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', borderRadius: '6px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--danger-light)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <LogOut size={16} /> Log Out
                     </button>
                   </div>
@@ -391,6 +400,27 @@ const Dashboard = () => {
                 {passkeyLoading ? 'Verifying...' : 'Unlock Exam'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Error Modal */}
+      {logoutError && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '32px', borderRadius: '16px', maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-medium)' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <Lock size={32} />
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '12px' }}>Action Blocked</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+              {logoutError}
+            </p>
+            <button 
+              onClick={() => setLogoutError('')}
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--danger)', color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+            >
+              Okay, I understand
+            </button>
           </div>
         </div>
       )}

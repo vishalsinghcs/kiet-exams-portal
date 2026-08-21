@@ -308,10 +308,10 @@ async def upload_exam_file(
     return {"message": f"{file_type} uploaded successfully. Remember to click Finish Test!"}
 
 @router.post("/users/me/exams/{exam_id}/submit")
-def submit_exam(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Student clicks 'Finish Test'. Will fail if both files aren't uploaded."""
-    logger.info(f"Student attempting to submit final exam [user_id={current_user.id} exam_id={exam_id}]")
-    return enrollment_service.submit_exam(db, user_id=current_user.id, exam_id=exam_id)
+def submit_exam(exam_id: UUID, force: bool = False, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Student clicks 'Finish Test' or system autosubmits. Will fail if both files aren't uploaded unless force is True."""
+    logger.info(f"Student attempting to submit final exam [user_id={current_user.id} exam_id={exam_id} force={force}]")
+    return enrollment_service.submit_exam(db, user_id=current_user.id, exam_id=exam_id, force=force)
 
 @router.get("/users/me/exams/{exam_id}/dataset")
 def download_exam_dataset(exam_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

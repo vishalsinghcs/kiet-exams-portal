@@ -38,19 +38,21 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async (skipApi = false) => {
     if (token && !skipApi) {
-      try {
-        await fetch(`${API_BASE_URL}/logout`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-      } catch (err) {
-        console.error("Logout API failed", err);
+      const res = await fetch(`${API_BASE_URL}/logout`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Cannot logout at this moment.");
       }
     }
     setToken(null);
     setUser(null);
+    return true;
   };
 
   return (

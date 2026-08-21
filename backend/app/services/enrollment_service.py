@@ -57,8 +57,8 @@ class EnrollmentService:
 
 
     # === 2. SUBMITTING THE EXAM ===
-    def submit_exam(self, db: Session, user_id: UUID, exam_id: UUID):
-        logger.debug(f"Attempting to submit exam [user_id={user_id} exam_id={exam_id}]")
+    def submit_exam(self, db: Session, user_id: UUID, exam_id: UUID, force: bool = False):
+        logger.debug(f"Attempting to submit exam [user_id={user_id} exam_id={exam_id} force={force}]")
         # 1. Fetch the student's report card
         enrollment = enrollment_repo.get_enrollment(db, user_id, exam_id)
         if not enrollment:
@@ -70,8 +70,8 @@ class EnrollmentService:
             raise HTTPException(status_code=400, detail="Exam already submitted.")
 
         # 2. THE STRICT BUSINESS RULE
-        # This is exactly what you requested: Block submission if any file is missing.
-        if not enrollment.csv_submission_path or not enrollment.notebook_submission_path:
+        # This is exactly what you requested: Block submission if any file is missing, UNLESS forced (e.g. timeout).
+        if not force and (not enrollment.csv_submission_path or not enrollment.notebook_submission_path):
             logger.warning(f"Submission blocked: Missing required files [user_id={user_id} exam_id={exam_id}]")
             raise HTTPException(
                 status_code=400, 
