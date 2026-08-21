@@ -107,6 +107,78 @@ class AuthService:
 
         return {"message": "User created successfully", "user_id": new_user.id}
 
+    # === TEACHER INVITE PHASE 1: Send Invite ===
+    def invite_teacher(self, db: Session, admin_user: User, email: str, name: str):
+        logger.info(f"Admin {admin_user.email} inviting teacher {email}")
+        
+        # 1. Check if user already exists
+        existing_user = user_repo.get_by_email(db, email)
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User with this email already exists.")
+            
+        # 2. Create the user as inactive and without a password
+        new_teacher = user_repo.create(db, obj_in={
+            "email": email,
+            "name": name,
+            "password_hash": "INVITED_NO_PASSWORD",
+            "role": "teacher",
+            "is_active": False  # They must set password to activate
+        })
+        
+        # 3. Generate invite token
+        import secrets
+        invite_token = secrets.token_urlsafe(32)
+        
+        from datetime import datetime, timedelta
+        expires = datetime.utcnow() + timedelta(hours=24)
+        
+        token_repo.create(db, obj_in={
+            "email": email,
+            "token": invite_token,
+            "token_type": "teacher_invite",
+            "expires_at": expires
+        })
+        
+        # 4. Generate the frontend setup link and send email
+        from app.services.email_service import send_teacher_invite_email
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        invite_link = f"{frontend_url}/teacher/setup-password?token={invite_token}"
+        send_teacher_invite_email(to_email=email, invite_link=invite_link, teacher_name=name)
+        
+        return {"message": f"Teacher invited successfully. Email sent to {email}."}
+
+    # === TEACHER INVITE PHASE 2: Set Password ===
+    def set_teacher_password(self, db: Session, token_str: str, new_password: str):
+        logger.info("Attempting to set teacher password from invite token")
+        
+        # We need to find the token in DB since we don't have the email from the request
+        token_record = db.query(VerificationToken).filter(
+            VerificationToken.token == token_str,
+            VerificationToken.token_type == "teacher_invite"
+        ).first()
+        
+        if not token_record:
+            raise HTTPException(status_code=400, detail="Invalid or expired invitation token.")
+            
+        from datetime import datetime
+        if token_record.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="Invitation token has expired.")
+            
+        # Find the user
+        user = user_repo.get_by_email(db, token_record.email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+            
+        # Set password and activate
+        user.password_hash = get_password_hash(new_password)
+        user.is_active = True
+        db.commit()
+        
+        # Cleanup token
+        token_repo.delete_all_for_user(db, user.email, "teacher_invite")
+        
+        return {"message": "Password set successfully. You can now login."}
+
     # === FORGOT PASSWORD PHASE 1: Send OTP ===
     def initiate_forgot_password(self, db: Session, email: str):
         logger.debug(f"Initiating forgot password for {email}")

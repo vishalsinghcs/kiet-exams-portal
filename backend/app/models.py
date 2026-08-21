@@ -35,7 +35,7 @@ class VerificationToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, index=True, nullable=False)
     token = Column(String, nullable=False)
-    token_type = Column(Enum("signup", "password_reset", name="token_types"), nullable=False) # 'signup_otp', 'password_reset_otp'
+    token_type = Column(Enum("signup", "password_reset", "teacher_invite", name="token_types"), nullable=False) # 'signup', 'password_reset', 'teacher_invite'
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

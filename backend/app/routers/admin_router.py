@@ -15,6 +15,14 @@ def get_teachers(admin: User = Depends(get_admin_user), db: Session = Depends(ge
     logger.info(f"Admin action: Fetching all teachers [admin_id={admin.id}]")
     return user_repo.get_all_by_role(db, role="teacher")
 
+from app.services.auth_service import auth_service
+
+@router.post("/invite-teacher")
+def invite_teacher(request: schemas.TeacherInviteRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
+    """Send an invitation email to a new teacher."""
+    logger.info(f"Admin action: Inviting new teacher [admin_id={admin.id} target_email={request.email}]")
+    return auth_service.invite_teacher(db=db, admin_user=admin, email=request.email, name=request.name)
+
 @router.post("/teachers")
 def add_teacher(request: schemas.EmailRequest, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Promote a student to a teacher."""

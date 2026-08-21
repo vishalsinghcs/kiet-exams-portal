@@ -46,6 +46,15 @@ def reset_password(request: schemas.ResetPasswordOTPRequest, db: Session = Depen
         otp=request.otp,
         new_password=request.new_password
     )
+@router.post("/set-teacher-password")
+def set_teacher_password(request: schemas.TeacherSetPasswordRequest, db: Session = Depends(get_db)):
+    """Teacher uses their invite token to set a password and activate account."""
+    logger.info("Incoming request to set teacher password from invite.")
+    return auth_service.set_teacher_password(
+        db=db, 
+        token_str=request.token, 
+        new_password=request.new_password
+    )
 
 @router.post("/login")
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):

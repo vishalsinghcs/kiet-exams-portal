@@ -25,6 +25,21 @@ class UserCreate(BaseModel):
             raise ValueError('Registration is restricted to @kiet.edu domains only')
         return v
 
+# Teacher Auth Schemas
+class TeacherInviteRequest(BaseModel):
+    name: str
+    email: EmailStr
+
+    @field_validator('email')
+    def validate_kiet_email(cls, v):
+        if not v.endswith('@kiet.edu'):
+            raise ValueError('Teacher emails are restricted to @kiet.edu domains only')
+        return v
+
+class TeacherSetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
 # 1b. The rules for verifying signup OTP
 class OTPVerifyRequest(BaseModel):
     name: str

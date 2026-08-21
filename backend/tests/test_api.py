@@ -485,3 +485,57 @@ def test_edit_exam(client, db_session):
         assert updated_exam.dataset_path == "mock_s3_path/dataset.zip"
         assert updated_exam.sample_csv_path == "mock_s3_path/dataset.zip" # Because mock_upload returns the same path for both calls
 
+def test_teacher_invite_flow(client, db_session):
+    import uuid
+    from app.models import User, VerificationToken
+    from app.utils.security import get_password_hash
+    
+    # 1. Setup Admin User
+    admin_email = f"admin_{uuid.uuid4().hex[:6]}@kietexams.edu"
+    admin = User(
+        id=uuid.uuid4(),
+        name="System Admin",
+        email=admin_email,
+        password_hash=get_password_hash("adminpassword"),
+        role="admin",
+        is_active=True
+    )
+    db_session.add(admin)
+    db_session.commit()
+    
+    # 2. Login as Admin
+    login_response = client.post("/login", json={"email": admin_email, "password": "adminpassword"})
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # 3. Admin invites a new teacher
+    teacher_email = f"new_teacher_{uuid.uuid4().hex[:6]}@kiet.edu"
+    invite_response = client.post("/admin/invite-teacher", json={
+        "name": "New Teacher",
+        "email": teacher_email
+    }, headers=headers)
+    assert invite_response.status_code == 200
+    
+    # 4. Extract token from DB
+    token_obj = db_session.query(VerificationToken).filter(
+        VerificationToken.email == teacher_email,
+        VerificationToken.token_type == "teacher_invite"
+    ).first()
+    assert token_obj is not None
+    invite_token = token_obj.token
+    
+    # 5. Teacher sets their password using the token
+    set_pw_response = client.post("/set-teacher-password", json={
+        "token": invite_token,
+        "new_password": "securepassword123"
+    })
+    assert set_pw_response.status_code == 200
+    
+    # 6. Verify teacher can now login
+    teacher_login_response = client.post("/login", json={
+        "email": teacher_email,
+        "password": "securepassword123"
+    })
+    assert teacher_login_response.status_code == 200
+    assert teacher_login_response.json()["role"] == "teacher"
