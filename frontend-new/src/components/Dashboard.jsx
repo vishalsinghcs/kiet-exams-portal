@@ -173,7 +173,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       
       {/* Topbar */}
       <header style={{ 
@@ -251,7 +251,8 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '40px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '1200px', margin: '0 auto', width: '100%', overflow: 'hidden' }}>
+        <div style={{ padding: '40px 40px 0 40px', flexShrink: 0 }}>
         <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '8px' }}>My Exams</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Manage and participate in your enrolled examinations.</p>
 
@@ -273,9 +274,11 @@ const Dashboard = () => {
             </button>
           ))}
         </div>
+        </div>
 
         {/* Exams Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
+        <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '0 40px 40px 40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
           {filteredExams.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-medium)', gridColumn: '1 / -1' }}>
               No {activeTab} exams found.
@@ -358,6 +361,7 @@ const Dashboard = () => {
               </div>
             ))
           )}
+        </div>
         </div>
       </main>
 
