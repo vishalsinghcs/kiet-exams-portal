@@ -35,7 +35,7 @@ const Dashboard = () => {
           const data = await res.json();
           setUser(data);
         } else {
-          logout();
+          logout().catch(() => {});
           navigate('/login');
         }
       } catch (err) {

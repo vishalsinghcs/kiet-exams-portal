@@ -12,6 +12,13 @@ const StudentRouteGuard = () => {
     const payloadStr = atob(token.split('.')[1]);
     const payload = JSON.parse(payloadStr);
     
+    // Check if token is expired
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return <Navigate to="/login" replace />;
+    }
+    
     if (payload.role !== 'student') {
       return <Navigate to="/login" replace />;
     }

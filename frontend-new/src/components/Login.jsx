@@ -36,6 +36,10 @@ const Login = () => {
         if (!token) return;
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            logout().catch(() => {});
+            return;
+          }
           if (payload.role === "teacher") {
             navigate("/teacher/dashboard", { replace: true });
           } else if (payload.role === "admin") {
@@ -43,7 +47,7 @@ const Login = () => {
           } else if (payload.role === "student") {
             navigate("/dashboard", { replace: true });
           } else {
-            logout();
+            logout().catch(() => {});
           }
         } catch (e) {
           console.error("Profile check failed:", e);

@@ -37,21 +37,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async (skipApi = false) => {
+    let apiError = null;
     if (token && !skipApi) {
-      const res = await fetch(`${API_BASE_URL}/logout`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      try {
+        const res = await fetch(`${API_BASE_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || "Cannot logout at this moment.");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          apiError = new Error(data.detail || "Cannot logout at this moment.");
+        }
+      } catch (err) {
+        apiError = err;
       }
     }
+    
+    // Always clear local state regardless of API success
     setToken(null);
     setUser(null);
+    
+    if (apiError) {
+      throw apiError;
+    }
     return true;
   };
 
